@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { submitScore, getHiScore } from './scoreUtils';
+import { saveLeaderboardScore } from './utils/saveScore';
 
 const NEON = '#39FF14';
 const VW = 360, VH = 640;
@@ -93,7 +93,7 @@ export function useNeonSnake({ canvasRef, onExit }) {
   useEffect(()=>{scoreRef.current=score;},[score]);
   useEffect(()=>{hiRef.current=hiScore;},[hiScore]);
   useEffect(()=>{statusRef.current=status;},[status]);
-  useEffect(()=>{getHiScore('snake').then(s=>{setHi(s);hiRef.current=s;});},[]);
+  useEffect(()=>{const v=parseInt(localStorage.getItem('snake_hi')||'0',10);setHi(v);hiRef.current=v;},[]);
 
   const start = useCallback(()=>{
     setNewHi(false); setScore(0); scoreRef.current=0;
@@ -194,7 +194,13 @@ export function useNeonSnake({ canvasRef, onExit }) {
           if(g.snake.some(s=>s.x===head.x&&s.y===head.y)){
             const final=scoreRef.current;
             setStatus('gameover');
-            submitScore('snake',final).then(ok=>{if(ok){setHi(final);hiRef.current=final;setNewHi(true);}});
+            saveLeaderboardScore('snake',final).then(ok=>{
+              if(ok||final>hiRef.current){
+                const best=Math.max(final,hiRef.current);
+                setHi(best);hiRef.current=best;setNewHi(true);
+                localStorage.setItem('snake_hi',String(best));
+              }
+            });
             try{window.AndroidInterface?.showInterstitialAd?.();}catch(_){}
             setTimeout(()=>{setStatus('idle');onExit?.(final);},2000);
           } else {
