@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { saveLeaderboardScore } from './utils/saveScore';
 
 /* ── 상수 ──────────────────────────────────────────────── */
 const NEON = '#39FF14';
@@ -218,8 +219,13 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
   const triggerGameOver = useCallback(() => {
     const final = scoreRef.current;
     setStatus('gameover');
+    saveLeaderboardScore('brickBreaker', final).then(isNew => {
+      if (isNew || final > hiScoreRef.current) {
+        setHiScore(final); setIsNewHi(true);
+      }
+    });
     if (final > hiScoreRef.current) {
-      setHiScore(final); setIsNewHi(true); saveHiScore(final);
+      saveHiScore(final); // 로컬 컬렉션 유지
     }
     try {
       window.AndroidInterface?.showInterstitialAd?.();

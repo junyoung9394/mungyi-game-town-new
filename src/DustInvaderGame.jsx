@@ -7,6 +7,7 @@ import {
   setDoc,
   serverTimestamp,
 } from 'firebase/firestore';
+import { saveLeaderboardScore } from './utils/saveScore';
 
 /* ============================================================
  * 상수 (가상 해상도 + 게임 밸런스)
@@ -304,11 +305,14 @@ export function useDustInvaderGame({ canvasRef, onExit }) {
     const finalScore = scoreRef.current;
     setStatus('gameover');
 
-    // 1) Hi-Score 갱신 시 Firestore 저장
+    // 1) 리더보드 저장 (전체) + Hi-Score 갱신
+    saveLeaderboardScore('dustInvader', finalScore).then(isNew => {
+      if (isNew || finalScore > hiScoreRef.current) {
+        setHiScore(finalScore); setIsNewHi(true);
+      }
+    });
     if (finalScore > hiScoreRef.current) {
-      setHiScore(finalScore);
-      setIsNewHi(true);
-      saveHiScore(finalScore);
+      saveHiScore(finalScore); // 로컬 컬렉션도 유지
     }
 
     // 2) 안드로이드 웹뷰로 전면 광고 신호 전송
