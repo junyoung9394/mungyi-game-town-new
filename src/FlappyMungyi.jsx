@@ -239,9 +239,10 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
 }
 
 /* ── 컴포넌트 ─────────────────────────────────────── */
-export default function FlappyMungyi({ onExit }) {
+export default function FlappyMungyi({ onExit, autoStart }) {
   const canvasRef = useRef(null);
   const { start, doJump, status, hiScore, isNewHi } = useFlappyMungyi({ canvasRef, onExit });
+  useEffect(() => { if (autoStart) start(); }, []); // eslint-disable-line
 
   return (
     <div className="absolute inset-0">

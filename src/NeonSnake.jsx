@@ -243,9 +243,10 @@ export function useNeonSnake({ canvasRef, onExit }) {
 }
 
 /* ── 컴포넌트 ──────────────────────────────────────── */
-export default function NeonSnake({ onExit }) {
+export default function NeonSnake({ onExit, autoStart }) {
   const canvasRef=useRef(null);
   const {start,status,hiScore,isNewHi}=useNeonSnake({canvasRef,onExit});
+  useEffect(()=>{ if(autoStart) start(); },[]); // eslint-disable-line
   return (
     <div className="absolute inset-0">
       <canvas ref={canvasRef} className="block w-full h-full select-none"

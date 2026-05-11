@@ -599,10 +599,11 @@ export function useDustInvaderGame({ canvasRef, onExit }) {
  *   - 기존 GameTownLayout의 <canvas> 대신 이 컴포넌트를 넣으면 됨
  *   - 자체적으로 idle/play/gameover UI를 가짐
  * ============================================================ */
-export default function DustInvaderGame({ onExit }) {
+export default function DustInvaderGame({ onExit, autoStart }) {
   const canvasRef = useRef(null);
   const { start, status, score, hiScore, stage, lives, isNewHi } =
     useDustInvaderGame({ canvasRef, onExit });
+  useEffect(() => { if (autoStart) start(); }, []); // eslint-disable-line
 
   return (
     <div className="absolute inset-0">

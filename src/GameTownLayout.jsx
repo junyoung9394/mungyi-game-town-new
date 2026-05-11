@@ -46,14 +46,15 @@ function VerticalAd({ side }) {
 
 /* ── 메인 레이아웃 ────────────────────────────────── */
 export default function GameTownLayout() {
-  const [user, setUser]             = useState(null);
-  const [loading, setLoading]       = useState(false);
+  const [user, setUser]               = useState(null);
+  const [loading, setLoading]         = useState(false);
   const [currentGame, setCurrentGame] = useState(null);
+  const [pendingGame, setPendingGame] = useState(null); // 조작법 안내 중인 게임
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
-      if (!u) setCurrentGame(null);
+      if (!u) { setCurrentGame(null); setPendingGame(null); }
     });
     return () => unsub();
   }, []);
@@ -70,6 +71,20 @@ export default function GameTownLayout() {
   };
 
   const handleLogout = () => signOut(auth);
+
+  const goLobby = () => { setCurrentGame(null); setPendingGame(null); };
+
+  /* 로비 카드 클릭 → 조작법 안내 먼저 */
+  const handleSelectGame = (gameId) => {
+    setPendingGame(gameId);
+    setCurrentGame(null);
+  };
+
+  /* 조작법 안내에서 START → 게임 실행 */
+  const handleGuideStart = () => {
+    setCurrentGame(pendingGame);
+    setPendingGame(null);
+  };
 
   return (
     <div className="relative min-h-screen w-full bg-black font-pixel text-neon overflow-hidden">
@@ -117,16 +132,23 @@ export default function GameTownLayout() {
             {!user && <LoginScreen loading={loading} onGoogle={handleGoogle} />}
 
             {/* 로그인 후 – 로비 */}
-            {user && currentGame === null   && <GameLobby user={user} onSelect={setCurrentGame} />}
-            {user && currentGame === 'dustInvader'  && <DustInvaderGame   onExit={() => setCurrentGame(null)} />}
-            {user && currentGame === 'brickBreaker' && <NeonBrickBreaker  onExit={() => setCurrentGame(null)} />}
-            {user && currentGame === 'tetris'        && <ClassicTetris     onExit={() => setCurrentGame(null)} />}
-            {user && currentGame === 'snake'         && <NeonSnake         onExit={() => setCurrentGame(null)} />}
-            {user && currentGame === 'flappy'        && <FlappyMungyi      onExit={() => setCurrentGame(null)} />}
+            {user && currentGame === null && pendingGame === null &&
+              <GameLobby user={user} onSelect={handleSelectGame} />}
+
+            {/* 조작법 안내 오버레이 */}
+            {user && pendingGame !== null &&
+              <ControlGuide gameId={pendingGame} onStart={handleGuideStart} onBack={goLobby} />}
+
+            {/* 게임 화면 */}
+            {user && currentGame === 'dustInvader'  && <DustInvaderGame   autoStart onExit={goLobby} />}
+            {user && currentGame === 'brickBreaker' && <NeonBrickBreaker  autoStart onExit={goLobby} />}
+            {user && currentGame === 'tetris'        && <ClassicTetris     autoStart onExit={goLobby} />}
+            {user && currentGame === 'snake'         && <NeonSnake         autoStart onExit={goLobby} />}
+            {user && currentGame === 'flappy'        && <FlappyMungyi      autoStart onExit={goLobby} />}
 
             {/* 게임 중 로비 복귀 버튼 */}
             {user && currentGame !== null && (
-              <button onClick={() => setCurrentGame(null)}
+              <button onClick={goLobby}
                 className="absolute top-2 left-2 z-20 border border-neon/60 text-neon/70 hover:text-neon hover:border-neon text-[7px] px-2 py-1 bg-black/80 transition-colors tracking-widest"
                 style={{ fontFamily: '"Press Start 2P",monospace' }}>
                 ◀ LOBBY
@@ -145,6 +167,173 @@ export default function GameTownLayout() {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 h-[50px] border-t-2 border-neon bg-black flex items-center justify-center text-neon text-[9px] tracking-wider"
         style={{ fontFamily: '"Press Start 2P",monospace' }}>
         무명이 게임 타운 · PIXEL ARCADE
+      </div>
+    </div>
+  );
+}
+
+/* ── 조작법 안내 오버레이 ──────────────────────────── */
+const GUIDE_DATA = {
+  dustInvader: {
+    title: 'DUST INVADER',
+    color: '#39FF14',
+    keys: [
+      { key: '← →',   desc: '플레이어 이동' },
+      { key: 'AUTO',  desc: '자동 발사' },
+    ],
+    touch: [
+      { icon: '👆', desc: '좌/우 드래그로 이동' },
+      { icon: '🔫', desc: '총알은 자동으로 발사' },
+    ],
+    tip: '적이 내려오기 전에 모두 격파하라!',
+  },
+  brickBreaker: {
+    title: 'NEON BRICKS',
+    color: '#FF2D55',
+    keys: [
+      { key: '← →',     desc: '패들 이동' },
+      { key: '마우스',  desc: '패들 이동' },
+    ],
+    touch: [
+      { icon: '👆', desc: '드래그로 패들 이동' },
+    ],
+    tip: '공을 놓치지 말고 모든 벽돌을 부숴라!',
+  },
+  tetris: {
+    title: 'CLASSIC TETRIS',
+    color: '#BF5AF2',
+    keys: [
+      { key: '← →',    desc: '좌/우 이동' },
+      { key: '↑ / X',  desc: '블록 회전' },
+      { key: '↓',      desc: '빠른 낙하' },
+      { key: 'SPACE',  desc: '즉시 낙하' },
+    ],
+    touch: [
+      { icon: '👆', desc: '탭: 회전' },
+      { icon: '👉', desc: '좌우 스와이프: 이동' },
+      { icon: '👇', desc: '아래 스와이프: 즉시 낙하' },
+    ],
+    tip: '줄을 가득 채워 한 번에 없애자!',
+  },
+  snake: {
+    title: 'NEON SNAKE',
+    color: '#39FF14',
+    keys: [
+      { key: '← → ↑ ↓', desc: '방향 전환' },
+      { key: 'W A S D',  desc: '대체 조작키' },
+    ],
+    touch: [
+      { icon: '👆', desc: '스와이프로 방향 전환' },
+    ],
+    tip: '자기 몸에 닿으면 게임오버! 벽은 통과 가능.',
+  },
+  flappy: {
+    title: 'FLAPPY 무명이',
+    color: '#FFD700',
+    keys: [
+      { key: 'SPACE', desc: '위로 점프' },
+      { key: '↑',    desc: '위로 점프' },
+      { key: 'CLICK', desc: '위로 점프' },
+    ],
+    touch: [
+      { icon: '👆', desc: '화면 탭으로 점프' },
+    ],
+    tip: '파이프 사이를 통과하며 최고 기록에 도전!',
+  },
+};
+
+function ControlGuide({ gameId, onStart, onBack }) {
+  const cfg = GUIDE_DATA[gameId];
+  if (!cfg) return null;
+
+  return (
+    <div className="absolute inset-0 z-10 flex flex-col bg-black/95 overflow-y-auto">
+      {/* 상단 뒤로가기 */}
+      <button onClick={onBack}
+        className="absolute top-2 left-2 z-20 border border-neon/50 text-neon/60 hover:text-neon hover:border-neon text-[7px] px-2 py-1 bg-black/80 transition-colors tracking-widest"
+        style={{ fontFamily: '"Press Start 2P",monospace' }}>
+        ◀ LOBBY
+      </button>
+
+      {/* 중앙 컨텐츠 */}
+      <div className="flex flex-col items-center justify-center flex-1 px-5 py-8 gap-5">
+
+        {/* 게임 타이틀 */}
+        <div className="text-center">
+          <div className="text-[13px] tracking-widest mb-1 title-glow-pulse"
+            style={{ fontFamily: '"Press Start 2P",monospace', color: cfg.color }}>
+            {cfg.title}
+          </div>
+          <div className="h-px w-20 mx-auto mt-2"
+            style={{ background: cfg.color, boxShadow: `0 0 8px ${cfg.color}` }} />
+        </div>
+
+        {/* 조작법 카드 */}
+        <div className="w-full max-w-[300px] border border-neon/30 bg-black/60"
+          style={{ boxShadow: '0 0 12px rgba(57,255,20,0.1)' }}>
+
+          {/* 키보드 섹션 */}
+          <div className="border-b border-neon/20 px-4 py-2 flex items-center gap-2">
+            <span className="text-[8px] text-neon/50 tracking-widest"
+              style={{ fontFamily: '"Press Start 2P",monospace' }}>⌨ KEYBOARD</span>
+          </div>
+          <div className="px-4 py-3 flex flex-col gap-2.5">
+            {cfg.keys.map((k, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <span className="border border-neon/50 text-neon text-[7px] px-2 py-1 min-w-[58px] text-center shrink-0"
+                  style={{ fontFamily: '"Press Start 2P",monospace', boxShadow: '0 0 4px rgba(57,255,20,0.2)', background: 'rgba(57,255,20,0.05)' }}>
+                  {k.key}
+                </span>
+                <span className="text-neon/70 text-[8px]"
+                  style={{ fontFamily: '"Press Start 2P",monospace' }}>
+                  {k.desc}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* 터치 섹션 */}
+          <div className="border-t border-neon/20 border-b border-neon/20 px-4 py-2 flex items-center gap-2">
+            <span className="text-[8px] text-neon/50 tracking-widest"
+              style={{ fontFamily: '"Press Start 2P",monospace' }}>📱 TOUCH</span>
+          </div>
+          <div className="px-4 py-3 flex flex-col gap-2.5">
+            {cfg.touch.map((t, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <span className="text-base w-8 text-center shrink-0">{t.icon}</span>
+                <span className="text-neon/70 text-[8px]"
+                  style={{ fontFamily: '"Press Start 2P",monospace' }}>
+                  {t.desc}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* 팁 */}
+          <div className="border-t border-neon/20 px-4 py-3">
+            <p className="text-neon/40 text-[7px] leading-relaxed text-center"
+              style={{ fontFamily: '"Press Start 2P",monospace' }}>
+              💡 {cfg.tip}
+            </p>
+          </div>
+        </div>
+
+        {/* START 버튼 */}
+        <button
+          onClick={onStart}
+          className="border-2 border-neon px-8 py-3 text-neon text-[11px] tracking-widest hover:bg-neon hover:text-black active:scale-95 transition-all"
+          style={{ fontFamily: '"Press Start 2P",monospace', boxShadow: '0 0 16px rgba(57,255,20,0.5)', color: cfg.color === '#39FF14' ? undefined : cfg.color, borderColor: cfg.color === '#39FF14' ? undefined : cfg.color }}>
+          ▶ START GAME
+        </button>
+
+        {/* 픽셀 장식 */}
+        <div className="flex gap-2 opacity-30">
+          {[...Array(7)].map((_, i) => (
+            <span key={i} className="w-1.5 h-1.5 bg-neon inline-block"
+              style={{ animationDelay: `${i * 0.15}s` }} />
+          ))}
+        </div>
+
       </div>
     </div>
   );
@@ -199,7 +388,6 @@ function GoogleButton({ onClick, disabled }) {
       <span className="absolute inset-0 border-2 border-neon" />
       <span className="absolute inset-[3px] border border-neon opacity-50" />
       <div className="relative flex items-center gap-3 px-4 py-4 m-[6px] bg-white">
-        {/* Google G icon */}
         <svg className="h-6 w-6 shrink-0" viewBox="0 0 24 24">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
           <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>

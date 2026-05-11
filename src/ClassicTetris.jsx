@@ -254,9 +254,10 @@ export function useClassicTetris({ canvasRef, onExit }) {
 }
 
 /* ── 컴포넌트 ──────────────────────────────────────── */
-export default function ClassicTetris({ onExit }) {
+export default function ClassicTetris({ onExit, autoStart }) {
   const canvasRef=useRef(null);
   const {start,status,hiScore,isNewHi}=useClassicTetris({canvasRef,onExit});
+  useEffect(()=>{ if(autoStart) start(); },[]); // eslint-disable-line
   return (
     <div className="absolute inset-0">
       <canvas ref={canvasRef} className="block w-full h-full select-none"

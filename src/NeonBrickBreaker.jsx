@@ -428,10 +428,11 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
 }
 
 /* ── 컴포넌트 ──────────────────────────────────────────── */
-export default function NeonBrickBreaker({ onExit }) {
+export default function NeonBrickBreaker({ onExit, autoStart }) {
   const canvasRef = useRef(null);
   const { start, status, score, hiScore, stage, lives, isNewHi } =
     useNeonBrickBreaker({ canvasRef, onExit });
+  useEffect(() => { if (autoStart) start(); }, []); // eslint-disable-line
 
   return (
     <div className="absolute inset-0">
