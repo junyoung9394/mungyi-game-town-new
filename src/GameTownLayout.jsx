@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { initializeApp } from 'firebase/app';
 import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+  signInAnonymously, updateProfile,
 } from 'firebase/auth';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import DustInvaderGame from './DustInvaderGame';
 import NeonBrickBreaker from './NeonBrickBreaker';
 import ClassicTetris    from './ClassicTetris';
@@ -23,6 +25,10 @@ const firebaseConfig = {
 };
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db   = getFirestore(app);
+
+/* ── Kakao SDK 초기화 ─────────────────────────────── */
+const KAKAO_JS_KEY = 'ad5490ca84b163e5628e714505fa9c1a';
 
 /* ── AdSense 수직 광고 ────────────────────────────── */
 function VerticalAd({ side }) {
@@ -51,12 +57,28 @@ export default function GameTownLayout() {
   const [currentGame, setCurrentGame] = useState(null);
   const [pendingGame, setPendingGame] = useState(null); // 조작법 안내 중인 게임
 
+  /* Firebase Auth 상태 */
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       if (!u) { setCurrentGame(null); setPendingGame(null); }
     });
     return () => unsub();
+  }, []);
+
+  /* Kakao SDK 동적 로딩 */
+  useEffect(() => {
+    if (window.Kakao?.isInitialized?.()) return;
+    const script = document.createElement('script');
+    script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
+    script.crossOrigin = 'anonymous';
+    script.onload = () => {
+      if (window.Kakao && !window.Kakao.isInitialized()) {
+        window.Kakao.init(KAKAO_JS_KEY);
+        console.log('[Kakao SDK] 초기화 완료');
+      }
+    };
+    document.head.appendChild(script);
   }, []);
 
   const handleGoogle = async () => {
@@ -69,6 +91,47 @@ export default function GameTownLayout() {
       setLoading(false);
     }
   };
+
+  const handleKakao = useCallback(() => {
+    if (!window.Kakao?.Auth) {
+      alert('카카오 SDK를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+    setLoading(true);
+    window.Kakao.Auth.login({
+      success: () => {
+        window.Kakao.API.request({
+          url: '/v2/user/me',
+          success: async (res) => {
+            try {
+              const nickname  = res.kakao_account?.profile?.nickname || 'PLAYER';
+              const photoURL  = res.kakao_account?.profile?.profile_image_url || null;
+              const cred      = await signInAnonymously(auth);
+              const fireUser  = cred.user;
+              await updateProfile(fireUser, { displayName: nickname, photoURL });
+              await setDoc(doc(db, 'users', fireUser.uid), {
+                uid: fireUser.uid, displayName: nickname, photoURL,
+                provider: 'kakao', updatedAt: serverTimestamp(),
+              }, { merge: true });
+              console.log('[Kakao] 로그인 완료:', nickname);
+            } catch (e) {
+              console.error('[Kakao] Firebase 연동 실패:', e);
+            } finally {
+              setLoading(false);
+            }
+          },
+          fail: (err) => {
+            console.error('[Kakao API] 프로필 조회 실패:', err);
+            setLoading(false);
+          },
+        });
+      },
+      fail: (err) => {
+        console.error('[Kakao] 로그인 실패:', err);
+        setLoading(false);
+      },
+    });
+  }, []);
 
   const handleLogout = () => signOut(auth);
 
@@ -93,18 +156,38 @@ export default function GameTownLayout() {
       <div className="pointer-events-none fixed inset-0 z-50 crt-flicker" />
 
       {/* 헤더 */}
-      <header className="relative z-10 flex items-center justify-between border-b-2 border-neon px-3 py-2 md:px-6">
-        <h1 className="text-neon title-glow-pulse text-sm md:text-xl tracking-widest leading-tight"
-          style={{ fontFamily: '"Press Start 2P",monospace' }}>
-          무명이<br className="md:hidden"/>게임 타운
-        </h1>
-        <div className="text-xs md:text-sm text-neon/80">
+      <header className="relative z-10 flex items-center justify-between border-b-2 border-neon px-3 py-1.5 md:px-6">
+        {/* 로고 + 타이틀 */}
+        <div className="flex items-center gap-2">
+          <img
+            src="/logo.png"
+            alt="무명이 게임 타운"
+            className="h-9 w-9 md:h-11 md:w-11 object-contain"
+            style={{ imageRendering: 'pixelated', filter: 'drop-shadow(0 0 4px #39FF14)' }}
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+          <h1 className="text-neon title-glow-pulse text-[10px] md:text-base tracking-widest leading-tight"
+            style={{ fontFamily: '"Press Start 2P",monospace' }}>
+            무명이<br/>게임 타운
+          </h1>
+        </div>
+        {/* 유저 영역 */}
+        <div className="flex items-center gap-2 text-xs md:text-sm text-neon/80">
           {user ? (
-            <button onClick={handleLogout}
-              className="border border-neon px-2 py-1 hover:bg-neon hover:text-black transition-colors text-[9px] md:text-xs tracking-wider"
-              style={{ fontFamily: '"Press Start 2P",monospace' }}>
-              LOGOUT
-            </button>
+            <>
+              {user.photoURL && (
+                <img src={user.photoURL} alt="" className="h-6 w-6 rounded-full border border-neon/50 object-cover" />
+              )}
+              <span className="hidden md:block text-neon/60 text-[8px] tracking-wider max-w-[80px] truncate"
+                style={{ fontFamily: '"Press Start 2P",monospace' }}>
+                {user.displayName?.split(' ')[0] || 'PLAYER'}
+              </span>
+              <button onClick={handleLogout}
+                className="border border-neon px-2 py-1 hover:bg-neon hover:text-black transition-colors text-[8px] tracking-wider"
+                style={{ fontFamily: '"Press Start 2P",monospace' }}>
+                LOGOUT
+              </button>
+            </>
           ) : (
             <span className="blink text-[9px]" style={{ fontFamily: '"Press Start 2P",monospace' }}>
               PRESS START
@@ -129,7 +212,7 @@ export default function GameTownLayout() {
             <CornerDots />
 
             {/* 로그인 전 */}
-            {!user && <LoginScreen loading={loading} onGoogle={handleGoogle} />}
+            {!user && <LoginScreen loading={loading} onGoogle={handleGoogle} onKakao={handleKakao} />}
 
             {/* 로그인 후 – 로비 */}
             {user && currentGame === null && pendingGame === null &&
@@ -340,40 +423,70 @@ function ControlGuide({ gameId, onStart, onBack }) {
 }
 
 /* ── 로그인 화면 ──────────────────────────────────── */
-function LoginScreen({ loading, onGoogle }) {
+function LoginScreen({ loading, onGoogle, onKakao }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-between px-6 py-10 bg-black">
-      {/* 타이틀 영역 */}
-      <div className="flex flex-col items-center gap-3 mt-6">
-        <div className="text-neon title-glow-pulse text-2xl md:text-3xl tracking-widest text-center leading-loose"
+    <div className="absolute inset-0 flex flex-col items-center justify-between px-6 py-8 bg-black">
+      {/* 타이틀 + 로고 영역 */}
+      <div className="flex flex-col items-center gap-3 mt-4">
+        {/* 로고 이미지 (없으면 픽셀 마스코트로 대체) */}
+        <img
+          src="/logo.png"
+          alt="무명이 게임 타운 로고"
+          className="w-[140px] h-[140px] object-contain"
+          style={{ imageRendering: 'pixelated', filter: 'drop-shadow(0 0 10px #39FF14)' }}
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
+        <div className="text-neon title-glow-pulse text-xl tracking-widest text-center leading-loose"
           style={{ fontFamily: '"Press Start 2P",monospace' }}>
           무명이<br/>게임 타운
         </div>
-        <div className="mt-1 h-px w-24 bg-neon" style={{ boxShadow: '0 0 8px #39FF14' }} />
-        <p className="mt-2 text-neon/50 text-[9px] tracking-wider text-center"
+        <div className="h-px w-24 bg-neon" style={{ boxShadow: '0 0 8px #39FF14' }} />
+        <p className="text-neon/50 text-[8px] tracking-wider text-center"
           style={{ fontFamily: '"Press Start 2P",monospace' }}>
           PIXEL ARCADE · EST.2026
         </p>
       </div>
 
-      {/* 픽셀 마스코트 */}
-      <PixelMascot />
-
-      {/* Google 로그인 버튼 */}
-      <div className="w-full max-w-[280px]">
-        <p className="text-center text-neon/50 text-[9px] tracking-widest mb-4"
+      {/* 로그인 버튼 영역 */}
+      <div className="w-full max-w-[280px] flex flex-col gap-3">
+        <p className="text-center text-neon/50 text-[9px] tracking-widest"
           style={{ fontFamily: '"Press Start 2P",monospace' }}>
           ▼ SELECT PLAYER ▼
         </p>
+        <KakaoButton onClick={onKakao} disabled={loading} />
         <GoogleButton onClick={onGoogle} disabled={loading} />
         {loading && (
-          <p className="text-center text-neon/40 text-[8px] mt-3 blink"
+          <p className="text-center text-neon/40 text-[8px] blink"
             style={{ fontFamily: '"Press Start 2P",monospace' }}>
             LOADING...
           </p>
         )}
       </div>
     </div>
+  );
+}
+
+/* ── 카카오 로그인 버튼 ────────────────────────────── */
+function KakaoButton({ onClick, disabled }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="group relative w-full transition-transform duration-100 hover:-translate-y-0.5 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{ filter: 'drop-shadow(0 0 6px rgba(254,229,0,0.6))' }}
+    >
+      <div className="flex items-center gap-3 px-4 py-3.5 bg-[#FEE500] border-2 border-[#FDDC3F]">
+        {/* 카카오 말풍선 아이콘 */}
+        <svg className="h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="#3C1E1E">
+          <path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.7 1.55 5.07 3.9 6.51L5.1 21l4.18-2.43C10.06 18.84 11.02 19 12 19c5.523 0 10-3.477 10-8s-4.477-8-10-8z"/>
+        </svg>
+        <span className="text-[#3C1E1E] text-[12px] tracking-wider flex-1"
+          style={{ fontFamily: '"Press Start 2P",monospace' }}>
+          카카오로 시작하기
+        </span>
+        <span className="text-[#3C1E1E]/60 group-hover:text-[#3C1E1E] transition-colors ml-auto">▶</span>
+      </div>
+    </button>
   );
 }
 
