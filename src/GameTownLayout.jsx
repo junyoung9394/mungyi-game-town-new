@@ -93,44 +93,107 @@ export default function GameTownLayout() {
   };
 
   const handleKakao = useCallback(() => {
-    if (!window.Kakao?.Auth) {
-      alert('카카오 SDK를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+    // ── [1] SDK 존재 확인 ────────────────────────────
+    console.log('[Kakao] 버튼 클릭됨');
+    console.log('[Kakao] window.Kakao 존재 여부:', !!window.Kakao);
+    console.log('[Kakao] isInitialized:', window.Kakao?.isInitialized?.());
+
+    if (!window.Kakao) {
+      alert('카카오 SDK가 아직 로드되지 않았습니다.\n페이지를 새로고침(F5) 후 다시 시도해주세요.');
       return;
     }
+    // 초기화 안 됐으면 재시도
+    if (!window.Kakao.isInitialized()) {
+      console.warn('[Kakao] isInitialized=false → 재초기화 시도');
+      try { window.Kakao.init(KAKAO_JS_KEY); }
+      catch (e) {
+        alert(`카카오 SDK 초기화 실패: ${e.message}`);
+        return;
+      }
+    }
+
     setLoading(true);
-    window.Kakao.Auth.login({
-      success: () => {
-        window.Kakao.API.request({
-          url: '/v2/user/me',
-          success: async (res) => {
-            try {
-              const nickname  = res.kakao_account?.profile?.nickname || 'PLAYER';
-              const photoURL  = res.kakao_account?.profile?.profile_image_url || null;
-              const cred      = await signInAnonymously(auth);
-              const fireUser  = cred.user;
-              await updateProfile(fireUser, { displayName: nickname, photoURL });
-              await setDoc(doc(db, 'users', fireUser.uid), {
-                uid: fireUser.uid, displayName: nickname, photoURL,
-                provider: 'kakao', updatedAt: serverTimestamp(),
-              }, { merge: true });
-              console.log('[Kakao] 로그인 완료:', nickname);
-            } catch (e) {
-              console.error('[Kakao] Firebase 연동 실패:', e);
-            } finally {
+
+    // ── [2] 30초 타임아웃 (팝업 차단 대비) ──────────
+    const timer = setTimeout(() => {
+      setLoading(false);
+      alert(
+        '카카오 로그인 응답이 없습니다 (30초 초과).\n\n' +
+        '원인 1: 팝업이 차단됐을 수 있습니다.\n' +
+        '  → 브라우저 주소창 옆 팝업 차단 아이콘을 클릭해서 허용하세요.\n\n' +
+        '원인 2: 카카오 개발자센터에 사이트 도메인이 등록 안 됐을 수 있습니다.\n' +
+        '  → game.luckygrampus.com 을 Web 플랫폼 도메인에 추가하세요.'
+      );
+    }, 30000);
+
+    // ── [3] 로그인 실행 ──────────────────────────────
+    try {
+      window.Kakao.Auth.login({
+        // redirectUri 없이 팝업 자체 처리 (JS SDK 기본 동작)
+        success: async (authObj) => {
+          clearTimeout(timer);
+          console.log('[Kakao] ✅ Auth.login 성공');
+          console.log('[Kakao] access_token 앞 10자:', String(authObj?.access_token ?? '없음').slice(0, 10));
+
+          // ── [4] 프로필 API 호출 ───────────────────
+          window.Kakao.API.request({
+            url: '/v2/user/me',
+            success: async (res) => {
+              console.log('[Kakao API] /v2/user/me 응답:', JSON.stringify(res).slice(0, 300));
+              const nickname = res.kakao_account?.profile?.nickname
+                ?? res.properties?.nickname
+                ?? 'KAKAO USER';
+              const photoURL = res.kakao_account?.profile?.profile_image_url
+                ?? res.properties?.profile_image
+                ?? null;
+              console.log(`[Kakao] 닉네임="${nickname}", 사진=${photoURL ? '있음' : '없음'}`);
+
+              try {
+                const cred     = await signInAnonymously(auth);
+                const fireUser = cred.user;
+                await updateProfile(fireUser, { displayName: nickname, photoURL });
+                await setDoc(doc(db, 'users', fireUser.uid), {
+                  uid: fireUser.uid, displayName: nickname, photoURL,
+                  provider: 'kakao', updatedAt: serverTimestamp(),
+                }, { merge: true });
+                console.log('[Kakao] ✅ Firebase 연동 완료 uid:', fireUser.uid);
+              } catch (e) {
+                console.error('[Kakao] ❌ Firebase 연동 실패:', e.code, e.message);
+                alert(`Firebase 연동 실패: ${e.message}`);
+              } finally {
+                setLoading(false);
+              }
+            },
+            fail: (err) => {
+              console.error('[Kakao API] ❌ 프로필 조회 실패:', JSON.stringify(err));
+              alert(`카카오 프로필 조회 실패\ncode: ${err.code ?? '?'} / ${err.msg ?? JSON.stringify(err)}`);
               setLoading(false);
-            }
-          },
-          fail: (err) => {
-            console.error('[Kakao API] 프로필 조회 실패:', err);
-            setLoading(false);
-          },
-        });
-      },
-      fail: (err) => {
-        console.error('[Kakao] 로그인 실패:', err);
-        setLoading(false);
-      },
-    });
+            },
+          });
+        },
+        fail: (err) => {
+          clearTimeout(timer);
+          console.error('[Kakao] ❌ Auth.login fail:', JSON.stringify(err));
+          const msg = err?.error_description ?? err?.msg ?? err?.message ?? JSON.stringify(err);
+          if (err?.error === 'access_denied') {
+            // 사용자가 직접 취소한 경우 — 조용히 처리
+            console.log('[Kakao] 사용자 로그인 취소');
+          } else {
+            alert(
+              `카카오 로그인 실패\n\n사유: ${msg}\n\n` +
+              '카카오 개발자센터 → 앱 설정 → 플랫폼 → Web에\n' +
+              'game.luckygrampus.com 이 등록되어 있는지 확인하세요.'
+            );
+          }
+          setLoading(false);
+        },
+      });
+    } catch (e) {
+      clearTimeout(timer);
+      console.error('[Kakao] ❌ Auth.login 예외:', e);
+      alert(`카카오 로그인 오류: ${e.message}`);
+      setLoading(false);
+    }
   }, []);
 
   const handleLogout = () => signOut(auth);
@@ -453,13 +516,22 @@ function LoginScreen({ loading, onGoogle, onKakao }) {
           style={{ fontFamily: '"Press Start 2P",monospace' }}>
           ▼ SELECT PLAYER ▼
         </p>
-        <KakaoButton onClick={onKakao} disabled={loading} />
+        <KakaoButton onClick={onKakao} disabled={loading} loading={loading} />
         <GoogleButton onClick={onGoogle} disabled={loading} />
+
+        {/* 로딩 중 안내 */}
         {loading && (
-          <p className="text-center text-neon/40 text-[8px] blink"
-            style={{ fontFamily: '"Press Start 2P",monospace' }}>
-            LOADING...
-          </p>
+          <div className="flex flex-col items-center gap-2 mt-1">
+            <p className="text-center text-[#FEE500]/80 text-[8px] blink"
+              style={{ fontFamily: '"Press Start 2P",monospace' }}>
+              ⏳ 로그인 처리 중...
+            </p>
+            <p className="text-center text-neon/30 text-[7px] leading-relaxed"
+              style={{ fontFamily: '"Press Start 2P",monospace' }}>
+              팝업 창을 확인해주세요.<br/>
+              차단됐다면 주소창 옆 아이콘을 클릭→허용
+            </p>
+          </div>
         )}
       </div>
     </div>
@@ -467,24 +539,30 @@ function LoginScreen({ loading, onGoogle, onKakao }) {
 }
 
 /* ── 카카오 로그인 버튼 ────────────────────────────── */
-function KakaoButton({ onClick, disabled }) {
+function KakaoButton({ onClick, disabled, loading }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className="group relative w-full transition-transform duration-100 hover:-translate-y-0.5 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-      style={{ filter: 'drop-shadow(0 0 6px rgba(254,229,0,0.6))' }}
+      className="group relative w-full transition-transform duration-100 hover:-translate-y-0.5 active:translate-y-0.5 disabled:cursor-not-allowed"
+      style={{ filter: 'drop-shadow(0 0 6px rgba(254,229,0,0.6))', opacity: disabled ? 0.7 : 1 }}
     >
       <div className="flex items-center gap-3 px-4 py-3.5 bg-[#FEE500] border-2 border-[#FDDC3F]">
-        {/* 카카오 말풍선 아이콘 */}
-        <svg className="h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="#3C1E1E">
-          <path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.7 1.55 5.07 3.9 6.51L5.1 21l4.18-2.43C10.06 18.84 11.02 19 12 19c5.523 0 10-3.477 10-8s-4.477-8-10-8z"/>
-        </svg>
+        {/* 로딩 중이면 스피너, 아니면 카카오 아이콘 */}
+        {loading ? (
+          <span className="h-6 w-6 shrink-0 flex items-center justify-center text-lg animate-spin">⏳</span>
+        ) : (
+          <svg className="h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="#3C1E1E">
+            <path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.7 1.55 5.07 3.9 6.51L5.1 21l4.18-2.43C10.06 18.84 11.02 19 12 19c5.523 0 10-3.477 10-8s-4.477-8-10-8z"/>
+          </svg>
+        )}
         <span className="text-[#3C1E1E] text-[12px] tracking-wider flex-1"
           style={{ fontFamily: '"Press Start 2P",monospace' }}>
-          카카오로 시작하기
+          {loading ? '로그인 중...' : '카카오로 시작하기'}
         </span>
-        <span className="text-[#3C1E1E]/60 group-hover:text-[#3C1E1E] transition-colors ml-auto">▶</span>
+        {!loading && (
+          <span className="text-[#3C1E1E]/60 group-hover:text-[#3C1E1E] transition-colors ml-auto">▶</span>
+        )}
       </div>
     </button>
   );
