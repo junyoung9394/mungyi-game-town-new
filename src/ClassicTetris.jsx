@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { saveLeaderboardScore } from './utils/saveScore';
+import { useAutoSave } from './utils/useAutoSave';
 
 const NEON = '#39FF14';
 const VW = 360, VH = 640;
@@ -104,6 +105,9 @@ export function useClassicTetris({ canvasRef, onExit }) {
   useEffect(()=>{hiRef.current=hiScore;},[hiScore]);
   useEffect(()=>{statusRef.current=status;},[status]);
   useEffect(()=>{const v=parseInt(localStorage.getItem('tetris_hi')||'0',10);setHi(v);hiRef.current=v;},[]);
+
+  // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
+  useAutoSave('tetris', scoreRef, statusRef);
 
   const trySpawn = useCallback((board, piece) => {
     const nx=Math.floor((COLS-piece.grid[0].length)/2);

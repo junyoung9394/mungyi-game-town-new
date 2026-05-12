@@ -8,6 +8,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { saveLeaderboardScore } from './utils/saveScore';
+import { useAutoSave } from './utils/useAutoSave';
 
 /* ============================================================
  * 상수 (가상 해상도 + 게임 밸런스)
@@ -208,6 +209,9 @@ export function useDustInvaderGame({ canvasRef, onExit }) {
   useEffect(() => { livesRef.current = lives; }, [lives]);
   useEffect(() => { hiScoreRef.current = hiScore; }, [hiScore]);
   useEffect(() => { statusRef.current = status; }, [status]);
+
+  // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
+  useAutoSave('dustInvader', scoreRef, statusRef);
 
   /* === Firestore: Hi-Score 로드 === */
   useEffect(() => {

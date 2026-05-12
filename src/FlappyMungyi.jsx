@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { saveLeaderboardScore } from './utils/saveScore';
+import { useAutoSave } from './utils/useAutoSave';
 
 /* ── 상수 ─────────────────────────────────────────── */
 const VW=360, VH=640, NEON='#39FF14';
@@ -116,6 +117,9 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
   useEffect(()=>{ scoreRef.current=score; },[score]);
   useEffect(()=>{ hiRef.current=hiScore; },[hiScore]);
   useEffect(()=>{ statusRef.current=status; },[status]);
+
+  // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
+  useAutoSave('flappy', scoreRef, statusRef);
 
   useEffect(()=>{
     const v=parseInt(localStorage.getItem('flappy_hi')||'0',10);

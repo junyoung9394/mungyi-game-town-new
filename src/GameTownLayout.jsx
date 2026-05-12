@@ -260,11 +260,11 @@ function ControlGuide({ gameId, onStart, onBack }) {
 
         {/* 게임 타이틀 */}
         <div className="text-center">
-          <div className="text-[13px] tracking-widest mb-1 title-glow-pulse"
+          <div className="text-[15px] tracking-widest mb-1 title-glow-pulse"
             style={{ fontFamily: '"Press Start 2P",monospace', color: cfg.color }}>
             {cfg.title}
           </div>
-          <div className="h-px w-20 mx-auto mt-2"
+          <div className="h-px w-24 mx-auto mt-2"
             style={{ background: cfg.color, boxShadow: `0 0 8px ${cfg.color}` }} />
         </div>
 
@@ -273,18 +273,18 @@ function ControlGuide({ gameId, onStart, onBack }) {
           style={{ boxShadow: '0 0 12px rgba(57,255,20,0.1)' }}>
 
           {/* 키보드 섹션 */}
-          <div className="border-b border-neon/20 px-4 py-2 flex items-center gap-2">
-            <span className="text-[8px] text-neon/50 tracking-widest"
+          <div className="border-b border-neon/20 px-4 py-2.5 flex items-center gap-2">
+            <span className="text-[10px] text-neon/50 tracking-widest font-bold"
               style={{ fontFamily: '"Press Start 2P",monospace' }}>⌨ KEYBOARD</span>
           </div>
-          <div className="px-4 py-3 flex flex-col gap-2.5">
+          <div className="px-4 py-3 flex flex-col gap-3">
             {cfg.keys.map((k, i) => (
               <div key={i} className="flex items-center gap-3">
-                <span className="border border-neon/50 text-neon text-[7px] px-2 py-1 min-w-[58px] text-center shrink-0"
+                <span className="border border-neon/50 text-neon text-[9px] px-2 py-1.5 min-w-[64px] text-center shrink-0 font-bold"
                   style={{ fontFamily: '"Press Start 2P",monospace', boxShadow: '0 0 4px rgba(57,255,20,0.2)', background: 'rgba(57,255,20,0.05)' }}>
                   {k.key}
                 </span>
-                <span className="text-neon/70 text-[8px]"
+                <span className="text-neon/80 text-[10px]"
                   style={{ fontFamily: '"Press Start 2P",monospace' }}>
                   {k.desc}
                 </span>
@@ -293,15 +293,15 @@ function ControlGuide({ gameId, onStart, onBack }) {
           </div>
 
           {/* 터치 섹션 */}
-          <div className="border-t border-neon/20 border-b border-neon/20 px-4 py-2 flex items-center gap-2">
-            <span className="text-[8px] text-neon/50 tracking-widest"
+          <div className="border-t border-neon/20 border-b border-neon/20 px-4 py-2.5 flex items-center gap-2">
+            <span className="text-[10px] text-neon/50 tracking-widest font-bold"
               style={{ fontFamily: '"Press Start 2P",monospace' }}>📱 TOUCH</span>
           </div>
-          <div className="px-4 py-3 flex flex-col gap-2.5">
+          <div className="px-4 py-3 flex flex-col gap-3">
             {cfg.touch.map((t, i) => (
               <div key={i} className="flex items-center gap-3">
-                <span className="text-base w-8 text-center shrink-0">{t.icon}</span>
-                <span className="text-neon/70 text-[8px]"
+                <span className="text-xl w-9 text-center shrink-0">{t.icon}</span>
+                <span className="text-neon/80 text-[10px]"
                   style={{ fontFamily: '"Press Start 2P",monospace' }}>
                   {t.desc}
                 </span>
@@ -311,7 +311,7 @@ function ControlGuide({ gameId, onStart, onBack }) {
 
           {/* 팁 */}
           <div className="border-t border-neon/20 px-4 py-3">
-            <p className="text-neon/40 text-[7px] leading-relaxed text-center"
+            <p className="text-neon/50 text-[9px] leading-relaxed text-center"
               style={{ fontFamily: '"Press Start 2P",monospace' }}>
               💡 {cfg.tip}
             </p>
@@ -321,8 +321,8 @@ function ControlGuide({ gameId, onStart, onBack }) {
         {/* START 버튼 */}
         <button
           onClick={onStart}
-          className="border-2 border-neon px-8 py-3 text-neon text-[11px] tracking-widest hover:bg-neon hover:text-black active:scale-95 transition-all"
-          style={{ fontFamily: '"Press Start 2P",monospace', boxShadow: '0 0 16px rgba(57,255,20,0.5)', color: cfg.color === '#39FF14' ? undefined : cfg.color, borderColor: cfg.color === '#39FF14' ? undefined : cfg.color }}>
+          className="border-2 border-neon px-10 py-4 text-neon text-[13px] tracking-widest hover:bg-neon hover:text-black active:scale-95 transition-all font-bold"
+          style={{ fontFamily: '"Press Start 2P",monospace', boxShadow: '0 0 20px rgba(57,255,20,0.6)', color: cfg.color === '#39FF14' ? undefined : cfg.color, borderColor: cfg.color === '#39FF14' ? undefined : cfg.color }}>
           ▶ START GAME
         </button>
 

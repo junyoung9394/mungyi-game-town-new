@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { saveLeaderboardScore } from './utils/saveScore';
+import { useAutoSave } from './utils/useAutoSave';
 
 const NEON = '#39FF14';
 const VW = 360, VH = 640;
@@ -94,6 +95,9 @@ export function useNeonSnake({ canvasRef, onExit }) {
   useEffect(()=>{hiRef.current=hiScore;},[hiScore]);
   useEffect(()=>{statusRef.current=status;},[status]);
   useEffect(()=>{const v=parseInt(localStorage.getItem('snake_hi')||'0',10);setHi(v);hiRef.current=v;},[]);
+
+  // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
+  useAutoSave('snake', scoreRef, statusRef);
 
   const start = useCallback(()=>{
     setNewHi(false); setScore(0); scoreRef.current=0;

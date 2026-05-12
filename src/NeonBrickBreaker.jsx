@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { saveLeaderboardScore } from './utils/saveScore';
+import { useAutoSave } from './utils/useAutoSave';
 
 /* ── 상수 ──────────────────────────────────────────────── */
 const NEON = '#39FF14';
@@ -147,6 +148,9 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
   useEffect(() => { scoreRef.current = score; }, [score]);
   useEffect(() => { livesRef.current = lives; }, [lives]);
   useEffect(() => { hiScoreRef.current = hiScore; }, [hiScore]);
+
+  // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
+  useAutoSave('brickBreaker', scoreRef, statusRef);
   useEffect(() => { statusRef.current = status; }, [status]);
 
   /* Firestore: 하이스코어 로드 */
