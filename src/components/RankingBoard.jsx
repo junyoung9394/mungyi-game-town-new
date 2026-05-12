@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { getFirestore, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { useEffect, useState, useRef } from 'react';
+import { getFirestore, collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const GAMES = [
@@ -13,7 +13,6 @@ const GAMES = [
 const MEDALS = ['🥇', '🥈', '🥉'];
 const NEON = '#39FF14';
 
-/* ── 작은 픽셀 아바타 (프로필 사진 없을 때) ─────────── */
 function Avatar({ name, photoURL, size = 24 }) {
   const [err, setErr] = useState(false);
   const letter = (name || 'P')[0].toUpperCase();
@@ -46,32 +45,48 @@ export default function RankingBoard() {
   const [active, setActive]   = useState('dustInvader');
   const [scores, setScores]   = useState([]);
   const [loading, setLoading] = useState(false);
-  const [spin, setSpin]       = useState(false);  // 새로고침 아이콘 회전
-  const myRowRef = useRef(null);
+  const [spin, setSpin]       = useState(false);
+  const myRowRef  = useRef(null);
+  const unsubRef  = useRef(null);
 
-  /* ── 데이터 로드 ─────────────────────────────────── */
-  const load = useCallback(async (gameId, force = false) => {
-    setLoading(true);
-    try {
-      const q = query(
-        collection(getFirestore(), 'leaderboard', gameId, 'scores'),
-        orderBy('score', 'desc'),
-        limit(50)                             // ← 전체 TOP 50
-      );
-      const snap = await getDocs(q);
-      const rows = snap.docs.map((d, i) => ({ rank: i + 1, ...d.data() }));
-      console.log(`[RankingBoard:${gameId}] ${rows.length}명 로드`);
-      setScores(rows);
-    } catch (e) {
-      console.error('[RankingBoard] ❌', e.code, e.message);
-      setScores([]);
-    } finally {
-      setLoading(false);
+  /* ── 실시간 리스너 (탭 전환 시 재구독) ──────────────── */
+  useEffect(() => {
+    // 이전 탭의 리스너 해제
+    if (unsubRef.current) {
+      unsubRef.current();
+      unsubRef.current = null;
     }
-  }, []);
 
-  /* 탭 전환 시 로드 */
-  useEffect(() => { load(active); }, [active]); // eslint-disable-line
+    // UID 필터 없음 — 전체 유저 TOP 50, 점수 내림차순
+    const q = query(
+      collection(getFirestore(), 'leaderboard', active, 'scores'),
+      orderBy('score', 'desc'),
+      limit(50)
+    );
+
+    unsubRef.current = onSnapshot(
+      q,
+      (snap) => {
+        const rows = snap.docs.map((d, i) => ({ rank: i + 1, ...d.data() }));
+        console.log(`[RankingBoard:${active}] 실시간 업데이트: ${rows.length}명`);
+        setScores(rows);
+        setLoading(false);
+      },
+      (e) => {
+        console.error('[RankingBoard] ❌', e.code, e.message);
+        setScores([]);
+        setLoading(false);
+      }
+    );
+
+    // 컴포넌트 언마운트 또는 탭 변경 시 리스너 해제
+    return () => {
+      if (unsubRef.current) {
+        unsubRef.current();
+        unsubRef.current = null;
+      }
+    };
+  }, [active]);
 
   /* 내 행으로 스크롤 */
   useEffect(() => {
@@ -80,20 +95,21 @@ export default function RankingBoard() {
     }
   }, [loading, active]);
 
-  /* ── 새로고침 ─────────────────────────────────────── */
-  const handleRefresh = () => {
-    setSpin(true);
-    setTimeout(() => setSpin(false), 600);
-    load(active, true);
-  };
-
   /* ── 탭 클릭 ─────────────────────────────────────── */
   const handleTab = (id) => {
-    if (id !== active) { setScores([]); setActive(id); }
-    else handleRefresh();           // 같은 탭 클릭 → 새로고침
+    if (id !== active) {
+      // 탭 전환: 즉시 초기화 후 새 리스너 구독
+      setScores([]);
+      setLoading(true);
+      setActive(id);
+    } else {
+      // 같은 탭 클릭 → 새로고침 애니메이션만 (onSnapshot이 실시간 유지 중)
+      setSpin(true);
+      setTimeout(() => setSpin(false), 600);
+    }
   };
 
-  /* ── 내 순위가 리스트에 있는지 ────────────────────── */
+  /* ── 내 순위 ─────────────────────────────────────── */
   const myRank  = scores.findIndex(s => s.uid === currentUid);
   const myEntry = myRank >= 0 ? scores[myRank] : null;
 
@@ -107,16 +123,23 @@ export default function RankingBoard() {
           style={{ fontFamily: '"Press Start 2P",monospace', textShadow: `0 0 6px ${NEON}` }}>
           🏆 명예의 전당
         </span>
-        <button
-          onClick={handleRefresh}
-          className="text-neon/40 hover:text-neon text-[9px] tracking-wider transition-colors px-1"
-          style={{ fontFamily: '"Press Start 2P",monospace' }}
-          title="새로고침"
-        >
-          <span style={{ display: 'inline-block', transition: 'transform 0.5s', transform: spin ? 'rotate(360deg)' : 'none' }}>
-            ↻
+        <div className="flex items-center gap-2">
+          {/* 실시간 표시 */}
+          <span className="text-[8px] text-neon/50 tracking-wider"
+            style={{ fontFamily: '"Press Start 2P",monospace' }}>
+            ● LIVE
           </span>
-        </button>
+          <button
+            onClick={() => handleTab(active)}
+            className="text-neon/40 hover:text-neon text-[9px] tracking-wider transition-colors px-1"
+            style={{ fontFamily: '"Press Start 2P",monospace' }}
+            title="새로고침"
+          >
+            <span style={{ display: 'inline-block', transition: 'transform 0.5s', transform: spin ? 'rotate(360deg)' : 'none' }}>
+              ↻
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* ── 게임 탭 ───────────────────────────────────── */}
@@ -171,21 +194,30 @@ export default function RankingBoard() {
         )}
 
         {!loading && scores.map((s, i) => {
-          const isMe = currentUid && s.uid === currentUid;
+          const isMe   = currentUid && s.uid === currentUid;
           const isTop3 = i < 3;
 
           return (
             <div
               key={s.uid ?? i}
               ref={isMe ? myRowRef : null}
-              className={`flex items-center gap-2 px-3 border-b border-neon/10 last:border-0 transition-colors ${
+              className={`flex items-center gap-2 px-3 border-b last:border-0 transition-colors ${
                 isMe
-                  ? 'bg-neon/[0.12] border-l-2 border-l-neon'
-                  : isTop3
-                    ? 'bg-neon/[0.03]'
-                    : ''
+                  ? 'border-neon/40'
+                  : 'border-neon/10'
               }`}
-              style={{ paddingTop: 8, paddingBottom: 8 }}
+              style={{
+                paddingTop: 8,
+                paddingBottom: 8,
+                // 본인 행 강조: 밝은 녹색 배경 + 좌우 네온 테두리
+                background: isMe
+                  ? 'rgba(57,255,20,0.18)'
+                  : isTop3
+                    ? 'rgba(57,255,20,0.03)'
+                    : 'transparent',
+                borderLeft: isMe ? `3px solid ${NEON}` : '3px solid transparent',
+                boxShadow: isMe ? `inset 0 0 12px rgba(57,255,20,0.12)` : 'none',
+              }}
             >
               {/* 등수 */}
               <div className="w-6 flex items-center justify-center shrink-0">
@@ -205,11 +237,14 @@ export default function RankingBoard() {
                 className={`flex-1 text-[11px] truncate ${
                   isMe ? 'text-neon font-bold' : isTop3 ? 'text-neon/90' : 'text-neon/70'
                 }`}
-                style={{ fontFamily: '"Press Start 2P",monospace', textShadow: isMe ? `0 0 6px ${NEON}` : 'none' }}
+                style={{
+                  fontFamily: '"Press Start 2P",monospace',
+                  textShadow: isMe ? `0 0 8px ${NEON}` : 'none',
+                }}
               >
                 {(s.displayName || 'PLAYER').slice(0, 12).toUpperCase()}
                 {isMe && (
-                  <span className="text-[8px] text-neon/50 ml-1.5 align-middle">◀ ME</span>
+                  <span className="text-[8px] text-neon/70 ml-1.5 align-middle">◀ ME</span>
                 )}
               </span>
 
@@ -220,7 +255,11 @@ export default function RankingBoard() {
                 }`}
                 style={{
                   fontFamily: '"Press Start 2P",monospace',
-                  textShadow: isMe ? `0 0 10px ${NEON}` : isTop3 ? `0 0 4px rgba(57,255,20,0.4)` : 'none',
+                  textShadow: isMe
+                    ? `0 0 12px ${NEON}`
+                    : isTop3
+                      ? `0 0 4px rgba(57,255,20,0.4)`
+                      : 'none',
                 }}
               >
                 {s.score.toLocaleString()}
@@ -230,10 +269,10 @@ export default function RankingBoard() {
         })}
       </div>
 
-      {/* ── 내 순위 고정 푸터 (내가 목록 안에 있을 때) ── */}
+      {/* ── 내 순위 고정 푸터 ─────────────────────────── */}
       {!loading && myEntry && myRank >= 0 && (
-        <div className="border-t border-neon/30 px-3 py-2 flex items-center gap-2"
-          style={{ background: 'rgba(57,255,20,0.06)' }}>
+        <div className="border-t border-neon/40 px-3 py-2 flex items-center gap-2"
+          style={{ background: 'rgba(57,255,20,0.10)', boxShadow: `0 -2px 8px rgba(57,255,20,0.10)` }}>
           <span className="text-neon/50 text-[9px] shrink-0"
             style={{ fontFamily: '"Press Start 2P",monospace' }}>내 순위</span>
           <span className="text-neon text-[11px] font-bold"
