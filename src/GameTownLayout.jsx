@@ -27,8 +27,10 @@ const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-/* ── Kakao SDK 초기화 ─────────────────────────────── */
-const KAKAO_JS_KEY = 'ad5490ca84b163e5628e714505fa9c1a';
+/* ── Kakao OAuth 상수 (SDK 없이 직접 팝업 방식) ──── */
+// Kakao JS SDK v2에서 Kakao.Auth.login()이 제거됨 → window.open() 직접 OAuth로 대체
+const KAKAO_JS_KEY      = 'ad5490ca84b163e5628e714505fa9c1a';
+const KAKAO_REDIRECT_URI = 'https://game.luckygrampus.com/auth/kakao/callback';
 
 /* ── AdSense 수직 광고 ────────────────────────────── */
 function VerticalAd({ side }) {
@@ -66,20 +68,7 @@ export default function GameTownLayout() {
     return () => unsub();
   }, []);
 
-  /* Kakao SDK 동적 로딩 */
-  useEffect(() => {
-    if (window.Kakao?.isInitialized?.()) return;
-    const script = document.createElement('script');
-    script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
-    script.crossOrigin = 'anonymous';
-    script.onload = () => {
-      if (window.Kakao && !window.Kakao.isInitialized()) {
-        window.Kakao.init(KAKAO_JS_KEY);
-        console.log('[Kakao SDK] 초기화 완료');
-      }
-    };
-    document.head.appendChild(script);
-  }, []);
+  // ※ Kakao SDK v2에서 Kakao.Auth.login() 제거됨 → SDK 불필요, 직접 OAuth 팝업 사용
 
   const handleGoogle = async () => {
     setLoading(true);
@@ -93,107 +82,160 @@ export default function GameTownLayout() {
   };
 
   const handleKakao = useCallback(() => {
-    // ── [1] SDK 존재 확인 ────────────────────────────
-    console.log('[Kakao] 버튼 클릭됨');
-    console.log('[Kakao] window.Kakao 존재 여부:', !!window.Kakao);
-    console.log('[Kakao] isInitialized:', window.Kakao?.isInitialized?.());
-
-    if (!window.Kakao) {
-      alert('카카오 SDK가 아직 로드되지 않았습니다.\n페이지를 새로고침(F5) 후 다시 시도해주세요.');
-      return;
-    }
-    // 초기화 안 됐으면 재시도
-    if (!window.Kakao.isInitialized()) {
-      console.warn('[Kakao] isInitialized=false → 재초기화 시도');
-      try { window.Kakao.init(KAKAO_JS_KEY); }
-      catch (e) {
-        alert(`카카오 SDK 초기화 실패: ${e.message}`);
-        return;
-      }
-    }
-
+    // ── Kakao SDK v2 에서 Auth.login() 제거됨 ────────
+    // → window.open() 으로 직접 OAuth 팝업 열기 (implicit flow)
+    console.log('[Kakao] 로그인 시작 — 직접 팝업 방식');
     setLoading(true);
 
-    // ── [2] 30초 타임아웃 (팝업 차단 대비) ──────────
-    const timer = setTimeout(() => {
+    const authUrl =
+      'https://kauth.kakao.com/oauth/authorize' +
+      '?client_id=' + KAKAO_JS_KEY +
+      '&redirect_uri=' + encodeURIComponent(KAKAO_REDIRECT_URI) +
+      '&response_type=token';   // implicit flow → 백엔드 불필요
+
+    console.log('[Kakao] OAuth URL (앞 80자):', authUrl.slice(0, 80));
+
+    const popup = window.open(
+      authUrl,
+      'kakao_login',
+      'width=520,height=720,top=80,left=200,scrollbars=yes,status=yes'
+    );
+
+    // ── 팝업 차단 감지 ─────────────────────────────
+    if (!popup || popup.closed) {
       setLoading(false);
       alert(
-        '카카오 로그인 응답이 없습니다 (30초 초과).\n\n' +
-        '원인 1: 팝업이 차단됐을 수 있습니다.\n' +
-        '  → 브라우저 주소창 옆 팝업 차단 아이콘을 클릭해서 허용하세요.\n\n' +
-        '원인 2: 카카오 개발자센터에 사이트 도메인이 등록 안 됐을 수 있습니다.\n' +
-        '  → game.luckygrampus.com 을 Web 플랫폼 도메인에 추가하세요.'
+        '⚠️ 팝업이 차단되어 카카오 로그인 창을 열 수 없습니다!\n\n' +
+        '브라우저 주소창 오른쪽의 팝업 차단 아이콘(🚫)을 클릭하여\n' +
+        '"game.luckygrampus.com의 팝업 허용"을 선택 후 다시 시도해주세요.'
       );
-    }, 30000);
+      return;
+    }
 
-    // ── [3] 로그인 실행 ──────────────────────────────
-    try {
-      window.Kakao.Auth.login({
-        // redirectUri 없이 팝업 자체 처리 (JS SDK 기본 동작)
-        success: async (authObj) => {
-          clearTimeout(timer);
-          console.log('[Kakao] ✅ Auth.login 성공');
-          console.log('[Kakao] access_token 앞 10자:', String(authObj?.access_token ?? '없음').slice(0, 10));
+    let done = false;
 
-          // ── [4] 프로필 API 호출 ───────────────────
-          window.Kakao.API.request({
-            url: '/v2/user/me',
-            success: async (res) => {
-              console.log('[Kakao API] /v2/user/me 응답:', JSON.stringify(res).slice(0, 300));
-              const nickname = res.kakao_account?.profile?.nickname
-                ?? res.properties?.nickname
-                ?? 'KAKAO USER';
-              const photoURL = res.kakao_account?.profile?.profile_image_url
-                ?? res.properties?.profile_image
-                ?? null;
-              console.log(`[Kakao] 닉네임="${nickname}", 사진=${photoURL ? '있음' : '없음'}`);
+    const cleanup = () => {
+      clearInterval(pollId);
+      clearTimeout(timeoutId);
+    };
 
-              try {
-                const cred     = await signInAnonymously(auth);
-                const fireUser = cred.user;
-                await updateProfile(fireUser, { displayName: nickname, photoURL });
-                await setDoc(doc(db, 'users', fireUser.uid), {
-                  uid: fireUser.uid, displayName: nickname, photoURL,
-                  provider: 'kakao', updatedAt: serverTimestamp(),
-                }, { merge: true });
-                console.log('[Kakao] ✅ Firebase 연동 완료 uid:', fireUser.uid);
-              } catch (e) {
-                console.error('[Kakao] ❌ Firebase 연동 실패:', e.code, e.message);
-                alert(`Firebase 연동 실패: ${e.message}`);
-              } finally {
-                setLoading(false);
-              }
-            },
-            fail: (err) => {
-              console.error('[Kakao API] ❌ 프로필 조회 실패:', JSON.stringify(err));
-              alert(`카카오 프로필 조회 실패\ncode: ${err.code ?? '?'} / ${err.msg ?? JSON.stringify(err)}`);
-              setLoading(false);
-            },
-          });
-        },
-        fail: (err) => {
-          clearTimeout(timer);
-          console.error('[Kakao] ❌ Auth.login fail:', JSON.stringify(err));
-          const msg = err?.error_description ?? err?.msg ?? err?.message ?? JSON.stringify(err);
-          if (err?.error === 'access_denied') {
-            // 사용자가 직접 취소한 경우 — 조용히 처리
-            console.log('[Kakao] 사용자 로그인 취소');
+    const finishLogin = async (accessToken) => {
+      if (done) return;
+      done = true;
+      cleanup();
+      console.log('[Kakao] ✅ access_token 수신 완료');
+
+      try {
+        // ── 프로필 조회 (Kakao REST API) ─────────────
+        const res = await fetch('https://kapi.kakao.com/v2/user/me', {
+          headers: { Authorization: 'Bearer ' + accessToken },
+        });
+        const profile = await res.json();
+        console.log('[Kakao API] 프로필:', JSON.stringify(profile).slice(0, 300));
+
+        if (profile.code < 0) throw new Error(`Kakao API 오류 code=${profile.code}: ${profile.msg}`);
+
+        const nickname =
+          profile.kakao_account?.profile?.nickname ??
+          profile.properties?.nickname ??
+          'KAKAO USER';
+        const photoURL =
+          profile.kakao_account?.profile?.profile_image_url ??
+          profile.properties?.profile_image ??
+          null;
+        console.log(`[Kakao] 닉네임="${nickname}", 사진=${photoURL ? '있음' : '없음'}`);
+
+        // ── Firebase 익명 로그인 + 프로필 업데이트 ──
+        const cred = await signInAnonymously(auth);
+        await updateProfile(cred.user, { displayName: nickname, photoURL });
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          uid: cred.user.uid, displayName: nickname, photoURL,
+          provider: 'kakao', updatedAt: serverTimestamp(),
+        }, { merge: true });
+
+        console.log('[Kakao] ✅ Firebase 연동 완료 uid:', cred.user.uid);
+      } catch (e) {
+        console.error('[Kakao] ❌ 처리 실패:', e.code ?? '', e.message);
+        alert('카카오 로그인 처리 중 오류가 발생했습니다:\n' + e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // ── 팝업 URL 폴링 (500ms 간격) ─────────────────
+    const pollId = setInterval(async () => {
+      if (done) { cleanup(); return; }
+
+      // 팝업이 사용자에 의해 닫혔을 때
+      if (popup.closed) {
+        if (!done) { console.log('[Kakao] 팝업 닫힘 (사용자 취소)'); setLoading(false); }
+        cleanup();
+        return;
+      }
+
+      try {
+        // kauth.kakao.com 에 있을 때는 cross-origin → SecurityError → catch에서 무시
+        const url = popup.location.href;
+
+        // 우리 도메인으로 돌아왔을 때만 처리
+        if (!url.startsWith('https://game.luckygrampus.com')) return;
+
+        console.log('[Kakao] 콜백 URL 감지:', url.slice(0, 100));
+        popup.close();
+
+        // ── 에러 체크 (?error=...) ──────────────────
+        const qStr  = url.split('?')[1]?.split('#')[0] ?? '';
+        const qp    = new URLSearchParams(qStr);
+        const error = qp.get('error');
+        if (error) {
+          done = true; cleanup();
+          const desc = qp.get('error_description') ?? error;
+          if (error === 'access_denied') {
+            console.log('[Kakao] 사용자 취소');
           } else {
+            console.error('[Kakao] OAuth 에러:', error, desc);
             alert(
-              `카카오 로그인 실패\n\n사유: ${msg}\n\n` +
-              '카카오 개발자센터 → 앱 설정 → 플랫폼 → Web에\n' +
-              'game.luckygrampus.com 이 등록되어 있는지 확인하세요.'
+              `카카오 로그인 실패: ${desc}\n\n` +
+              '카카오 개발자센터 확인 사항:\n' +
+              '1. 카카오 로그인 → Redirect URI에 아래 URL 등록\n' +
+              '   ' + KAKAO_REDIRECT_URI + '\n' +
+              '2. Web 플랫폼 도메인에 game.luckygrampus.com 등록'
             );
           }
           setLoading(false);
-        },
-      });
-    } catch (e) {
-      clearTimeout(timer);
-      console.error('[Kakao] ❌ Auth.login 예외:', e);
-      alert(`카카오 로그인 오류: ${e.message}`);
+          return;
+        }
+
+        // ── implicit flow: token in hash (#access_token=...) ──
+        const hStr = url.split('#')[1] ?? '';
+        const hp   = new URLSearchParams(hStr);
+        const accessToken = hp.get('access_token');
+        if (accessToken) { await finishLogin(accessToken); return; }
+
+        // ── code flow 감지 → 백엔드 없이 처리 불가 안내 ──
+        const code = qp.get('code');
+        if (code) {
+          done = true; cleanup(); setLoading(false);
+          alert(
+            '카카오 앱 설정 변경이 필요합니다.\n\n' +
+            '카카오 개발자센터 → 내 앱 → 카카오 로그인\n' +
+            '→ "토큰 방식"을 "액세스 토큰 (implicit grant)"으로 변경하거나\n' +
+            'Redirect URI 등록을 확인해주세요.'
+          );
+        }
+      } catch (_) {
+        // kauth.kakao.com 도메인 → cross-origin SecurityError → 정상, 무시
+      }
+    }, 500);
+
+    // ── 60초 타임아웃 ──────────────────────────────
+    const timeoutId = setTimeout(() => {
+      if (done) return;
+      done = true; cleanup();
+      if (!popup.closed) popup.close();
       setLoading(false);
-    }
+      alert('카카오 로그인 시간 초과 (60초).\n팝업 차단 여부를 확인해주세요.');
+    }, 60000);
   }, []);
 
   const handleLogout = () => signOut(auth);
