@@ -168,7 +168,17 @@ export default function GameTownLayout() {
           console.log('[Kakao] ✅ Firebase 완료 uid:', cred.user.uid);
         } catch (e) {
           console.error('[Kakao] ❌ 처리 실패:', e.code ?? '', e.message);
-          alert('카카오 로그인 처리 중 오류:\n' + e.message);
+          // Firebase Anonymous auth 미활성화 안내
+          if (e.code === 'auth/admin-restricted-operation' || e.code === 'auth/operation-not-allowed') {
+            alert(
+              '⚙️ Firebase 설정이 필요합니다.\n\n' +
+              'Firebase Console → Authentication\n' +
+              '→ Sign-in method → Anonymous → 사용 설정\n\n' +
+              '(관리자에게 문의해주세요)'
+            );
+          } else {
+            alert('카카오 로그인 처리 중 오류:\n' + e.message);
+          }
         } finally {
           setLoading(false);
         }
