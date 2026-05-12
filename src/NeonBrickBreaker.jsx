@@ -3,6 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
+import KakaoShareButton from './components/KakaoShareButton';
 
 /* ── 상수 ──────────────────────────────────────────────── */
 const NEON = '#39FF14';
@@ -143,6 +144,7 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
   const statusRef   = useRef('idle');
   const inputRef    = useRef({ left: false, right: false });
   const paddleXRef  = useRef(null); // mouse/touch 직접 위치
+  const goTimer     = useRef(null);
 
   useEffect(() => { stageRef.current = stage; }, [stage]);
   useEffect(() => { scoreRef.current = score; }, [score]);
@@ -213,6 +215,7 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
 
   /* 게임 시작 */
   const start = useCallback(() => {
+    if(goTimer.current){clearTimeout(goTimer.current);goTimer.current=null;}
     setIsNewHi(false);
     setStage(1); setScore(0); setLives(3);
     initStage(1);
@@ -234,7 +237,7 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
     try {
       window.AndroidInterface?.showInterstitialAd?.();
     } catch (e) {}
-    setTimeout(() => { setStatus('idle'); onExit?.(final); }, GAMEOVER_DELAY_MS);
+    goTimer.current = setTimeout(() => { goTimer.current=null; setStatus('idle'); onExit?.(final); }, 5000);
   }, [saveHiScore, onExit]);
 
   /* 입력: 키보드 */
@@ -475,14 +478,27 @@ export default function NeonBrickBreaker({ onExit, autoStart }) {
         </div>
       )}
 
-      {/* NEW HI-SCORE 배너 */}
-      {status === 'gameover' && isNewHi && (
-        <div className="absolute top-1/2 left-0 right-0 mt-16 flex justify-center pointer-events-none">
-          <div
-            className="text-neon text-glow text-[10px] tracking-widest blink"
-            style={{ fontFamily: '"Press Start 2P", monospace' }}
-          >
-            ★ NEW HI-SCORE ★
+      {/* 게임오버 오버레이 */}
+      {status === 'gameover' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 pointer-events-none">
+          <div className="pointer-events-auto flex flex-col items-center gap-3">
+            {isNewHi && (
+              <div className="text-neon text-glow text-[10px] tracking-widest blink mb-1"
+                style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                ★ NEW HI-SCORE ★
+              </div>
+            )}
+            <div className="text-[#FF2D55]/70 text-[9px] mb-1" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+              SCORE {String(score).padStart(5, '0')}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={start}
+                className="border-2 px-5 py-3 text-[11px] tracking-widest active:scale-95 transition-all"
+                style={{ fontFamily: '"Press Start 2P", monospace', borderColor: '#FF2D55', color: '#FF2D55', boxShadow: '0 0 14px rgba(255,45,85,0.5)' }}>
+                🔄 RETRY
+              </button>
+              <KakaoShareButton gameId="brickBreaker" score={score} />
+            </div>
           </div>
         </div>
       )}

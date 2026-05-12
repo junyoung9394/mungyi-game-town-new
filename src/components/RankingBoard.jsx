@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getFirestore, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 const GAMES = [
   { id: 'dustInvader', label: 'INVADER', short: 'INV' },
@@ -10,6 +11,7 @@ const GAMES = [
 ];
 
 export default function RankingBoard() {
+  const currentUid = getAuth().currentUser?.uid ?? null;
   const [active, setActive]   = useState('dustInvader');
   const [cache, setCache]     = useState({});
   const [loading, setLoading] = useState(false);
@@ -90,19 +92,26 @@ export default function RankingBoard() {
             <span className="text-[9px] text-neon/20">첫 번째 기록을 세워보세요!</span>
           </div>
         )}
-        {!loading && scores.map((s, i) => (
-          <div key={i} className="flex items-center gap-2 py-1.5 border-b border-neon/10 last:border-0">
-            <span className="text-[13px] w-6 shrink-0">{MEDALS[i]}</span>
-            <span className="flex-1 text-neon/80 text-[10px] truncate"
-              style={{ fontFamily: '"Press Start 2P",monospace' }}>
-              {(s.displayName || 'PLAYER').slice(0, 10).toUpperCase()}
-            </span>
-            <span className="text-neon text-[11px] font-bold shrink-0"
-              style={{ fontFamily: '"Press Start 2P",monospace' }}>
-              {String(s.score).padStart(5, '0')}
-            </span>
-          </div>
-        ))}
+        {!loading && scores.map((s, i) => {
+          const isMe = currentUid && s.uid === currentUid;
+          return (
+            <div key={i}
+              className={`flex items-center gap-2 py-1.5 border-b border-neon/10 last:border-0 transition-colors ${
+                isMe ? 'bg-neon/10 -mx-3 px-3 rounded' : ''
+              }`}>
+              <span className="text-[13px] w-6 shrink-0">{MEDALS[i]}</span>
+              <span className={`flex-1 text-[10px] truncate ${isMe ? 'text-neon font-bold' : 'text-neon/80'}`}
+                style={{ fontFamily: '"Press Start 2P",monospace' }}>
+                {(s.displayName || 'PLAYER').slice(0, 10).toUpperCase()}
+                {isMe && <span className="text-[8px] text-neon/60 ml-1">◀ ME</span>}
+              </span>
+              <span className={`text-[11px] font-bold shrink-0 ${isMe ? 'text-neon' : 'text-neon/90'}`}
+                style={{ fontFamily: '"Press Start 2P",monospace', textShadow: isMe ? '0 0 8px #39FF14' : 'none' }}>
+                {String(s.score).padStart(5, '0')}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

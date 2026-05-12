@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
+import KakaoShareButton from './components/KakaoShareButton';
 
 /* ── 상수 ─────────────────────────────────────────── */
 const VW=360, VH=640, NEON='#39FF14';
@@ -283,12 +284,15 @@ export default function FlappyMungyi({ onExit, autoStart }) {
             <div className="text-neon/60 text-[9px] mb-1" style={{fontFamily:'"Press Start 2P",monospace'}}>
               SCORE {String(score).padStart(3,'0')}
             </div>
-            <button
-              onClick={start}
-              className="border-2 border-neon px-6 py-3 text-neon text-[11px] tracking-widest hover:bg-neon hover:text-black active:scale-95 transition-all"
-              style={{fontFamily:'"Press Start 2P",monospace',boxShadow:'0 0 14px rgba(57,255,20,0.6)'}}>
-              🔄 RETRY
-            </button>
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={start}
+                className="border-2 border-neon px-5 py-3 text-neon text-[11px] tracking-widest hover:bg-neon hover:text-black active:scale-95 transition-all"
+                style={{fontFamily:'"Press Start 2P",monospace',boxShadow:'0 0 14px rgba(57,255,20,0.6)'}}>
+                🔄 RETRY
+              </button>
+              <KakaoShareButton gameId="flappy" score={score} />
+            </div>
           </div>
         </div>
       )}

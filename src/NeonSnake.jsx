@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
+import KakaoShareButton from './components/KakaoShareButton';
 
 const NEON = '#39FF14';
 const VW = 360, VH = 640;
@@ -90,6 +91,7 @@ export function useNeonSnake({ canvasRef, onExit }) {
   const scoreRef  = useRef(0); const hiRef  = useRef(0);
   const statusRef = useRef('idle');
   const dirBuf    = useRef(null); // 다음 방향 버퍼
+  const goTimer   = useRef(null); // 게임오버 자동복귀 타이머
 
   useEffect(()=>{scoreRef.current=score;},[score]);
   useEffect(()=>{hiRef.current=hiScore;},[hiScore]);
@@ -100,6 +102,7 @@ export function useNeonSnake({ canvasRef, onExit }) {
   useAutoSave('snake', scoreRef, statusRef);
 
   const start = useCallback(()=>{
+    if(goTimer.current){clearTimeout(goTimer.current);goTimer.current=null;}
     setNewHi(false); setScore(0); scoreRef.current=0;
     const snake=[{x:9,y:14},{x:8,y:14},{x:7,y:14}];
     gameRef.current={
@@ -206,7 +209,7 @@ export function useNeonSnake({ canvasRef, onExit }) {
               }
             });
             try{window.AndroidInterface?.showInterstitialAd?.();}catch(_){}
-            setTimeout(()=>{setStatus('idle');onExit?.(final);},2000);
+            goTimer.current=setTimeout(()=>{goTimer.current=null;setStatus('idle');onExit?.(final);},5000);
           } else {
             const ateFood=head.x===g.food.x&&head.y===g.food.y;
             g.snake=[head,...g.snake];
@@ -243,13 +246,13 @@ export function useNeonSnake({ canvasRef, onExit }) {
     return ()=>{cancelled=true;cancelAnimationFrame(raf);};
   },[canvasRef,onExit]);
 
-  return {start,status,score,hiScore,isNewHi};
+  return {start,status,score,hiScore,isNewHi,scoreRef};
 }
 
 /* ── 컴포넌트 ──────────────────────────────────────── */
 export default function NeonSnake({ onExit, autoStart }) {
   const canvasRef=useRef(null);
-  const {start,status,hiScore,isNewHi}=useNeonSnake({canvasRef,onExit});
+  const {start,status,score,hiScore,isNewHi}=useNeonSnake({canvasRef,onExit});
   useEffect(()=>{ if(autoStart) start(); },[]); // eslint-disable-line
   return (
     <div className="absolute inset-0">
@@ -268,9 +271,25 @@ export default function NeonSnake({ onExit, autoStart }) {
           </div>
         </div>
       )}
-      {status==='gameover'&&isNewHi&&(
-        <div className="absolute top-1/2 mt-14 left-0 right-0 flex justify-center pointer-events-none">
-          <span className="text-neon text-glow text-[10px] tracking-widest blink" style={{fontFamily:'"Press Start 2P",monospace'}}>★ NEW HI-SCORE ★</span>
+      {status==='gameover'&&(
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 pointer-events-none">
+          <div className="pointer-events-auto flex flex-col items-center gap-3">
+            {isNewHi&&(
+              <div className="text-neon text-glow text-[10px] tracking-widest blink mb-1"
+                style={{fontFamily:'"Press Start 2P",monospace'}}>★ NEW HI-SCORE ★</div>
+            )}
+            <div className="text-neon/60 text-[9px] mb-1" style={{fontFamily:'"Press Start 2P",monospace'}}>
+              SCORE {String(score).padStart(5,'0')}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={start}
+                className="border-2 border-neon px-5 py-3 text-neon text-[11px] tracking-widest hover:bg-neon hover:text-black active:scale-95 transition-all"
+                style={{fontFamily:'"Press Start 2P",monospace',boxShadow:'0 0 14px rgba(57,255,20,0.6)'}}>
+                🔄 RETRY
+              </button>
+              <KakaoShareButton gameId="snake" score={score} />
+            </div>
+          </div>
         </div>
       )}
     </div>

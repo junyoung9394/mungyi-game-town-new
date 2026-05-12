@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
+import KakaoShareButton from './components/KakaoShareButton';
 
 const NEON = '#39FF14';
 const VW = 360, VH = 640;
@@ -98,6 +99,7 @@ export function useClassicTetris({ canvasRef, onExit }) {
   const gameRef=useRef(null); const scoreRef=useRef(0); const levelRef=useRef(1);
   const linesRef=useRef(0);  const hiRef=useRef(0);    const statusRef=useRef('idle');
   const inp=useRef({left:false,right:false,down:false,la:80,ra:80});
+  const goTimer=useRef(null);
 
   useEffect(()=>{scoreRef.current=score;},[score]);
   useEffect(()=>{levelRef.current=level;},[level]);
@@ -115,6 +117,7 @@ export function useClassicTetris({ canvasRef, onExit }) {
   },[]);
 
   const start = useCallback(()=>{
+    if(goTimer.current){clearTimeout(goTimer.current);goTimer.current=null;}
     setNewHi(false); setScore(0); setLevel(1); setLines(0);
     scoreRef.current=0; levelRef.current=1; linesRef.current=0;
     const board=Array.from({length:ROWS},()=>Array(COLS).fill(null));
@@ -232,7 +235,7 @@ export function useClassicTetris({ canvasRef, onExit }) {
                 }
               });
               try{window.AndroidInterface?.showInterstitialAd?.();}catch(_){}
-              setTimeout(()=>{setStatus('idle');onExit?.(ns);},2200);
+              goTimer.current=setTimeout(()=>{goTimer.current=null;setStatus('idle');onExit?.(ns);},5000);
             } else {
               g.board=cleared;g.current=np;g.next=makePiece(randomType());g.dropAccum=0;
             }
@@ -260,7 +263,7 @@ export function useClassicTetris({ canvasRef, onExit }) {
 /* ── 컴포넌트 ──────────────────────────────────────── */
 export default function ClassicTetris({ onExit, autoStart }) {
   const canvasRef=useRef(null);
-  const {start,status,hiScore,isNewHi}=useClassicTetris({canvasRef,onExit});
+  const {start,status,score,hiScore,isNewHi}=useClassicTetris({canvasRef,onExit});
   useEffect(()=>{ if(autoStart) start(); },[]); // eslint-disable-line
   return (
     <div className="absolute inset-0">
@@ -279,9 +282,25 @@ export default function ClassicTetris({ onExit, autoStart }) {
           </div>
         </div>
       )}
-      {status==='gameover'&&isNewHi&&(
-        <div className="absolute top-1/2 mt-14 left-0 right-0 flex justify-center pointer-events-none">
-          <span className="text-neon text-glow text-[10px] tracking-widest blink" style={{fontFamily:'"Press Start 2P",monospace'}}>★ NEW HI-SCORE ★</span>
+      {status==='gameover'&&(
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 pointer-events-none">
+          <div className="pointer-events-auto flex flex-col items-center gap-3">
+            {isNewHi&&(
+              <div className="text-neon text-glow text-[10px] tracking-widest blink mb-1"
+                style={{fontFamily:'"Press Start 2P",monospace'}}>★ NEW HI-SCORE ★</div>
+            )}
+            <div className="text-[#BF5AF2]/70 text-[9px] mb-1" style={{fontFamily:'"Press Start 2P",monospace'}}>
+              SCORE {String(score).padStart(6,'0')}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={start}
+                className="border-2 px-5 py-3 text-[11px] tracking-widest active:scale-95 transition-all"
+                style={{fontFamily:'"Press Start 2P",monospace',borderColor:'#BF5AF2',color:'#BF5AF2',boxShadow:'0 0 14px rgba(191,90,242,0.5)'}}>
+                🔄 RETRY
+              </button>
+              <KakaoShareButton gameId="tetris" score={score} />
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
+import KakaoShareButton from './components/KakaoShareButton';
 
 /* ============================================================
  * 상수 (가상 해상도 + 게임 밸런스)
@@ -203,6 +204,7 @@ export function useDustInvaderGame({ canvasRef, onExit }) {
   const hiScoreRef = useRef(0);
   const statusRef = useRef('idle');
   const inputRef = useRef({ left: false, right: false, touchDir: 0 });
+  const goTimer = useRef(null);
 
   useEffect(() => { stageRef.current = stage; }, [stage]);
   useEffect(() => { scoreRef.current = score; }, [score]);
@@ -296,6 +298,7 @@ export function useDustInvaderGame({ canvasRef, onExit }) {
 
   /* === 게임 시작 === */
   const start = useCallback(() => {
+    if(goTimer.current){clearTimeout(goTimer.current);goTimer.current=null;}
     setIsNewHi(false);
     setStage(1);
     setScore(0);
@@ -330,10 +333,11 @@ export function useDustInvaderGame({ canvasRef, onExit }) {
     }
 
     // 3) 잠시 후 로비(idle)로 복귀 + 외부 onExit 콜백
-    setTimeout(() => {
+    goTimer.current = setTimeout(() => {
+      goTimer.current = null;
       setStatus('idle');
       onExit?.(finalScore);
-    }, GAMEOVER_DELAY_MS);
+    }, 5000);
   }, [saveHiScore, onExit]);
 
   /* === 입력: 키보드 === */
@@ -649,14 +653,27 @@ export default function DustInvaderGame({ onExit, autoStart }) {
         </div>
       )}
 
-      {/* === GAME OVER 오버레이 (캔버스 위 작은 보조 UI) === */}
-      {status === 'gameover' && isNewHi && (
-        <div className="absolute top-1/2 left-0 right-0 mt-16 flex justify-center pointer-events-none">
-          <div
-            className="text-neon text-glow text-[10px] tracking-widest blink"
-            style={{ fontFamily: '"Press Start 2P", monospace' }}
-          >
-            ★ NEW HI-SCORE ★
+      {/* === GAME OVER 오버레이 === */}
+      {status === 'gameover' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 pointer-events-none">
+          <div className="pointer-events-auto flex flex-col items-center gap-3">
+            {isNewHi && (
+              <div className="text-neon text-glow text-[10px] tracking-widest blink mb-1"
+                style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                ★ NEW HI-SCORE ★
+              </div>
+            )}
+            <div className="text-neon/60 text-[9px] mb-1" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+              SCORE {String(score).padStart(5, '0')}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={start}
+                className="border-2 border-neon px-5 py-3 text-neon text-[11px] tracking-widest hover:bg-neon hover:text-black active:scale-95 transition-all"
+                style={{ fontFamily: '"Press Start 2P", monospace', boxShadow: '0 0 14px rgba(57,255,20,0.6)' }}>
+                🔄 RETRY
+              </button>
+              <KakaoShareButton gameId="dustInvader" score={score} />
+            </div>
           </div>
         </div>
       )}
