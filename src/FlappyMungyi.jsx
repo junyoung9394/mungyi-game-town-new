@@ -12,13 +12,11 @@ const GAMEOVER_DELAY=1800;
 /* ── 드로잉 ───────────────────────────────────────── */
 function drawBg(ctx) {
   ctx.fillStyle='#000'; ctx.fillRect(0,0,VW,VH);
-  // Stars
   ctx.fillStyle='rgba(57,255,20,0.15)';
   for (let i=0;i<60;i++) {
     const sx=(i*137.5)%VW, sy=(i*93.7)%VH;
     ctx.fillRect(sx|0,sy|0,1,1);
   }
-  // Ground line
   ctx.fillStyle=NEON; ctx.fillRect(0,VH-30,VW,2);
   ctx.fillStyle='rgba(57,255,20,0.15)'; ctx.fillRect(0,VH-28,VW,28);
 }
@@ -28,26 +26,21 @@ function drawMungyi(ctx, x, y, vy) {
   ctx.save();
   ctx.translate(x + BIRD_W/2, y + BIRD_H/2);
   ctx.rotate(tilt);
-  // Body - golden dog
   ctx.fillStyle='#FFD700';
   ctx.fillRect(-BIRD_W/2, -BIRD_H/2, BIRD_W, BIRD_H);
-  // Ears
   ctx.fillStyle='#C8A000';
   ctx.fillRect(-BIRD_W/2-2, -BIRD_H/2-5, 8, 8);
   ctx.fillRect(BIRD_W/2-6, -BIRD_H/2-5, 8, 8);
-  // Eyes
   ctx.fillStyle='#111';
   ctx.fillRect(-6, -4, 4, 4);
   ctx.fillRect(3, -4, 4, 4);
   ctx.fillStyle='#fff';
   ctx.fillRect(-5, -5, 2, 2);
   ctx.fillRect(4, -5, 2, 2);
-  // Nose
   ctx.fillStyle='#FF6B6B';
   ctx.fillRect(-3, 3, 6, 4);
   ctx.fillStyle='#000';
   ctx.fillRect(-2, 4, 2, 2); ctx.fillRect(2, 4, 2, 2);
-  // Neon outline glow
   ctx.globalAlpha=0.5;
   ctx.strokeStyle=NEON; ctx.lineWidth=1;
   ctx.strokeRect(-BIRD_W/2-1, -BIRD_H/2-1, BIRD_W+2, BIRD_H+2);
@@ -55,13 +48,12 @@ function drawMungyi(ctx, x, y, vy) {
   ctx.restore();
 }
 
-function drawPipes(ctx, pipes, tick) {
+function drawPipes(ctx, pipes) {
   for (const p of pipes) {
     const topH = p.gapY - PIPE_GAP/2;
     const botY = p.gapY + PIPE_GAP/2;
     const botH = VH - 30 - botY;
 
-    // Top pipe
     ctx.fillStyle='#1a1a1a';
     ctx.fillRect(p.x, 0, PIPE_W, topH);
     ctx.fillStyle=NEON;
@@ -72,7 +64,6 @@ function drawPipes(ctx, pipes, tick) {
     ctx.strokeStyle=NEON; ctx.lineWidth=1;
     ctx.strokeRect(p.x, 0, PIPE_W, topH);
 
-    // Bottom pipe
     ctx.fillStyle='#1a1a1a';
     ctx.fillRect(p.x, botY, PIPE_W, botH);
     ctx.fillStyle=NEON;
@@ -120,6 +111,7 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
   const [isNewHi, setIsNewHi] = useState(false);
 
   const gRef = useRef(null), scoreRef=useRef(0), hiRef=useRef(0), statusRef=useRef('idle');
+  const timerRef = useRef(null); // gameover 자동복귀 타이머
 
   useEffect(()=>{ scoreRef.current=score; },[score]);
   useEffect(()=>{ hiRef.current=hiScore; },[hiScore]);
@@ -132,11 +124,14 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
 
   const doJump = useCallback(()=>{
     const g=gRef.current; if(!g) return;
-    if(statusRef.current==='idle') return;
+    const st=statusRef.current;
+    if(st==='idle'||st==='gameover') return; // gameover 중 점프 방지
     g.vy=JUMP;
   },[]);
 
   const start = useCallback(()=>{
+    // 진행 중인 gameover 타이머 취소
+    if(timerRef.current){ clearTimeout(timerRef.current); timerRef.current=null; }
     gRef.current={
       birdY: VH/2-50, vy:0,
       pipes:[], pipeTimer:0,
@@ -155,16 +150,22 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
       setHiScore(best); setIsNewHi(true);
       localStorage.setItem('flappy_hi',String(best));
     }
-    setTimeout(()=>{ setStatus('idle'); onExit?.(final); },GAMEOVER_DELAY);
+    // GAMEOVER_DELAY 후 로비 복귀 (retry 시 취소됨)
+    timerRef.current = setTimeout(()=>{
+      timerRef.current=null;
+      setStatus('idle');
+      onExit?.(final);
+    }, GAMEOVER_DELAY);
   },[onExit]);
 
-  // Input
+  // Input: 키보드
   useEffect(()=>{
     const kd=(e)=>{ if(e.key===' '||e.key==='ArrowUp'){ e.preventDefault(); doJump(); } };
     window.addEventListener('keydown',kd);
     return ()=>window.removeEventListener('keydown',kd);
   },[doJump]);
 
+  // Input: 터치/클릭
   useEffect(()=>{
     const canvas=canvasRef.current; if(!canvas) return;
     const click=()=>doJump();
@@ -186,7 +187,7 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
     return ()=>window.removeEventListener('resize',resize);
   },[canvasRef]);
 
-  // Loop
+  // 게임 루프
   useEffect(()=>{
     const canvas=canvasRef.current; if(!canvas) return;
     const ctx=canvas.getContext('2d');
@@ -199,13 +200,10 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
 
       if(st==='playing'&&g){
         g.tick+=dt;
-        // Physics
         g.vy+=GRAVITY*(dt/16);
         g.birdY+=g.vy*(dt/16);
-        // Ground/ceiling
         if(g.birdY<0){ g.birdY=0; g.vy=0; }
         if(g.birdY+BIRD_H>VH-30){ triggerGameOver(); }
-        // Pipes
         g.pipeTimer+=dt;
         if(g.pipeTimer>=PIPE_SPAWN_INTERVAL){
           g.pipeTimer=0;
@@ -214,18 +212,16 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
         }
         for(const p of g.pipes){ p.x-=PIPE_SPEED*(dt/16); }
         g.pipes=g.pipes.filter(p=>p.x+PIPE_W>-10);
-        // Score
         for(const p of g.pipes){
           if(!g.scored.has(p.id)&&p.x+PIPE_W<BIRD_X){
             g.scored.add(p.id); setScore(s=>s+1);
           }
         }
-        // Collision
         for(const p of g.pipes) if(hitsPipe(BIRD_X,g.birdY,p)){ triggerGameOver(); break; }
       }
 
       drawBg(ctx);
-      if(g){ drawPipes(ctx,g.pipes,g.tick); drawMungyi(ctx,BIRD_X,g.birdY,g.vy); drawHUD(ctx,scoreRef.current); }
+      if(g){ drawPipes(ctx,g.pipes); drawMungyi(ctx,BIRD_X,g.birdY,g.vy); drawHUD(ctx,scoreRef.current); }
       if(st==='gameover') drawBanner(ctx,'GAME OVER','SCORE '+scoreRef.current);
 
       raf=requestAnimationFrame(loop);
@@ -241,16 +237,21 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
 /* ── 컴포넌트 ─────────────────────────────────────── */
 export default function FlappyMungyi({ onExit, autoStart }) {
   const canvasRef = useRef(null);
-  const { start, doJump, status, hiScore, isNewHi } = useFlappyMungyi({ canvasRef, onExit });
+  const { start, doJump, status, score, hiScore, isNewHi } = useFlappyMungyi({ canvasRef, onExit });
   useEffect(() => { if (autoStart) start(); }, []); // eslint-disable-line
 
   return (
     <div className="absolute inset-0">
       <canvas ref={canvasRef} className="block w-full h-full select-none"
         style={{imageRendering:'pixelated',touchAction:'none',cursor:'pointer'}} />
+
+      {/* 시작 전 idle 화면 */}
       {status==='idle' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/80">
-          <div className="text-neon text-glow text-lg tracking-widest" style={{fontFamily:'"Press Start 2P",monospace'}}>FLAPPY<br/><span className="text-[#FFD700]">무명이</span></div>
+          <div className="text-neon text-glow text-lg tracking-widest text-center"
+            style={{fontFamily:'"Press Start 2P",monospace'}}>
+            FLAPPY<br/><span style={{color:'#FFD700'}}>무명이</span>
+          </div>
           <div className="text-neon/70 text-[10px] tracking-wider text-center px-6 leading-loose">
             SPACE / 클릭 / 탭: 점프<br/>파이프 사이를 통과하세요!
           </div>
@@ -264,9 +265,27 @@ export default function FlappyMungyi({ onExit, autoStart }) {
           </div>
         </div>
       )}
-      {status==='gameover' && isNewHi && (
-        <div className="absolute top-1/2 left-0 right-0 mt-16 flex justify-center pointer-events-none">
-          <div className="text-neon text-glow text-[10px] tracking-widest blink" style={{fontFamily:'"Press Start 2P",monospace'}}>★ NEW RECORD ★</div>
+
+      {/* 게임 오버 오버레이 — Retry 버튼 */}
+      {status==='gameover' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-24 pointer-events-none">
+          <div className="pointer-events-auto flex flex-col items-center gap-3">
+            {isNewHi && (
+              <div className="text-neon text-glow text-[10px] tracking-widest blink mb-1"
+                style={{fontFamily:'"Press Start 2P",monospace'}}>
+                ★ NEW RECORD ★
+              </div>
+            )}
+            <div className="text-neon/60 text-[9px] mb-1" style={{fontFamily:'"Press Start 2P",monospace'}}>
+              SCORE {String(score).padStart(3,'0')}
+            </div>
+            <button
+              onClick={start}
+              className="border-2 border-neon px-6 py-3 text-neon text-[11px] tracking-widest hover:bg-neon hover:text-black active:scale-95 transition-all"
+              style={{fontFamily:'"Press Start 2P",monospace',boxShadow:'0 0 14px rgba(57,255,20,0.6)'}}>
+              🔄 RETRY
+            </button>
+          </div>
         </div>
       )}
     </div>

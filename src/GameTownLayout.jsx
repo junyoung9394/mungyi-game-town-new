@@ -146,11 +146,11 @@ export default function GameTownLayout() {
             {user && currentGame === 'snake'         && <NeonSnake         autoStart onExit={goLobby} />}
             {user && currentGame === 'flappy'        && <FlappyMungyi      autoStart onExit={goLobby} />}
 
-            {/* 게임 중 로비 복귀 버튼 */}
+            {/* 게임 중 로비 복귀 버튼 — 하단 중앙 (HUD 겹침 방지) */}
             {user && currentGame !== null && (
               <button onClick={goLobby}
-                className="absolute top-2 left-2 z-20 border border-neon/60 text-neon/70 hover:text-neon hover:border-neon text-[7px] px-2 py-1 bg-black/80 transition-colors tracking-widest"
-                style={{ fontFamily: '"Press Start 2P",monospace' }}>
+                className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 border border-neon/50 text-neon/60 hover:text-neon hover:border-neon text-[8px] px-3 py-1.5 bg-black/90 transition-colors tracking-widest whitespace-nowrap"
+                style={{ fontFamily: '"Press Start 2P",monospace', boxShadow: '0 0 8px rgba(57,255,20,0.15)' }}>
                 ◀ LOBBY
               </button>
             )}

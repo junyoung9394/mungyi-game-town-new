@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 리더보드: 누구나 읽기 가능 / 로그인 유저는 자신의 점수만 쓰기
+    match /leaderboard/{gameId}/scores/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 기존 DustInvader 개인 점수 컬렉션
+    match /scores/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 기존 BrickBreaker 개인 점수 컬렉션
+    match /scores_brick/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
