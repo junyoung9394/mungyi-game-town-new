@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { initializeApp } from 'firebase/app';
 import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
@@ -11,6 +11,7 @@ import ClassicTetris    from './ClassicTetris';
 import NeonSnake        from './NeonSnake';
 import FlappyMungyi     from './FlappyMungyi';
 import GameLobby        from './GameLobby';
+import { useBgm }       from './utils/useBgm';
 
 /* ── Firebase ─────────────────────────────────────── */
 const firebaseConfig = {
@@ -32,12 +33,12 @@ const db   = getFirestore(app);
 const KAKAO_JS_KEY = 'ad5490ca84b163e5628e714505fa9c1a';
 
 /* ── AdSense 수직 광고 ────────────────────────────── */
-function VerticalAd({ side }) {
+function VerticalAd() {
   const pushed = useRef(false);
   useEffect(() => {
     if (!pushed.current) {
       pushed.current = true;
-      try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+      try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch { /* adsbygoogle 미로드 시 무시 */ }
     }
   }, []);
   return (
@@ -57,6 +58,9 @@ export default function GameTownLayout() {
   const [loading, setLoading]         = useState(false);
   const [currentGame, setCurrentGame] = useState(null);
   const [pendingGame, setPendingGame] = useState(null); // 조작법 안내 중인 게임
+
+  // BGM: 게임 화면일 때 gameplay BGM, 그 외(로비·가이드)는 lobby BGM
+  useBgm(currentGame !== null);
 
   /* Firebase Auth 상태 */
   useEffect(() => {
@@ -607,23 +611,6 @@ function CornerDots() {
       <span className={`${cls} bottom-0 left-0`} style={s}/>
       <span className={`${cls} bottom-0 right-0`} style={s}/>
     </>
-  );
-}
-
-function PixelMascot() {
-  return (
-    <svg viewBox="0 0 12 12" className="w-24 h-24"
-      style={{ imageRendering:'pixelated', shapeRendering:'crispEdges' }}>
-      {[
-        [3,1],[4,1],[5,1],[6,1],[7,1],[8,1],
-        [2,2],[9,2],[2,3],[4,3],[7,3],[9,3],
-        [2,4],[9,4],[2,5],[4,5],[5,5],[6,5],[7,5],[9,5],
-        [2,6],[9,6],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],
-        [4,8],[7,8],[4,9],[5,9],[6,9],[7,9],
-      ].map(([x,y],i) => (
-        <rect key={i} x={x} y={y} width={1} height={1} fill="#39FF14"/>
-      ))}
-    </svg>
   );
 }
 
