@@ -60,7 +60,7 @@ export default function GameTownLayout() {
   const [pendingGame, setPendingGame] = useState(null); // 조작법 안내 중인 게임
 
   // BGM: 게임 화면일 때 gameplay BGM, 그 외(로비·가이드)는 lobby BGM
-  useBgm(currentGame !== null);
+  const { bgmOn, toggleBgm } = useBgm(currentGame !== null);
 
   /* Firebase Auth 상태 */
   useEffect(() => {
@@ -241,6 +241,19 @@ export default function GameTownLayout() {
         </div>
         {/* 유저 영역 */}
         <div className="flex items-center gap-2 text-xs md:text-sm text-neon/80">
+          {/* BGM 토글 버튼 — 로그인 전후 항상 표시 */}
+          <button
+            onClick={toggleBgm}
+            title={bgmOn ? '음악 끄기' : '음악 켜기'}
+            className={`text-[8px] px-2 py-1 border transition-colors tracking-widest ${
+              bgmOn
+                ? 'border-neon text-neon bg-neon/10 hover:bg-neon hover:text-black'
+                : 'border-neon/30 text-neon/30 hover:border-neon hover:text-neon'
+            }`}
+            style={{ fontFamily: '"Press Start 2P",monospace' }}
+          >
+            {bgmOn ? '♪ ON' : '♪ OFF'}
+          </button>
           {user ? (
             <>
               {user.photoURL && (
