@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { initializeApp } from 'firebase/app';
 import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
@@ -11,6 +11,8 @@ import ClassicTetris    from './ClassicTetris';
 import NeonSnake        from './NeonSnake';
 import FlappyMungyi     from './FlappyMungyi';
 import GameLobby        from './GameLobby';
+import NeonOmok         from './NeonOmok';
+import { useBgm }       from './utils/useBgm';
 
 /* ── Firebase ─────────────────────────────────────── */
 const firebaseConfig = {
@@ -32,12 +34,12 @@ const db   = getFirestore(app);
 const KAKAO_JS_KEY = 'ad5490ca84b163e5628e714505fa9c1a';
 
 /* ── AdSense 수직 광고 ────────────────────────────── */
-function VerticalAd({ side }) {
+function VerticalAd() {
   const pushed = useRef(false);
   useEffect(() => {
     if (!pushed.current) {
       pushed.current = true;
-      try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+      try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch { /* adsbygoogle 미로드 시 무시 */ }
     }
   }, []);
   return (
@@ -57,6 +59,9 @@ export default function GameTownLayout() {
   const [loading, setLoading]         = useState(false);
   const [currentGame, setCurrentGame] = useState(null);
   const [pendingGame, setPendingGame] = useState(null); // 조작법 안내 중인 게임
+
+  // BGM: 게임 화면일 때 gameplay BGM, 그 외(로비·가이드)는 lobby BGM
+  const { bgmOn, toggleBgm } = useBgm(currentGame !== null);
 
   /* Firebase Auth 상태 */
   useEffect(() => {
@@ -237,6 +242,19 @@ export default function GameTownLayout() {
         </div>
         {/* 유저 영역 */}
         <div className="flex items-center gap-2 text-xs md:text-sm text-neon/80">
+          {/* BGM 토글 버튼 — 로그인 전후 항상 표시 */}
+          <button
+            onClick={toggleBgm}
+            title={bgmOn ? '음악 끄기' : '음악 켜기'}
+            className={`text-[8px] px-2 py-1 border transition-colors tracking-widest ${
+              bgmOn
+                ? 'border-neon text-neon bg-neon/10 hover:bg-neon hover:text-black'
+                : 'border-neon/30 text-neon/30 hover:border-neon hover:text-neon'
+            }`}
+            style={{ fontFamily: '"Press Start 2P",monospace' }}
+          >
+            {bgmOn ? '♪ ON' : '♪ OFF'}
+          </button>
           {user ? (
             <>
               {user.photoURL && (
@@ -292,6 +310,7 @@ export default function GameTownLayout() {
             {user && currentGame === 'tetris'        && <ClassicTetris     autoStart onExit={goLobby} />}
             {user && currentGame === 'snake'         && <NeonSnake         autoStart onExit={goLobby} />}
             {user && currentGame === 'flappy'        && <FlappyMungyi      autoStart onExit={goLobby} />}
+            {user && currentGame === 'omok'          && <NeonOmok                    onExit={goLobby} />}
 
             {/* 게임 중 로비 복귀 버튼 — 하단 중앙 (HUD 겹침 방지) */}
             {user && currentGame !== null && (
@@ -373,6 +392,17 @@ const GUIDE_DATA = {
       { icon: '👆', desc: '스와이프로 방향 전환' },
     ],
     tip: '자기 몸에 닿으면 게임오버! 벽은 통과 가능.',
+  },
+  omok: {
+    title: 'NEON OMOK',
+    color: '#39FF14',
+    keys: [
+      { key: 'CLICK', desc: '돌 놓기' },
+    ],
+    touch: [
+      { icon: '👆', desc: '탭으로 돌 놓기' },
+    ],
+    tip: '5개를 연속으로 놓으면 승리! AI 또는 2인 대전.',
   },
   flappy: {
     title: 'FLAPPY 무명이',
@@ -607,23 +637,6 @@ function CornerDots() {
       <span className={`${cls} bottom-0 left-0`} style={s}/>
       <span className={`${cls} bottom-0 right-0`} style={s}/>
     </>
-  );
-}
-
-function PixelMascot() {
-  return (
-    <svg viewBox="0 0 12 12" className="w-24 h-24"
-      style={{ imageRendering:'pixelated', shapeRendering:'crispEdges' }}>
-      {[
-        [3,1],[4,1],[5,1],[6,1],[7,1],[8,1],
-        [2,2],[9,2],[2,3],[4,3],[7,3],[9,3],
-        [2,4],[9,4],[2,5],[4,5],[5,5],[6,5],[7,5],[9,5],
-        [2,6],[9,6],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],
-        [4,8],[7,8],[4,9],[5,9],[6,9],[7,9],
-      ].map(([x,y],i) => (
-        <rect key={i} x={x} y={y} width={1} height={1} fill="#39FF14"/>
-      ))}
-    </svg>
   );
 }
 

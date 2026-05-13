@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import RankingBoard from './components/RankingBoard';
 
 /* ── AdSense 컴포넌트 ─────────────────────────────── */
@@ -7,7 +7,7 @@ function AdUnit({ slot, format = 'auto', style = {}, className = '' }) {
   useEffect(() => {
     if (!pushed.current) {
       pushed.current = true;
-      try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+      try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch { /* adsbygoogle 미로드 시 무시 */ }
     }
   }, []);
   return (
@@ -29,6 +29,7 @@ const GAMES = [
   { id: 'tetris',       title: 'TETRIS',          desc: '줄을 없애라',         available: true,  preview: <TetrisPreview /> },
   { id: 'snake',        title: 'NEON SNAKE',      desc: '먹이를 먹어라',       available: true,  preview: <SnakePreview /> },
   { id: 'flappy',       title: 'FLAPPY 무명이',  desc: '하늘을 날아라',       available: true,  preview: <FlappyPreview /> },
+  { id: 'omok',         title: 'NEON OMOK',      desc: '5목으로 승부하라',    available: true,  preview: <OmokPreview /> },
 ];
 
 /* ── 메인 로비 ────────────────────────────────────── */
@@ -62,13 +63,15 @@ export default function GameLobby({ onSelect, user }) {
       {/* 구분선 */}
       <div className="mx-4 h-px bg-neon/30 mb-4" />
 
-      {/* 게임 카드 그리드 (2+2+1) */}
+      {/* 게임 카드 그리드 (2×2) + 와이드 카드 목록 */}
       <div className="px-3 grid grid-cols-2 gap-3 mb-3">
         {GAMES.slice(0, 4).map(g => <GameCard key={g.id} game={g} onSelect={onSelect} />)}
       </div>
-      <div className="px-3 mb-4">
-        <GameCard game={GAMES[4]} onSelect={onSelect} wide />
-      </div>
+      {GAMES.slice(4).map(g => (
+        <div key={g.id} className="px-3 mb-3">
+          <GameCard game={g} onSelect={onSelect} wide />
+        </div>
+      ))}
 
       {/* 구분선 */}
       <div className="mx-4 h-px bg-neon/30 mb-4" />
@@ -235,6 +238,28 @@ function FlappyPreview() {
       <rect x={17} y={21} width={2} height={2} fill="#111"/>
       <rect x={14} y={26} width={4} height={2} fill="#FF6B6B"/>
       <rect x={0} y={40} width={60} height={1} fill="#39FF14"/>
+    </svg>
+  );
+}
+
+function OmokPreview() {
+  const cols=7, rows=5, px=5, py=4;
+  const cw=(60-px*2)/(cols-1), ch=(44-py*2)/(rows-1);
+  const stones=[{r:1,c:2,cl:'#39FF14'},{r:2,c:3,cl:'#39FF14'},{r:3,c:4,cl:'#39FF14'},
+                {r:2,c:2,cl:'#FF2D55'},{r:3,c:3,cl:'#FF2D55'},{r:1,c:4,cl:'#FF2D55'}];
+  return (
+    <svg viewBox="0 0 60 44" className="w-full h-full bg-black">
+      {Array.from({length:cols},(_,i)=>(
+        <line key={`v${i}`} x1={px+i*cw} y1={py} x2={px+i*cw} y2={44-py}
+          stroke="rgba(57,255,20,0.38)" strokeWidth={0.6}/>
+      ))}
+      {Array.from({length:rows},(_,i)=>(
+        <line key={`h${i}`} x1={px} y1={py+i*ch} x2={60-px} y2={py+i*ch}
+          stroke="rgba(57,255,20,0.38)" strokeWidth={0.6}/>
+      ))}
+      {stones.map((s,i)=>(
+        <circle key={i} cx={px+s.c*cw} cy={py+s.r*ch} r={3.4} fill={s.cl}/>
+      ))}
     </svg>
   );
 }
