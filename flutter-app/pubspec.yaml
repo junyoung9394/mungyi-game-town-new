@@ -1,0 +1,37 @@
+name: mini_games_app
+description: 도전! 미니게임 - 즐거운 미니게임 모음
+publish_to: 'none'
+version: 2.1.0+2         # ★ 반드시 이전 버전(2.0.0+1)보다 높아야 업데이트 배포 가능
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"  # Flutter 3.16+ 필요 (PopScope 지원)
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 광고
+  google_mobile_ads: ^5.1.0
+
+  # 웹뷰
+  webview_flutter: ^4.10.0
+
+  # 아이콘 (기본 유지)
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/app_icon.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/app_icon.png
