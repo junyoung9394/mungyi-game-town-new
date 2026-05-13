@@ -11,6 +11,7 @@ import ClassicTetris    from './ClassicTetris';
 import NeonSnake        from './NeonSnake';
 import FlappyMungyi     from './FlappyMungyi';
 import GameLobby        from './GameLobby';
+import NeonOmok         from './NeonOmok';
 import { useBgm }       from './utils/useBgm';
 
 /* ── Firebase ─────────────────────────────────────── */
@@ -309,6 +310,7 @@ export default function GameTownLayout() {
             {user && currentGame === 'tetris'        && <ClassicTetris     autoStart onExit={goLobby} />}
             {user && currentGame === 'snake'         && <NeonSnake         autoStart onExit={goLobby} />}
             {user && currentGame === 'flappy'        && <FlappyMungyi      autoStart onExit={goLobby} />}
+            {user && currentGame === 'omok'          && <NeonOmok                    onExit={goLobby} />}
 
             {/* 게임 중 로비 복귀 버튼 — 하단 중앙 (HUD 겹침 방지) */}
             {user && currentGame !== null && (
@@ -390,6 +392,17 @@ const GUIDE_DATA = {
       { icon: '👆', desc: '스와이프로 방향 전환' },
     ],
     tip: '자기 몸에 닿으면 게임오버! 벽은 통과 가능.',
+  },
+  omok: {
+    title: 'NEON OMOK',
+    color: '#39FF14',
+    keys: [
+      { key: 'CLICK', desc: '돌 놓기' },
+    ],
+    touch: [
+      { icon: '👆', desc: '탭으로 돌 놓기' },
+    ],
+    tip: '5개를 연속으로 놓으면 승리! AI 또는 2인 대전.',
   },
   flappy: {
     title: 'FLAPPY 무명이',

@@ -8,6 +8,7 @@ const GAMES = [
   { id: 'tetris',       label: 'TETRIS',  short: 'TET' },
   { id: 'snake',        label: 'SNAKE',   short: 'SNK' },
   { id: 'flappy',       label: 'FLAPPY',  short: 'FLP' },
+  { id: 'omok',         label: 'OMOK',    short: 'OMK' },
 ];
 
 const MEDALS = ['🥇', '🥈', '🥉'];
