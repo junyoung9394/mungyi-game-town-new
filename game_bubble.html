@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="같은 색 버블 3개를 맞춰 터뜨려라! 레벨이 올라갈수록 어려워지는 버블슈터">
+<meta name="keywords" content="버블슈터,버블게임,퍼즐게임,무료게임">
+<meta name="author" content="뭉이 게임타운">
+<meta name="robots" content="index, follow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta property="og:type" content="website">
+<meta property="og:title" content="🫧 버블 슈터 — 뭉이 게임타운">
+<meta property="og:description" content="같은 색 버블 3개를 맞춰 터뜨려라!">
+<meta property="og:image" content="https://game.luckygrampus.com/icons/icon-512.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#5EDFCA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>버블 슈터 — 뭉이 게임타운</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Jua&display=swap" rel="stylesheet">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8518556382646891" crossorigin="anonymous"></script>
+<script src="ad_manager.js" onerror="console.warn('ad_manager.js 로드 실패')"></script>
+<style>
+/* ═══════════════════════════════════════
+   🍬 CANDY GALAXY — 버블 슈터
+═══════════════════════════════════════ */
+:root {
+  --bg:      #0c0820;
+  --surface: rgba(255,255,255,0.07);
+  --border:  rgba(255,255,255,0.13);
+  --border2: rgba(255,255,255,0.22);
+  --pink:    #FF85A1;
+  --pink-d:  #FF4D8D;
+  --mint:    #5EDFCA;
+  --mint-d:  #3CBBA8;
+  --lav:     #C4B5FF;
+  --lav-d:   #9F89FF;
+  --yellow:  #FFE97F;
+  --peach:   #FFB07C;
+  --sky:     #87CEEB;
+  --green:   #76EBA0;
+  --white:   #FFFFFF;
+  --dim:     rgba(255,255,255,0.55);
+  --dim2:    rgba(255,255,255,0.32);
+  --r-sm: 12px; --r-md: 18px; --r-lg: 26px; --r-pill: 100px;
+}
+*,*::before,*::after { margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none; }
+body {
+  font-family:'Nunito',sans-serif;
+  background:var(--bg); min-height:100vh;
+  display:flex; justify-content:center; overflow-x:hidden;
+}
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 10%, rgba(94,223,202,.12) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 60% at 80% 90%, rgba(255,133,161,.09) 0%,transparent 65%);
+}
+
+/* ── Layout ── */
+.app {
+  width:100%; max-width:460px; min-height:100vh;
+  position:relative; z-index:1;
+  display:flex; flex-direction:column;
+}
+
+/* ── Home FAB ── */
+#home-fab {
+  position:fixed; top:14px; left:14px; z-index:9990;
+  width:44px; height:44px; border-radius:50%;
+  background:rgba(12,8,32,.75); border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; cursor:pointer; text-decoration:none;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  box-shadow:0 2px 16px rgba(0,0,0,.5);
+  transition:all .2s cubic-bezier(.34,1.56,.64,1);
+}
+#home-fab:active { transform:scale(.9); }
+
+/* ── Header ── */
+.header {
+  padding:16px 20px 12px; padding-left:70px;
+  display:flex; justify-content:space-between; align-items:center;
+  border-bottom:1px solid var(--border);
+  background:rgba(12,8,32,.7); backdrop-filter:blur(16px);
+  position:sticky; top:0; z-index:10;
+}
+.title {
+  font-family:'Jua',sans-serif; font-size:20px;
+  background:linear-gradient(135deg,var(--mint),var(--sky));
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 2px 8px rgba(94,223,202,.4));
+}
+.coin-box {
+  background:linear-gradient(135deg,rgba(255,233,127,.15),rgba(255,176,124,.15));
+  border:1px solid rgba(255,233,127,.35);
+  border-radius:var(--r-pill); padding:6px 14px;
+  font-size:14px; font-weight:900; color:var(--yellow);
+}
+
+/* ── HUD ── */
+.hud {
+  display:flex; gap:6px; padding:10px 12px 8px;
+  background:rgba(12,8,32,.5); position:relative; z-index:5;
+}
+.hud-stat {
+  flex:1; background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:8px 6px; text-align:center;
+}
+.hud-n { font-family:'Jua',sans-serif; font-size:18px; display:block; }
+.hud-l { font-size:9px; font-weight:800; color:var(--dim2); margin-top:1px; }
+.hud-score .hud-n { color:var(--pink); }
+.hud-level .hud-n { color:var(--yellow); }
+.hud-shots .hud-n { color:var(--mint); }
+
+/* ── Game wrap ── */
+.game-wrap {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; padding:6px 8px 0;
+  position:relative; z-index:5;
+}
+#game-canvas {
+  border-radius:20px;
+  box-shadow:
+    0 0 0 2px rgba(94,223,202,.3),
+    0 12px 48px rgba(0,0,0,.6),
+    0 0 60px rgba(94,223,202,.08);
+  touch-action:none; cursor:crosshair; display:block;
+}
+
+/* ── Shooter area ── */
+.shooter-area {
+  display:flex; align-items:center; justify-content:center;
+  gap:16px; padding:10px 16px 20px;
+  background:rgba(12,8,32,.6);
+  border-top:1px solid var(--border);
+  position:relative; z-index:5;
+}
+.next-label { font-size:12px; font-weight:700; color:var(--dim); }
+.bubble-preview {
+  width:36px; height:36px; border-radius:50%;
+  box-shadow:0 0 14px rgba(255,255,255,.2), inset 0 -3px 6px rgba(0,0,0,.3);
+  position:relative; overflow:hidden;
+}
+.bubble-preview::after {
+  content:''; position:absolute; top:5px; left:7px;
+  width:10px; height:10px; border-radius:50%;
+  background:rgba(255,255,255,.5);
+}
+.shoot-hint { font-size:11px; font-weight:700; color:var(--dim2); }
+
+/* ── Result overlay ── */
+.overlay {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.75);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  display:none; align-items:center; justify-content:center; z-index:200;
+}
+.overlay.show { display:flex; }
+.result-card {
+  background:rgba(20,10,48,.97);
+  border:1px solid var(--border2); border-radius:32px;
+  padding:40px 32px; text-align:center;
+  width:85%; max-width:360px; position:relative; overflow:hidden;
+}
+.result-card::before {
+  content:''; position:absolute; top:0; left:10%; right:10%; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+}
+.r-emoji  { font-size:68px; display:block; margin-bottom:12px; }
+.r-title  { font-family:'Jua',sans-serif; font-size:28px; color:var(--white); margin-bottom:10px; }
+.r-score  { font-family:'Jua',sans-serif; font-size:44px; color:var(--pink); margin:8px 0; display:block; }
+.r-coin   { font-size:20px; font-weight:900; color:var(--yellow); margin-bottom:24px; display:block; }
+.r-btn {
+  background:linear-gradient(135deg,var(--mint-d),var(--mint));
+  border:none; border-radius:var(--r-pill); color:#0c2010;
+  padding:15px 44px; font-family:'Nunito',sans-serif;
+  font-size:17px; font-weight:900; cursor:pointer;
+  box-shadow:0 4px 20px rgba(94,223,202,.4);
+  position:relative; overflow:hidden;
+}
+.r-btn::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:50%;
+  background:rgba(255,255,255,.2); border-radius:var(--r-pill);
+}
+
+/* ── PC layout ── */
+@media(min-width:900px) {
+  body { background:#080618; align-items:flex-start; }
+  .app {
+    max-width:960px; flex-direction:row; flex-wrap:wrap;
+    align-items:flex-start; min-height:100vh;
+  }
+  .header { width:100%; position:static; }
+  .game-wrap {
+    flex:1; min-width:380px; padding:12px 16px 20px;
+    height:calc(100vh - 76px);
+  }
+  .right-panel {
+    width:260px; padding:16px 16px 20px 0;
+    display:flex; flex-direction:column; gap:10px;
+    height:calc(100vh - 76px);
+  }
+  .hud { flex-direction:column; padding:0; background:transparent; gap:8px; }
+  .hud-stat { padding:12px 16px; border-radius:var(--r-md); display:flex; justify-content:space-between; align-items:center; }
+  .hud-n { font-size:22px; }
+  .hud-l { font-size:11px; }
+  .shooter-area { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); border-top:none; padding:14px 16px; }
+  .shoot-hint { font-size:12px; }
+  #game-canvas:hover { cursor:crosshair; }
+}
+@media(min-width:1200px) {
+  .app { max-width:1100px; }
+  .right-panel { width:300px; }
+}
+</style>
+</head>
+<body>
+
+<a href="index.html" id="home-fab" title="홈으로">🏠</a>
+
+<div class="app">
+  <div class="header">
+    <div class="title">🫧 버블 슈터</div>
+    <div class="coin-box">🪙 <span id="coins">100</span></div>
+  </div>
+
+  <div class="hud">
+    <div class="hud-stat hud-score"><span class="hud-n" id="score">0</span><div class="hud-l">점수</div></div>
+    <div class="hud-stat hud-level"><span class="hud-n" id="level">1</span><div class="hud-l">레벨</div></div>
+    <div class="hud-stat hud-shots"><span class="hud-n" id="shots">30</span><div class="hud-l">남은 발수</div></div>
+  </div>
+
+  <div class="game-wrap">
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <div class="shooter-area">
+    <div class="next-label">다음</div>
+    <div class="bubble-preview" id="next-preview"></div>
+    <div class="shoot-hint">화면을 탭하여 발사! 🎯</div>
+  </div>
+
+  <!-- PC 오른쪽 패널 -->
+  <div class="right-panel" style="display:none;">
+    <div class="hud">
+      <div class="hud-stat hud-score"><span class="hud-n" id="score2">0</span><div class="hud-l">점수</div></div>
+      <div class="hud-stat hud-level"><span class="hud-n" id="level2">1</span><div class="hud-l">레벨</div></div>
+      <div class="hud-stat hud-shots"><span class="hud-n" id="shots2">30</span><div class="hud-l">남은 발수</div></div>
+    </div>
+    <div class="shooter-area" style="flex-direction:column;align-items:flex-start;gap:10px;">
+      <div class="next-label" style="font-size:11px;font-weight:900;color:var(--dim2);">다음 버블</div>
+      <div class="bubble-preview" id="next-preview2"></div>
+      <div class="shoot-hint" style="font-size:11px;">마우스 클릭으로 발사!</div>
+    </div>
+  </div>
+</div>
+
+<!-- 결과 오버레이 -->
+<div class="overlay" id="overlay">
+  <div class="result-card">
+    <span class="r-emoji" id="r-emoji">🎉</span>
+    <div class="r-title"  id="r-title">클리어!</div>
+    <span class="r-score" id="r-score">0</span>
+    <span class="r-coin"  id="r-coin"></span>
+    <button class="r-btn" onclick="resetGame()">다시하기!</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   버블 슈터 게임 로직
+═══════════════════════════════════════ */
+
+// 캔디 갤럭시 버블 색상 팔레트
+const COLORS = ['#FF85A1','#87CEEB','#5EDFCA','#FFE97F','#C4B5FF','#FFB07C'];
+// 각 색상의 진한 버전 (그라디언트 용)
+const COLORS_D = ['#FF4D8D','#4DA8D0','#3CBBA8','#FFCC00','#9F89FF','#E8903A'];
+
+const R = 18; // bubble radius
+const COLS = 10;
+let ROWS_VISIBLE = 10;
+let W, H;
+let grid = [];
+let shooter = { angle: -Math.PI/2, color: null, nextColor: null };
+let bullet = null;
+let score = 0, level = 1, shots = 30;
+let coins = (() => {
+  try { const s = localStorage.getItem('mungyi_town_save'); return s ? JSON.parse(s).coins || 100 : 100; } catch(e) { return 100; }
+})();
+let gameActive = true;
+let particles = [];
+
+const canvas = document.getElementById('game-canvas');
+const ctx    = canvas.getContext('2d');
+
+// PC 패널 표시
+function handleLayout() {
+  const isPC = window.innerWidth >= 900;
+  const rp = document.querySelector('.right-panel');
+  if (rp) rp.style.display = isPC ? 'flex' : 'none';
+}
+
+function resize() {
+  const isPC = window.innerWidth >= 900;
+  if (isPC) {
+    const availW = Math.min(window.innerWidth - 320, 700);
+    const availH = window.innerHeight - 100;
+    W = Math.min(availW, availH * 0.7);
+    H = W * 1.4;
+  } else {
+    const wrap = document.querySelector('.game-wrap');
+    W = Math.min((wrap ? wrap.offsetWidth : window.innerWidth) - 16, 400);
+    const shooterH = 70, hudH = 100, headerH = 60;
+    H = Math.min(window.innerHeight - shooterH - hudH - headerH, 520);
+  }
+  W = Math.max(280, Math.round(W));
+  H = Math.max(360, Math.round(H));
+  canvas.width = W; canvas.height = H;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+}
+
+window.addEventListener('resize', () => { resize(); handleLayout(); initGrid(); });
+
+function randomColor(limited) {
+  const pool = limited ? COLORS.slice(0, Math.min(3 + level, COLORS.length)) : COLORS;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function initGrid() {
+  grid = [];
+  const startRows = 4 + level;
+  for (let r = 0; r < startRows; r++) {
+    grid[r] = [];
+    const len = COLS - (r % 2 === 1 ? 1 : 0);
+    for (let c = 0; c < len; c++) {
+      grid[r][c] = Math.random() < 0.85 ? randomColor(true) : null;
+    }
+  }
+  for (let r = startRows; r < ROWS_VISIBLE + 2; r++) grid[r] = Array(COLS).fill(null);
+}
+
+function bubblePos(r, c) {
+  const offset = r % 2 === 1 ? R : 0;
+  const startX = (W - (COLS * R * 2 - R)) / 2;
+  return { x: startX + c * R * 2 + R + offset, y: r * R * 1.73 + R + 4 };
+}
+
+function colorIndex(color) { return COLORS.indexOf(color); }
+
+function drawBubble(x, y, color, alpha = 1, scale = 1) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y); ctx.scale(scale, scale);
+
+  const ci = colorIndex(color);
+  const darkCol = ci >= 0 ? COLORS_D[ci] : color;
+
+  // Shadow
+  ctx.beginPath(); ctx.arc(2, 3, R - 1, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fill();
+
+  // Body gradient (radial, glossy)
+  const grad = ctx.createRadialGradient(-R * .32, -R * .32, R * .06, 0, 0, R - 1);
+  grad.addColorStop(0, '#ffffff');
+  grad.addColorStop(0.2, color + 'ee');
+  grad.addColorStop(0.7, color);
+  grad.addColorStop(1, darkCol + 'cc');
+  ctx.beginPath(); ctx.arc(0, 0, R - 1, 0, Math.PI * 2);
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Rim
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(0, 0, R - 1.5, 0, Math.PI * 2); ctx.stroke();
+
+  // Specular highlight
+  ctx.beginPath(); ctx.ellipse(-R * .22, -R * .25, R * .22, R * .16, -0.4, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fill();
+
+  ctx.restore();
+}
+
+function draw() {
+  // Background
+  ctx.fillStyle = '#0a061a';
+  ctx.beginPath(); ctx.roundRect(0, 0, W, H, 20); ctx.fill();
+
+  // Subtle dot grid
+  ctx.fillStyle = 'rgba(196,181,255,0.03)';
+  for (let r = 0; r < ROWS_VISIBLE; r++) for (let c = 0; c < COLS; c++) {
+    const p = bubblePos(r, c);
+    if (p.x > 0 && p.x < W) { ctx.beginPath(); ctx.arc(p.x, p.y, R - 1, 0, Math.PI * 2); ctx.fill(); }
+  }
+
+  // Grid bubbles
+  for (let r = 0; r < grid.length; r++) {
+    if (!grid[r]) continue;
+    for (let c = 0; c < grid[r].length; c++) {
+      if (grid[r][c]) {
+        const p = bubblePos(r, c);
+        if (p.y < H - 60) drawBubble(p.x, p.y, grid[r][c]);
+      }
+    }
+  }
+
+  // Particles
+  particles.forEach(p => {
+    drawBubble(p.x, p.y, p.color, p.life / 30, p.scale);
+    p.x += p.vx; p.y += p.vy; p.vy += 0.35;
+    p.life--; p.scale *= 0.94;
+  });
+  particles = particles.filter(p => p.life > 0);
+
+  // Bullet
+  if (bullet) drawBubble(bullet.x, bullet.y, bullet.color);
+
+  // Aim line (dashed)
+  if (!bullet && gameActive) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 8]);
+    ctx.beginPath();
+    ctx.moveTo(W / 2, H - 30);
+    ctx.lineTo(W / 2 + Math.cos(shooter.angle) * 120, H - 30 + Math.sin(shooter.angle) * 120);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Shooter base bubble
+  drawBubble(W / 2, H - 30, shooter.color || COLORS[0]);
+
+  // Danger line
+  const dangerY = H - 80;
+  ctx.strokeStyle = 'rgba(255,85,161,0.3)'; ctx.lineWidth = 1;
+  ctx.setLineDash([5, 7]);
+  ctx.beginPath(); ctx.moveTo(0, dangerY); ctx.lineTo(W, dangerY); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function getNeighbors(r, c) {
+  const isOdd = r % 2 === 1;
+  const dirs = isOdd
+    ? [[-1,0],[-1,1],[0,-1],[0,1],[1,0],[1,1]]
+    : [[-1,-1],[-1,0],[0,-1],[0,1],[1,-1],[1,0]];
+  return dirs.map(([dr,dc]) => [r+dr, c+dc])
+    .filter(([nr,nc]) => nr>=0 && nr<grid.length && nc>=0 && nc<(grid[nr]||[]).length);
+}
+
+function findConnected(r, c, color) {
+  const visited = new Set(), queue = [[r,c]];
+  while (queue.length) {
+    const [cr,cc] = queue.shift();
+    const key = cr+','+cc;
+    if (visited.has(key)) continue;
+    visited.add(key);
+    getNeighbors(cr,cc).forEach(([nr,nc]) => {
+      if (grid[nr]&&grid[nr][nc]===color&&!visited.has(nr+','+nc)) queue.push([nr,nc]);
+    });
+  }
+  return [...visited].map(k => k.split(',').map(Number));
+}
+
+function findFloating() {
+  const connected = new Set();
+  const queue = [];
+  for (let c = 0; c < COLS; c++) { if (grid[0]&&grid[0][c]) queue.push([0,c]); }
+  while (queue.length) {
+    const [r,c] = queue.shift();
+    const key = r+','+c;
+    if (connected.has(key)) continue;
+    connected.add(key);
+    getNeighbors(r,c).forEach(([nr,nc]) => {
+      if (grid[nr]&&grid[nr][nc]&&!connected.has(nr+','+nc)) queue.push([nr,nc]);
+    });
+  }
+  const floating = [];
+  for (let r = 0; r < grid.length; r++)
+    for (let c = 0; c < (grid[r]||[]).length; c++)
+      if (grid[r][c]&&!connected.has(r+','+c)) floating.push([r,c]);
+  return floating;
+}
+
+function snapBullet() {
+  let bestDist = Infinity, bestR = -1, bestC = -1;
+  for (let r = 0; r < grid.length; r++) {
+    if (!grid[r]) continue;
+    for (let c = 0; c < grid[r].length; c++) {
+      if (grid[r][c]) continue;
+      const p = bubblePos(r,c);
+      const d = Math.hypot(bullet.x-p.x, bullet.y-p.y);
+      if (d < R*2.2 && d < bestDist) { bestDist=d; bestR=r; bestC=c; }
+    }
+  }
+  if (bestR < 0) {
+    grid.unshift(Array(COLS).fill(null));
+    const c = Math.max(0, Math.min(COLS-1, Math.round((bullet.x-(W-(COLS*R*2-R))/2-R)/(R*2))));
+    grid[0][c] = bullet.color; bestR = 0; bestC = c;
+  } else {
+    grid[bestR][bestC] = bullet.color;
+  }
+
+  // Match check
+  const matched = findConnected(bestR, bestC, bullet.color);
+  if (matched.length >= 3) {
+    matched.forEach(([r,c]) => {
+      const p = bubblePos(r,c);
+      for (let i = 0; i < 6; i++)
+        particles.push({x:p.x, y:p.y, vx:(Math.random()-.5)*6, vy:-Math.random()*6, life:30, color:grid[r][c], scale:1});
+      grid[r][c] = null;
+    });
+    score += matched.length * 10 * (1 + Math.floor(matched.length / 3));
+
+    const floating = findFloating();
+    floating.forEach(([r,c]) => {
+      const p = bubblePos(r,c);
+      for (let i = 0; i < 3; i++)
+        particles.push({x:p.x, y:p.y, vx:(Math.random()-.5)*3, vy:-Math.random()*3, life:22, color:grid[r][c], scale:.8});
+      score += 15; grid[r][c] = null;
+    });
+    updateHUD();
+  }
+
+  // Danger check
+  for (let r = 0; r < grid.length; r++) {
+    const p = bubblePos(r,0);
+    if (p.y > H-80 && grid[r] && grid[r].some(c => c)) { endGame(false); return; }
+  }
+
+  // Win check
+  if (grid.flat().every(c => !c)) { nextLevel(); return; }
+
+  bullet = null;
+  shooter.color = shooter.nextColor;
+  shooter.nextColor = randomColor(true);
+  updateNextPreview();
+  shots--;
+  if (shots % 8 === 0 && shots > 0) dropOneRow();
+  if (shots <= 0) endGame(false);
+  updateHUD();
+}
+
+function dropOneRow() {
+  const len = COLS - (grid.length % 2 === 1 ? 1 : 0);
+  const newRow = Array.from({length:len}, () => Math.random() < .28 ? randomColor(true) : null);
+  grid.unshift(newRow);
+  for (let r = 0; r < grid.length; r++) {
+    const p = bubblePos(r,0);
+    if (p.y > H-90 && grid[r] && grid[r].some(c => c)) { endGame(false); return; }
+  }
+}
+
+function nextLevel() {
+  level++; shots = 30; score += 200;
+  initGrid(); updateHUD();
+}
+
+function updateHUD() {
+  ['score','level','shots'].forEach(id => {
+    const v = id==='score' ? score : id==='level' ? level : shots;
+    const el = document.getElementById(id), el2 = document.getElementById(id+'2');
+    if (el)  el.textContent  = v;
+    if (el2) el2.textContent = v;
+  });
+}
+
+function updateNextPreview() {
+  [document.getElementById('next-preview'), document.getElementById('next-preview2')]
+    .filter(Boolean).forEach(el => { el.style.background = shooter.nextColor; el.style.boxShadow = `0 0 14px ${shooter.nextColor}88`; });
+}
+
+function shoot(mx, my) {
+  if (!gameActive || bullet) return;
+  const angle = Math.atan2(my - (H-30), mx - W/2);
+  const clamped = Math.max(-Math.PI+0.18, Math.min(-0.18, angle));
+  shooter.angle = clamped;
+  bullet = { x:W/2, y:H-30, color:shooter.color, vx:Math.cos(clamped)*13, vy:Math.sin(clamped)*13 };
+}
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  shoot((e.clientX-rect.left)*(W/rect.width), (e.clientY-rect.top)*(H/rect.height));
+});
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  shoot((e.changedTouches[0].clientX-rect.left)*(W/rect.width), (e.changedTouches[0].clientY-rect.top)*(H/rect.height));
+}, { passive:false });
+
+function endGame(won) {
+  gameActive = false;
+  if (typeof AdManager !== 'undefined') {
+    AdManager.showReward(
+      () => { shots = 10; gameActive = true; },
+      () => showResult(won)
+    );
+  } else { showResult(won); }
+}
+
+function showResult(won) {
+  const reward = Math.floor(score / 20);
+  coins += reward;
+  townAddCoins(reward); townBoostMungyi('happy', 6); townRecordGame();
+  document.getElementById('coins').textContent = coins;
+  document.getElementById('r-emoji').textContent = won ? '🎉' : '😢';
+  document.getElementById('r-title').textContent = won ? '클리어!' : '게임 오버';
+  document.getElementById('r-score').textContent = score + '점';
+  document.getElementById('r-coin').textContent  = '+' + reward + '🪙 획득!';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function resetGame() {
+  document.getElementById('overlay').classList.remove('show');
+  score=0; level=1; shots=30; gameActive=true; particles=[]; bullet=null;
+  shooter.color = randomColor(true); shooter.nextColor = randomColor(true);
+  updateNextPreview(); initGrid(); updateHUD();
+}
+
+function loop() {
+  if (bullet) {
+    bullet.x += bullet.vx; bullet.y += bullet.vy;
+    if (bullet.x < R)   { bullet.x = R;   bullet.vx *= -1; }
+    if (bullet.x > W-R) { bullet.x = W-R; bullet.vx *= -1; }
+    let hit = bullet.y < R + 4;
+    if (!hit) {
+      for (let r = 0; r < grid.length && !hit; r++)
+        for (let c = 0; c < (grid[r]||[]).length && !hit; c++)
+          if (grid[r][c]) {
+            const p = bubblePos(r,c);
+            if (Math.hypot(bullet.x-p.x, bullet.y-p.y) < R*1.9) hit = true;
+          }
+    }
+    if (hit) snapBullet();
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ── 저장소 연동 ──
+const _SK = 'mungyi_town_save';
+function _load() {
+  try { const s = localStorage.getItem(_SK); return s ? JSON.parse(s) : {coins:100,items:{},mungyi:{},stats:{}}; }
+  catch(e) { return {coins:100,items:{},mungyi:{},stats:{}}; }
+}
+function _save(s) { try { localStorage.setItem(_SK, JSON.stringify(s)); } catch(e) {} }
+function townAddCoins(n)       { const s=_load(); s.coins=Math.max(0,(s.coins||0)+n); _save(s); }
+function townBoostMungyi(t,n)  { const s=_load(); if(s.mungyi){s.mungyi[t]=Math.min(100,(s.mungyi[t]||0)+n);_save(s);} }
+function townRecordGame()      { const s=_load(); s.stats=s.stats||{}; s.stats.totalGamesPlayed=(s.stats.totalGamesPlayed||0)+1; _save(s); }
+
+// 초기화
+resize(); handleLayout();
+window.addEventListener('resize', () => { resize(); handleLayout(); initGrid(); });
+shooter.color = randomColor(true); shooter.nextColor = randomColor(true);
+updateNextPreview(); initGrid();
+document.getElementById('coins').textContent = coins;
+loop();
+</script>
+</body>
+</html>
