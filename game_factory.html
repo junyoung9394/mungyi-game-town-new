@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>뭉이 공장 ⚙️</title>
+<meta name="theme-color" content="#FF85A1">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Jua&display=swap" rel="stylesheet">
+<script src="ad_manager.js" onerror="console.log('ad_manager not found')"></script>
+<script src="firebase_ranking.js" onerror="console.log('firebase_ranking not found')"></script>
+<style>
+:root {
+  --bg:#0c0820; --surface:rgba(255,255,255,0.07); --border:rgba(255,255,255,0.13);
+  --pink:#FF85A1; --mint:#5EDFCA; --lav:#C4B5FF; --peach:#FFB07C; --yellow:#FFE97F;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:#fff;font-family:'Nunito',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 20% 50%,rgba(94,223,202,0.1) 0%,transparent 50%),
+             radial-gradient(ellipse at 80% 50%,rgba(196,181,255,0.08) 0%,transparent 50%);
+  pointer-events:none;z-index:0;
+}
+#home-fab{
+  position:fixed;top:12px;left:12px;z-index:999;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:50%;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;text-decoration:none;
+  backdrop-filter:blur(10px);transition:transform 0.2s;
+}
+#home-fab:hover{transform:scale(1.1);}
+header{
+  position:relative;z-index:1;
+  text-align:center;padding:16px 20px 12px;
+  background:rgba(255,255,255,0.04);
+  border-bottom:1px solid var(--border);
+}
+header h1{font-family:'Jua',sans-serif;font-size:1.6rem;color:var(--mint);}
+.coin-display{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,224,127,0.12);border:1px solid rgba(255,224,127,0.3);
+  border-radius:20px;padding:6px 14px;margin-top:8px;font-size:0.95rem;font-weight:700;color:var(--yellow);
+}
+main{position:relative;z-index:1;padding:16px;max-width:700px;margin:0 auto;}
+.section-title{font-family:'Jua',sans-serif;font-size:1.1rem;color:var(--lav);margin:14px 0 10px;display:flex;align-items:center;gap:6px;}
+.resources-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.resource-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:14px;backdrop-filter:blur(10px);text-align:center;
+}
+.resource-icon{font-size:2.2rem;margin-bottom:6px;}
+.resource-name{font-size:0.8rem;color:rgba(255,255,255,0.5);margin-bottom:4px;}
+.resource-count{font-family:'Jua',sans-serif;font-size:1.4rem;color:var(--mint);}
+.resource-rate{font-size:0.7rem;color:rgba(255,255,255,0.35);margin-top:2px;}
+.sell-btn{
+  background:rgba(255,224,127,0.12);border:1px solid rgba(255,224,127,0.3);
+  color:var(--yellow);border-radius:8px;padding:4px 10px;font-size:0.72rem;
+  cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;
+  margin-top:8px;transition:all 0.2s;
+}
+.sell-btn:hover{background:rgba(255,224,127,0.22);}
+.line-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:14px;backdrop-filter:blur(10px);margin-bottom:10px;
+}
+.line-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.line-icon{font-size:1.8rem;}
+.line-title{flex:1;}
+.line-name{font-weight:700;font-size:0.95rem;}
+.line-desc{font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:2px;}
+.line-lv{font-size:0.72rem;color:var(--lav);}
+.progress-wrap{margin-bottom:10px;}
+.progress-label{display:flex;justify-content:space-between;font-size:0.7rem;color:rgba(255,255,255,0.45);margin-bottom:4px;}
+.progress-bar{background:rgba(255,255,255,0.07);border-radius:10px;height:10px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:10px;transition:width 0.3s linear;}
+.fill-gear{background:linear-gradient(90deg,var(--mint),#3bb5a3);}
+.fill-battery{background:linear-gradient(90deg,var(--lav),#9b87e8);}
+.fill-bulb{background:linear-gradient(90deg,var(--yellow),var(--peach));}
+.fill-rocket{background:linear-gradient(90deg,var(--pink),#e85a7a);}
+.line-actions{display:flex;gap:8px;}
+.start-btn{
+  flex:1;padding:8px;border:none;border-radius:10px;
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:0.82rem;
+  cursor:pointer;transition:all 0.2s;
+}
+.btn-start{background:linear-gradient(135deg,var(--mint),#3bb5a3);color:#fff;}
+.btn-running{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.35);cursor:not-allowed;}
+.btn-done{background:linear-gradient(135deg,var(--yellow),var(--peach));color:#0c0820;animation:pulse-btn 0.7s ease-in-out infinite;}
+@keyframes pulse-btn{0%,100%{transform:scale(1);}50%{transform:scale(1.02);}}
+.upg-btn{
+  background:rgba(196,181,255,0.12);border:1px solid rgba(196,181,255,0.3);
+  color:var(--lav);border-radius:10px;padding:8px 12px;font-size:0.78rem;
+  cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;transition:all 0.2s;white-space:nowrap;
+}
+.upg-btn:hover{background:rgba(196,181,255,0.22);}
+.recipe-row{display:flex;align-items:center;gap:6px;font-size:0.75rem;color:rgba(255,255,255,0.45);margin-bottom:8px;flex-wrap:wrap;}
+.recipe-need{color:var(--peach);}
+.recipe-arrow{color:rgba(255,255,255,0.3);}
+.recipe-out{color:var(--mint);}
+.offline-notice{
+  background:rgba(255,176,124,0.12);border:1px solid rgba(255,176,124,0.3);
+  border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:0.85rem;color:var(--peach);
+  display:none;
+}
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:rgba(255,224,127,0.18);border:1px solid rgba(255,224,127,0.4);
+  border-radius:20px;padding:10px 22px;font-size:0.9rem;font-weight:700;color:var(--yellow);
+  backdrop-filter:blur(12px);z-index:999;pointer-events:none;
+  display:none;
+}
+</style>
+</head>
+<body>
+<a href="index.html" id="home-fab">🏠</a>
+
+<header>
+  <h1>⚙️ 뭉이 공장</h1>
+  <div class="coin-display">🪙 <span id="coin-count">0</span></div>
+</header>
+
+<main>
+  <div class="offline-notice" id="offline-notice"></div>
+
+  <div class="section-title">📦 보유 자원</div>
+  <div class="resources-grid" id="resources-grid"></div>
+
+  <div class="section-title">🏭 생산 라인</div>
+  <div id="lines-container"></div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SK = 'mungyi_town_save';
+const FACTORY_KEY = 'mungyi_factory_save';
+
+function loadSave() { try { return JSON.parse(localStorage.getItem(SK)) || {}; } catch { return {}; } }
+function addCoins(n) {
+  const s = loadSave(); s.coins = (s.coins || 100) + n;
+  localStorage.setItem(SK, JSON.stringify(s));
+  document.getElementById('coin-count').textContent = (s.coins || 0).toLocaleString();
+}
+function getCoins() { return loadSave().coins || 100; }
+function spendCoins(n) {
+  const s = loadSave();
+  if ((s.coins || 100) < n) return false;
+  s.coins = (s.coins || 100) - n;
+  localStorage.setItem(SK, JSON.stringify(s));
+  document.getElementById('coin-count').textContent = (s.coins || 0).toLocaleString();
+  return true;
+}
+
+function loadFactory() { try { return JSON.parse(localStorage.getItem(FACTORY_KEY)) || {}; } catch { return {}; } }
+function saveFactory() { localStorage.setItem(FACTORY_KEY, JSON.stringify(state)); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._t); t._t = setTimeout(() => t.style.display = 'none', 2000);
+}
+
+const RESOURCES = [
+  { id:'gear',    emoji:'⚙️', name:'기어',  sellRate:2,  color:'var(--mint)' },
+  { id:'battery', emoji:'🔋', name:'배터리',sellRate:8,  color:'var(--lav)'  },
+  { id:'bulb',    emoji:'💡', name:'전구',  sellRate:30, color:'var(--yellow)'},
+  { id:'rocket',  emoji:'🚀', name:'로켓',  sellRate:120,color:'var(--pink)'  },
+];
+
+const LINES = [
+  {
+    id:'gear_line', emoji:'⚙️', name:'기어 라인',
+    desc:'원자재로 기어 생산',
+    output:'gear', outputAmt:3,
+    needs:[],
+    baseTime:8, upgCost:40, fillClass:'fill-gear'
+  },
+  {
+    id:'battery_line', emoji:'🔋', name:'배터리 라인',
+    desc:'기어 5개 → 배터리',
+    output:'battery', outputAmt:2,
+    needs:[{id:'gear', amt:5}],
+    baseTime:15, upgCost:80, fillClass:'fill-battery'
+  },
+  {
+    id:'bulb_line', emoji:'💡', name:'전구 라인',
+    desc:'배터리 3개 → 전구',
+    output:'bulb', outputAmt:2,
+    needs:[{id:'battery', amt:3}],
+    baseTime:25, upgCost:150, fillClass:'fill-bulb'
+  },
+  {
+    id:'rocket_line', emoji:'🚀', name:'로켓 라인',
+    desc:'기어10 + 배터리5 + 전구2 → 로켓',
+    output:'rocket', outputAmt:1,
+    needs:[{id:'gear',amt:10},{id:'battery',amt:5},{id:'bulb',amt:2}],
+    baseTime:60, upgCost:400, fillClass:'fill-rocket'
+  },
+];
+
+let state = {
+  resources: { gear:0, battery:0, bulb:0, rocket:0 },
+  lines: {},
+  lastVisit: Date.now(),
+  ...loadFactory()
+};
+if (!state.resources) state.resources = { gear:0, battery:0, bulb:0, rocket:0 };
+
+LINES.forEach(l => {
+  if (!state.lines[l.id]) state.lines[l.id] = { level:1, startTime:null };
+});
+
+function getLineTime(line) {
+  const lv = state.lines[line.id].level;
+  return Math.max(3, Math.round(line.baseTime / lv));
+}
+
+function canStart(line) {
+  return line.needs.every(n => state.resources[n.id] >= n.amt);
+}
+
+function startLine(lineId) {
+  const line = LINES.find(l => l.id === lineId);
+  const ls = state.lines[lineId];
+  if (ls.startTime) return;
+  if (!canStart(line)) { showToast('자원 부족!'); return; }
+  line.needs.forEach(n => { state.resources[n.id] -= n.amt; });
+  ls.startTime = Date.now();
+  saveFactory();
+  renderAll();
+}
+
+function collectLine(lineId) {
+  const line = LINES.find(l => l.id === lineId);
+  const ls = state.lines[lineId];
+  state.resources[line.output] = (state.resources[line.output] || 0) + line.outputAmt;
+  ls.startTime = null;
+  showToast(`${line.emoji} +${line.outputAmt} ${RESOURCES.find(r=>r.id===line.output).name}`);
+  saveFactory();
+  renderAll();
+}
+
+function upgradeLine(lineId) {
+  const line = LINES.find(l => l.id === lineId);
+  const ls = state.lines[lineId];
+  const cost = line.upgCost * ls.level;
+  if (!spendCoins(cost)) { showToast('코인 부족!'); return; }
+  ls.level++;
+  showToast(`${line.name} 업그레이드! Lv.${ls.level}`);
+  saveFactory();
+  renderAll();
+}
+
+function sellResource(resId) {
+  const res = RESOURCES.find(r => r.id === resId);
+  const amt = state.resources[resId] || 0;
+  if (amt === 0) { showToast('판매할 자원이 없습니다!'); return; }
+  const coins = amt * res.sellRate;
+  addCoins(coins);
+  state.resources[resId] = 0;
+  showToast(`${res.emoji} ${amt}개 판매! +${coins} 코인`);
+  saveFactory();
+  renderAll();
+}
+
+function renderResources() {
+  const grid = document.getElementById('resources-grid');
+  grid.innerHTML = '';
+  RESOURCES.forEach(res => {
+    const amt = state.resources[res.id] || 0;
+    const card = document.createElement('div');
+    card.className = 'resource-card';
+    card.innerHTML = `
+      <div class="resource-icon">${res.emoji}</div>
+      <div class="resource-name">${res.name}</div>
+      <div class="resource-count" style="color:${res.color}">${amt.toLocaleString()}</div>
+      <div class="resource-rate">판매가: ${res.sellRate} 코인/개</div>
+      <button class="sell-btn" onclick="sellResource('${res.id}')">전부 판매 (🪙${(amt*res.sellRate).toLocaleString()})</button>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderLines() {
+  const container = document.getElementById('lines-container');
+  container.innerHTML = '';
+  LINES.forEach(line => {
+    const ls = state.lines[line.id];
+    const lineTime = getLineTime(line);
+    let pct = 0;
+    let ready = false;
+    let remaining = lineTime;
+
+    if (ls.startTime) {
+      const elapsed = (Date.now() - ls.startTime) / 1000;
+      pct = Math.min(100, (elapsed / lineTime) * 100);
+      ready = pct >= 100;
+      remaining = ready ? 0 : Math.ceil(lineTime - elapsed);
+    }
+
+    const needsText = line.needs.length === 0 ? '원자재 없음' :
+      line.needs.map(n => `${RESOURCES.find(r=>r.id===n.id).emoji}${n.id} ×${n.amt}`).join(', ');
+
+    const recipeText = line.needs.length === 0
+      ? `<span class="recipe-out">→ ${RESOURCES.find(r=>r.id===line.output).emoji} ${line.outputAmt}개 생산</span>`
+      : `${line.needs.map(n=>`<span class="recipe-need">${RESOURCES.find(r=>r.id===n.id).emoji}${n.amt}</span>`).join(' + ')} <span class="recipe-arrow">→</span> <span class="recipe-out">${RESOURCES.find(r=>r.id===line.output).emoji}${line.outputAmt}</span>`;
+
+    let btnText, btnClass;
+    if (ready) { btnText = '수거하기 ✨'; btnClass = 'btn-done'; }
+    else if (ls.startTime) { btnText = `생산 중 ${remaining}s ⏳`; btnClass = 'btn-running'; }
+    else { btnText = canStart(line) ? '생산 시작 ▶' : '자원 부족 ⚠️'; btnClass = canStart(line) ? 'btn-start' : 'btn-running'; }
+
+    const card = document.createElement('div');
+    card.className = 'line-card';
+    card.innerHTML = `
+      <div class="line-header">
+        <div class="line-icon">${line.emoji}</div>
+        <div class="line-title">
+          <div class="line-name">${line.name}</div>
+          <div class="line-desc">${line.desc}</div>
+          <div class="line-lv">Lv.${ls.level} | ${lineTime}초/회</div>
+        </div>
+      </div>
+      <div class="recipe-row">${recipeText}</div>
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>${ls.startTime ? (ready ? '완료!' : '생산 중...') : '대기 중'}</span>
+          <span>${ls.startTime && !ready ? Math.round(pct) + '%' : ''}</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill ${line.fillClass}" id="pfill-${line.id}" style="width:${pct}%"></div></div>
+      </div>
+      <div class="line-actions">
+        <button class="start-btn ${btnClass}" onclick="${ready ? `collectLine('${line.id}')` : `startLine('${line.id}')`}">${btnText}</button>
+        <button class="upg-btn" onclick="upgradeLine('${line.id}')">⬆️ 🪙${line.upgCost * ls.level}</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderAll() {
+  renderResources();
+  renderLines();
+  document.getElementById('coin-count').textContent = getCoins().toLocaleString();
+}
+
+function checkOffline() {
+  const saved = loadFactory();
+  if (!saved.lastVisit) return;
+  const offlineSec = Math.min((Date.now() - saved.lastVisit) / 1000, 7200);
+  if (offlineSec < 30) return;
+
+  let totalCoins = 0;
+  LINES.forEach(line => {
+    const ls = saved.lines && saved.lines[line.id];
+    if (!ls) return;
+    const lineTime = Math.max(3, Math.round(line.baseTime / (ls.level || 1)));
+    const cycles = Math.floor(offlineSec / lineTime);
+    if (cycles > 0 && line.needs.length === 0) {
+      state.resources[line.output] = (state.resources[line.output] || 0) + cycles * line.outputAmt;
+      totalCoins += cycles * RESOURCES.find(r=>r.id===line.output).sellRate * line.outputAmt;
+    }
+  });
+
+  if (totalCoins > 0 || offlineSec > 60) {
+    const notice = document.getElementById('offline-notice');
+    notice.style.display = 'block';
+    const mins = Math.round(offlineSec / 60);
+    notice.textContent = `🌙 ${mins}분 동안 공장이 자동 생산했습니다! 자원을 확인하세요.`;
+    setTimeout(() => notice.style.display = 'none', 5000);
+  }
+}
+
+// Update progress bars every second
+setInterval(() => {
+  LINES.forEach(line => {
+    const ls = state.lines[line.id];
+    if (!ls.startTime) return;
+    const lineTime = getLineTime(line);
+    const elapsed = (Date.now() - ls.startTime) / 1000;
+    const pct = Math.min(100, (elapsed / lineTime) * 100);
+    const fill = document.getElementById('pfill-' + line.id);
+    if (fill) fill.style.width = pct + '%';
+    if (pct >= 100) { renderLines(); }
+  });
+}, 500);
+
+function init() {
+  const saved = loadFactory();
+  if (saved.resources) Object.assign(state.resources, saved.resources);
+  if (saved.lines) Object.assign(state.lines, saved.lines);
+  state.lastVisit = saved.lastVisit;
+  checkOffline();
+  state.lastVisit = Date.now();
+  renderAll();
+  saveFactory();
+
+  setInterval(() => {
+    state.lastVisit = Date.now();
+    saveFactory();
+  }, 10000);
+}
+
+init();
+</script>
+</body>
+</html>

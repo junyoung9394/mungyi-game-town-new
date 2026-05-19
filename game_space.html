@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우주 탐험 🚀</title>
+<meta name="theme-color" content="#FF85A1">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Jua&display=swap" rel="stylesheet">
+<script src="ad_manager.js" onerror="console.log('ad_manager not found')"></script>
+<script src="firebase_ranking.js" onerror="console.log('firebase_ranking not found')"></script>
+<style>
+:root {
+  --bg:#0c0820; --surface:rgba(255,255,255,0.07); --border:rgba(255,255,255,0.13);
+  --pink:#FF85A1; --mint:#5EDFCA; --lav:#C4B5FF; --peach:#FFB07C; --yellow:#FFE97F;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:#fff;font-family:'Nunito',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+/* 우주 별 배경 */
+.stars-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.star{
+  position:absolute;border-radius:50%;background:#fff;
+  animation:twinkle var(--dur,3s) ease-in-out infinite var(--delay,0s);
+}
+@keyframes twinkle{
+  0%,100%{opacity:var(--min-op,0.2);transform:scale(1);}
+  50%{opacity:1;transform:scale(1.3);}
+}
+
+#home-fab{
+  position:fixed;top:12px;left:12px;z-index:999;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:50%;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;text-decoration:none;
+  backdrop-filter:blur(10px);transition:transform 0.2s;
+}
+#home-fab:hover{transform:scale(1.1);}
+
+header{
+  position:relative;z-index:1;
+  text-align:center;padding:16px 20px 12px;
+  background:rgba(12,8,32,0.6);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(10px);
+}
+header h1{font-family:'Jua',sans-serif;font-size:1.6rem;color:var(--lav);}
+.header-stats{display:flex;justify-content:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
+.stat-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  border-radius:20px;padding:5px 12px;font-size:0.8rem;font-weight:700;
+}
+.pill-coin{background:rgba(255,224,127,0.12);border:1px solid rgba(255,224,127,0.3);color:var(--yellow);}
+.pill-star{background:rgba(196,181,255,0.12);border:1px solid rgba(196,181,255,0.3);color:var(--lav);}
+
+main{position:relative;z-index:1;padding:16px;max-width:680px;margin:0 auto;}
+
+.section-title{font-family:'Jua',sans-serif;font-size:1.1rem;color:var(--lav);margin:14px 0 10px;display:flex;align-items:center;gap:6px;}
+
+/* 행성 카드 */
+.planet-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:18px;padding:16px;backdrop-filter:blur(10px);
+  margin-bottom:10px;transition:all 0.2s;
+  position:relative;overflow:hidden;
+}
+.planet-card.active{
+  border-color:rgba(196,181,255,0.5);
+  box-shadow:0 0 20px rgba(196,181,255,0.15);
+}
+.planet-card.active::before{
+  content:'🔭 탐험 중';position:absolute;top:10px;right:12px;
+  font-size:0.7rem;color:var(--lav);
+  background:rgba(196,181,255,0.15);border:1px solid rgba(196,181,255,0.3);
+  border-radius:8px;padding:2px 8px;
+}
+.planet-card.locked{opacity:0.45;}
+.planet-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.planet-emoji{font-size:2.8rem;}
+.planet-info{flex:1;}
+.planet-name{font-weight:700;font-size:1.05rem;}
+.planet-desc{font-size:0.74rem;color:rgba(255,255,255,0.45);margin-top:2px;}
+.planet-reward{font-size:0.74rem;color:var(--yellow);margin-top:3px;}
+
+.progress-wrap{margin-bottom:10px;}
+.progress-label{display:flex;justify-content:space-between;font-size:0.7rem;color:rgba(255,255,255,0.45);margin-bottom:4px;}
+.progress-bar{background:rgba(255,255,255,0.07);border-radius:10px;height:10px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:10px;transition:width 0.5s linear;background:linear-gradient(90deg,var(--lav),var(--pink));}
+
+.explore-btn{
+  width:100%;padding:9px;border:none;border-radius:12px;
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:0.88rem;
+  cursor:pointer;transition:all 0.2s;
+}
+.btn-explore{background:linear-gradient(135deg,var(--lav),#9b87e8);color:#fff;}
+.btn-exploring{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.3);cursor:not-allowed;}
+.btn-complete{background:linear-gradient(135deg,var(--yellow),var(--peach));color:#0c0820;animation:pulse-btn 0.8s ease-in-out infinite;}
+@keyframes pulse-btn{0%,100%{transform:scale(1);}50%{transform:scale(1.02);}}
+.btn-locked{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.2);cursor:not-allowed;}
+
+/* 업그레이드 섹션 */
+.upg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.upg-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:14px;backdrop-filter:blur(10px);text-align:center;
+}
+.upg-icon{font-size:2rem;margin-bottom:6px;}
+.upg-name{font-weight:700;font-size:0.9rem;}
+.upg-lv{font-size:0.72rem;color:var(--lav);margin:4px 0;}
+.upg-btn{
+  background:rgba(196,181,255,0.12);border:1px solid rgba(196,181,255,0.3);
+  color:var(--lav);border-radius:10px;padding:6px 14px;font-size:0.78rem;
+  cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;
+  margin-top:6px;width:100%;transition:all 0.2s;
+}
+.upg-btn:hover{background:rgba(196,181,255,0.22);}
+
+.offline-notice{
+  background:rgba(255,176,124,0.12);border:1px solid rgba(255,176,124,0.3);
+  border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:0.85rem;color:var(--peach);
+  display:none;
+}
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:rgba(255,224,127,0.18);border:1px solid rgba(255,224,127,0.4);
+  border-radius:20px;padding:10px 22px;font-size:0.9rem;font-weight:700;color:var(--yellow);
+  backdrop-filter:blur(12px);z-index:999;pointer-events:none;display:none;
+}
+</style>
+</head>
+<body>
+
+<!-- 우주 별 배경 -->
+<div class="stars-bg" id="stars-bg"></div>
+
+<a href="index.html" id="home-fab">🏠</a>
+
+<header>
+  <h1>🚀 우주 탐험</h1>
+  <div class="header-stats">
+    <div class="stat-pill pill-coin">🪙 <span id="coin-count">0</span></div>
+    <div class="stat-pill pill-star">⭐ <span id="star-count">0</span></div>
+  </div>
+</header>
+
+<main>
+  <div class="offline-notice" id="offline-notice"></div>
+
+  <div class="section-title">🌌 행성 탐험</div>
+  <div id="planets-container"></div>
+
+  <div class="section-title">🛸 로켓 업그레이드</div>
+  <div class="upg-grid">
+    <div class="upg-card">
+      <div class="upg-icon">⚡</div>
+      <div class="upg-name">탐험 속도</div>
+      <div class="upg-lv">Lv.<span id="speed-lv">1</span></div>
+      <div style="font-size:0.7rem;color:rgba(255,255,255,0.35);" id="speed-val">속도 ×1</div>
+      <button class="upg-btn" onclick="upgradeRocket('speed')">⭐ <span id="speed-cost">5</span></button>
+    </div>
+    <div class="upg-card">
+      <div class="upg-icon">💰</div>
+      <div class="upg-name">코인 배율</div>
+      <div class="upg-lv">Lv.<span id="mult-lv">1</span></div>
+      <div style="font-size:0.7rem;color:rgba(255,255,255,0.35);" id="mult-val">코인 ×1</div>
+      <button class="upg-btn" onclick="upgradeRocket('mult')">⭐ <span id="mult-cost">8</span></button>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SK = 'mungyi_town_save';
+const SPACE_KEY = 'mungyi_space_save';
+
+function loadSave() { try { return JSON.parse(localStorage.getItem(SK)) || {}; } catch { return {}; } }
+function addCoins(n) {
+  const s = loadSave(); s.coins = (s.coins || 100) + n;
+  localStorage.setItem(SK, JSON.stringify(s));
+  document.getElementById('coin-count').textContent = (s.coins || 0).toLocaleString();
+}
+function getCoins() { return loadSave().coins || 100; }
+
+function loadSpace() { try { return JSON.parse(localStorage.getItem(SPACE_KEY)) || {}; } catch { return {}; } }
+function saveSpace() { localStorage.setItem(SPACE_KEY, JSON.stringify(state)); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._t); t._t = setTimeout(() => t.style.display = 'none', 2500);
+}
+
+const PLANETS = [
+  { id:'earth',  emoji:'🌍', name:'지구',  desc:'첫 번째 행성, 기초 탐험',    baseTime:15,  coinReward:5,  starReward:1,  unlockStars:0   },
+  { id:'moon',   emoji:'🌙', name:'달',    desc:'조용한 위성, 희귀 자원',     baseTime:30,  coinReward:15, starReward:3,  unlockStars:5   },
+  { id:'mars',   emoji:'♂️', name:'화성',  desc:'붉은 행성, 도전적인 환경',   baseTime:60,  coinReward:40, starReward:8,  unlockStars:15  },
+  { id:'saturn', emoji:'🪐', name:'토성',  desc:'고리의 행성, 엄청난 보물',   baseTime:120, coinReward:100,starReward:20, unlockStars:40  },
+  { id:'star',   emoji:'🌟', name:'별',    desc:'은하의 끝, 전설의 탐험지',   baseTime:240, coinReward:300,starReward:60, unlockStars:100 },
+];
+
+let state = {
+  stars: 0,
+  speedLv: 1,
+  multLv: 1,
+  planets: {},
+  lastVisit: Date.now(),
+  ...loadSpace()
+};
+
+PLANETS.forEach(p => {
+  if (!state.planets[p.id]) state.planets[p.id] = { exploring:null, completed:0 };
+});
+
+function getSpeedMult() { return 1 + (state.speedLv - 1) * 0.4; }
+function getCoinMult() { return 1 + (state.multLv - 1) * 0.5; }
+function getPlanetTime(planet) { return Math.max(5, Math.round(planet.baseTime / getSpeedMult())); }
+function isUnlocked(planet) { return state.stars >= planet.unlockStars; }
+
+function startExplore(planetId) {
+  const planet = PLANETS.find(p => p.id === planetId);
+  if (!isUnlocked(planet)) return;
+  const ps = state.planets[planetId];
+  if (ps.exploring) return;
+  ps.exploring = Date.now();
+  saveSpace();
+  renderPlanets();
+}
+
+function collectExplore(planetId) {
+  const planet = PLANETS.find(p => p.id === planetId);
+  const ps = state.planets[planetId];
+  const coins = Math.round(planet.coinReward * getCoinMult());
+  const stars = planet.starReward;
+  addCoins(coins);
+  state.stars += stars;
+  ps.completed++;
+  ps.exploring = null;
+  showToast(`${planet.emoji} 탐험 완료! 🪙+${coins} ⭐+${stars}`);
+  saveSpace();
+  renderAll();
+}
+
+function upgradeRocket(type) {
+  if (type === 'speed') {
+    const cost = 5 * state.speedLv;
+    if (state.stars < cost) { showToast('별이 부족합니다!'); return; }
+    state.stars -= cost;
+    state.speedLv++;
+    showToast(`탐험 속도 업그레이드! Lv.${state.speedLv}`);
+  } else {
+    const cost = 8 * state.multLv;
+    if (state.stars < cost) { showToast('별이 부족합니다!'); return; }
+    state.stars -= cost;
+    state.multLv++;
+    showToast(`코인 배율 업그레이드! Lv.${state.multLv}`);
+  }
+  saveSpace();
+  renderAll();
+}
+
+function renderPlanets() {
+  const container = document.getElementById('planets-container');
+  container.innerHTML = '';
+
+  PLANETS.forEach(planet => {
+    const ps = state.planets[planet.id];
+    const unlocked = isUnlocked(planet);
+    const planetTime = getPlanetTime(planet);
+    let pct = 0, ready = false, remaining = planetTime;
+
+    if (ps.exploring) {
+      const elapsed = (Date.now() - ps.exploring) / 1000;
+      pct = Math.min(100, (elapsed / planetTime) * 100);
+      ready = pct >= 100;
+      remaining = ready ? 0 : Math.ceil(planetTime - elapsed);
+    }
+
+    const isActive = ps.exploring && !ready;
+    const card = document.createElement('div');
+    card.className = 'planet-card' + (isActive ? ' active' : '') + (!unlocked ? ' locked' : '');
+
+    let btnText, btnClass, btnAction;
+    if (!unlocked) {
+      btnText = `🔒 잠금 해제: ⭐${planet.unlockStars}`;
+      btnClass = 'btn-locked'; btnAction = '';
+    } else if (ready) {
+      btnText = '🎉 탐험 완료! 수거하기';
+      btnClass = 'btn-complete'; btnAction = `collectExplore('${planet.id}')`;
+    } else if (ps.exploring) {
+      btnText = `🚀 탐험 중... ${remaining}s`;
+      btnClass = 'btn-exploring'; btnAction = '';
+    } else {
+      btnText = `🚀 탐험 시작 (${planetTime}초)`;
+      btnClass = 'btn-explore'; btnAction = `startExplore('${planet.id}')`;
+    }
+
+    card.innerHTML = `
+      <div class="planet-header">
+        <div class="planet-emoji">${planet.emoji}</div>
+        <div class="planet-info">
+          <div class="planet-name">${planet.name}</div>
+          <div class="planet-desc">${planet.desc}</div>
+          <div class="planet-reward">🪙 +${Math.round(planet.coinReward * getCoinMult())} | ⭐ +${planet.starReward} | 완료: ${ps.completed}회</div>
+        </div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>${ps.exploring ? (ready ? '완료!' : '탐험 진행 중...') : (unlocked ? '대기 중' : `⭐${planet.unlockStars} 필요`)}</span>
+          <span>${ps.exploring && !ready ? Math.round(pct) + '%' : ''}</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="pfill-${planet.id}" style="width:${pct}%"></div></div>
+      </div>
+      <button class="explore-btn ${btnClass}" ${btnAction ? `onclick="${btnAction}"` : 'disabled'}>${btnText}</button>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderUpgrades() {
+  document.getElementById('speed-lv').textContent = state.speedLv;
+  document.getElementById('speed-val').textContent = `속도 ×${getSpeedMult().toFixed(1)}`;
+  document.getElementById('speed-cost').textContent = 5 * state.speedLv;
+  document.getElementById('mult-lv').textContent = state.multLv;
+  document.getElementById('mult-val').textContent = `코인 ×${getCoinMult().toFixed(1)}`;
+  document.getElementById('mult-cost').textContent = 8 * state.multLv;
+  document.getElementById('star-count').textContent = state.stars.toLocaleString();
+  document.getElementById('coin-count').textContent = getCoins().toLocaleString();
+}
+
+function renderAll() {
+  renderPlanets();
+  renderUpgrades();
+}
+
+function checkOffline() {
+  const saved = loadSpace();
+  if (!saved.lastVisit) return;
+  const offlineSec = Math.min((Date.now() - saved.lastVisit) / 1000, 7200);
+  if (offlineSec < 30) return;
+
+  let totalCoins = 0, totalStars = 0, trips = 0;
+  PLANETS.forEach(planet => {
+    const ps = saved.planets && saved.planets[planet.id];
+    if (!ps || !ps.exploring) return;
+    const speedMult = 1 + ((saved.speedLv || 1) - 1) * 0.4;
+    const coinMult = 1 + ((saved.multLv || 1) - 1) * 0.5;
+    const pt = Math.max(5, Math.round(planet.baseTime / speedMult));
+    const elapsed = offlineSec + (saved.lastVisit - ps.exploring) / 1000;
+    const completions = Math.floor(elapsed / pt);
+    if (completions > 0) {
+      totalCoins += completions * Math.round(planet.coinReward * coinMult);
+      totalStars += completions * planet.starReward;
+      trips += completions;
+      if (state.planets[planet.id]) {
+        state.planets[planet.id].completed = (state.planets[planet.id].completed || 0) + completions;
+        state.planets[planet.id].exploring = null;
+      }
+    }
+  });
+
+  if (trips > 0) {
+    addCoins(totalCoins);
+    state.stars += totalStars;
+    const notice = document.getElementById('offline-notice');
+    notice.style.display = 'block';
+    const mins = Math.round(offlineSec / 60);
+    notice.textContent = `🌙 오프라인 ${mins}분: 탐험 ${trips}회 완료! 🪙+${totalCoins} ⭐+${totalStars}`;
+    setTimeout(() => notice.style.display = 'none', 5000);
+  }
+}
+
+// 별 생성
+function createStars() {
+  const bg = document.getElementById('stars-bg');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `
+      width:${size}px;height:${size}px;
+      left:${Math.random()*100}%;top:${Math.random()*100}%;
+      --dur:${2 + Math.random() * 4}s;
+      --delay:${-Math.random() * 4}s;
+      --min-op:${0.1 + Math.random() * 0.3};
+    `;
+    bg.appendChild(s);
+  }
+}
+
+// 타이머
+setInterval(() => {
+  PLANETS.forEach(planet => {
+    const ps = state.planets[planet.id];
+    if (!ps.exploring) return;
+    const pt = getPlanetTime(planet);
+    const elapsed = (Date.now() - ps.exploring) / 1000;
+    const pct = Math.min(100, (elapsed / pt) * 100);
+    const fill = document.getElementById('pfill-' + planet.id);
+    if (fill) fill.style.width = pct + '%';
+    if (pct >= 100) renderPlanets();
+  });
+  document.getElementById('coin-count').textContent = getCoins().toLocaleString();
+}, 500);
+
+function init() {
+  const saved = loadSpace();
+  if (saved.stars !== undefined) state.stars = saved.stars;
+  if (saved.speedLv) state.speedLv = saved.speedLv;
+  if (saved.multLv) state.multLv = saved.multLv;
+  if (saved.planets) {
+    PLANETS.forEach(p => {
+      if (saved.planets[p.id]) state.planets[p.id] = { ...state.planets[p.id], ...saved.planets[p.id] };
+    });
+  }
+  checkOffline();
+  state.lastVisit = Date.now();
+  createStars();
+  renderAll();
+  saveSpace();
+
+  setInterval(() => {
+    state.lastVisit = Date.now();
+    saveSpace();
+  }, 10000);
+}
+
+init();
+</script>
+</body>
+</html>

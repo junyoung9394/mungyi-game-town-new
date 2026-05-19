@@ -34,7 +34,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{font-family:'Nunito',sans-serif;background:var(--bg);display:flex;justify-content:center;min-height:100vh;}
-.app{width:100%;max-width:100%;min-height:100vh;background:linear-gradient(160deg,#110828 0%,#0c0820 60%,#160a30 100%);display:flex;flex-direction:column;position:relative;overflow:hidden;}
+.app{width:100%;max-width:100%;min-height:100vh;background:linear-gradient(160deg,#110828 0%,#0c0820 60%,#160a30 100%);display:flex;flex-direction:column;position:relative;overflow-y:auto;overflow-x:hidden;}
 
 .header{background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));border-bottom:1px solid var(--border);padding:14px 62px 14px 18px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:10;}
 .title{font-family:'Jua',sans-serif;font-size:20px;background:linear-gradient(135deg,var(--lavender),var(--mint));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
@@ -57,7 +57,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);display:flex;justify-c
 .diff-btn.active{background:linear-gradient(135deg,rgba(196,181,255,0.2),rgba(94,223,202,0.2));border-color:var(--lavender);color:white;}
 
 /* Card grid */
-.card-grid{display:grid;gap:8px;padding:0 16px 16px;flex:1;}
+.card-grid{display:grid;gap:6px;padding:0 12px 16px;}
 
 /* Card - 3D flip */
 .card{

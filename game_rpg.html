@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>뭉이용사 RPG ⚔️</title>
+<meta name="theme-color" content="#FF85A1">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Jua&display=swap" rel="stylesheet">
+<script src="ad_manager.js" onerror="console.log('ad_manager not found')"></script>
+<script src="firebase_ranking.js" onerror="console.log('firebase_ranking not found')"></script>
+<style>
+:root {
+  --bg:#0c0820; --surface:rgba(255,255,255,0.07); --border:rgba(255,255,255,0.13);
+  --pink:#FF85A1; --mint:#5EDFCA; --lav:#C4B5FF; --peach:#FFB07C; --yellow:#FFE97F;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:#fff;font-family:'Nunito',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 30% 30%,rgba(196,181,255,0.1) 0%,transparent 50%),
+             radial-gradient(ellipse at 70% 70%,rgba(255,133,161,0.1) 0%,transparent 50%);
+  pointer-events:none;z-index:0;
+}
+#home-fab{
+  position:fixed;top:12px;left:12px;z-index:999;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:50%;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;text-decoration:none;
+  backdrop-filter:blur(10px);transition:transform 0.2s;
+}
+#home-fab:hover{transform:scale(1.1);}
+header{
+  position:relative;z-index:1;
+  text-align:center;padding:16px 20px 12px;
+  background:rgba(255,255,255,0.04);
+  border-bottom:1px solid var(--border);
+}
+header h1{font-family:'Jua',sans-serif;font-size:1.6rem;color:var(--lav);}
+.header-stats{display:flex;justify-content:center;gap:12px;margin-top:8px;flex-wrap:wrap;}
+.stat-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  border-radius:20px;padding:5px 12px;font-size:0.8rem;font-weight:700;
+}
+.pill-coin{background:rgba(255,224,127,0.12);border:1px solid rgba(255,224,127,0.3);color:var(--yellow);}
+.pill-lv{background:rgba(196,181,255,0.12);border:1px solid rgba(196,181,255,0.3);color:var(--lav);}
+.pill-exp{background:rgba(94,223,202,0.12);border:1px solid rgba(94,223,202,0.3);color:var(--mint);}
+main{position:relative;z-index:1;padding:16px;max-width:600px;margin:0 auto;}
+.battle-arena{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:20px;backdrop-filter:blur(10px);
+  margin-bottom:14px;text-align:center;
+}
+.stage-label{font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:8px;}
+.monster-display{font-size:5rem;margin:8px 0;transition:transform 0.1s;}
+.monster-display.hit{animation:monster-hit 0.3s;}
+@keyframes monster-hit{0%{transform:translateX(0);}25%{transform:translateX(-12px);}75%{transform:translateX(12px);}100%{transform:translateX(0);}}
+.monster-name{font-family:'Jua',sans-serif;font-size:1.3rem;color:var(--pink);margin-bottom:10px;}
+.hp-wrap{margin:8px 0;}
+.hp-label{display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px;color:rgba(255,255,255,0.6);}
+.hp-bar{background:rgba(255,255,255,0.08);border-radius:10px;height:14px;overflow:hidden;}
+.hp-fill{height:100%;border-radius:10px;transition:width 0.3s;background:linear-gradient(90deg,#ff4d4d,#ff85a1);}
+.monster-reward{font-size:0.8rem;color:var(--yellow);margin-top:6px;}
+.players-section{margin-bottom:14px;}
+.section-title{font-family:'Jua',sans-serif;font-size:1rem;color:var(--lav);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.player-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:14px;backdrop-filter:blur(10px);margin-bottom:10px;
+}
+.player-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.player-emoji{font-size:2.4rem;}
+.player-info{flex:1;}
+.player-name{font-weight:700;font-size:1rem;}
+.player-stats{font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:2px;}
+.player-hp-wrap{margin-bottom:8px;}
+.player-hp-fill{background:linear-gradient(90deg,var(--mint),#3bb5a3);}
+.skills-row{display:flex;gap:8px;}
+.skill-btn{
+  flex:1;padding:9px 4px;border:none;border-radius:10px;
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:0.78rem;
+  cursor:pointer;transition:all 0.15s;
+}
+.skill-normal{background:linear-gradient(135deg,var(--lav),#9b87e8);color:#fff;}
+.skill-power{background:linear-gradient(135deg,var(--pink),#e85a7a);color:#fff;}
+.skill-heal{background:linear-gradient(135deg,var(--mint),#3bb5a3);color:#fff;}
+.skill-btn:hover{opacity:0.85;transform:scale(0.97);}
+.skill-btn:disabled{opacity:0.35;cursor:not-allowed;transform:none;}
+.cooldown-text{font-size:0.68rem;display:block;margin-top:1px;opacity:0.7;}
+.upgrade-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.upg-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:12px 8px;text-align:center;
+  backdrop-filter:blur(10px);
+}
+.upg-icon{font-size:1.6rem;margin-bottom:4px;}
+.upg-name{font-size:0.75rem;font-weight:700;}
+.upg-level{font-size:0.7rem;color:var(--lav);margin:2px 0;}
+.upg-btn{
+  background:rgba(196,181,255,0.15);border:1px solid rgba(196,181,255,0.3);
+  color:var(--lav);border-radius:8px;padding:5px 8px;font-size:0.7rem;
+  cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;
+  margin-top:6px;width:100%;transition:all 0.2s;
+}
+.upg-btn:hover{background:rgba(196,181,255,0.25);}
+.battle-log{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:12px;backdrop-filter:blur(10px);
+  height:100px;overflow-y:auto;font-size:0.78rem;color:rgba(255,255,255,0.6);
+}
+.battle-log p{margin-bottom:3px;}
+.log-dmg{color:var(--pink);}
+.log-heal{color:var(--mint);}
+.log-coin{color:var(--yellow);}
+.log-level{color:var(--lav);}
+.auto-toggle{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:10px 14px;margin-bottom:12px;
+  backdrop-filter:blur(10px);
+}
+.toggle-btn{
+  background:rgba(94,223,202,0.15);border:1px solid rgba(94,223,202,0.3);
+  color:var(--mint);border-radius:10px;padding:5px 14px;font-size:0.8rem;
+  cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;transition:all 0.2s;
+}
+.toggle-btn.active{background:rgba(94,223,202,0.3);}
+.offline-notice{
+  background:rgba(255,176,124,0.12);border:1px solid rgba(255,176,124,0.3);
+  border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:0.85rem;color:var(--peach);
+  display:none;
+}
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:rgba(255,224,127,0.18);border:1px solid rgba(255,224,127,0.4);
+  border-radius:20px;padding:10px 22px;font-size:0.9rem;font-weight:700;color:var(--yellow);
+  backdrop-filter:blur(12px);z-index:999;pointer-events:none;
+  animation:toast-in 0.3s ease;display:none;
+}
+@keyframes toast-in{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+</style>
+</head>
+<body>
+<a href="index.html" id="home-fab">🏠</a>
+
+<header>
+  <h1>⚔️ 뭉이용사 RPG</h1>
+  <div class="header-stats">
+    <div class="stat-pill pill-coin">🪙 <span id="coin-count">0</span></div>
+    <div class="stat-pill pill-lv">⭐ Lv.<span id="player-level">1</span></div>
+    <div class="stat-pill pill-exp">✨ <span id="exp-text">0/100</span> EXP</div>
+  </div>
+</header>
+
+<main>
+  <div class="offline-notice" id="offline-notice"></div>
+
+  <div class="battle-arena">
+    <div class="stage-label">스테이지 <span id="stage-num">1</span></div>
+    <div class="monster-display" id="monster-emoji">🐺</div>
+    <div class="monster-name" id="monster-name">늑대</div>
+    <div class="hp-wrap">
+      <div class="hp-label"><span id="monster-hp-text">HP</span><span id="monster-hp-num">100/100</span></div>
+      <div class="hp-bar"><div class="hp-fill" id="monster-hp-fill" style="width:100%"></div></div>
+    </div>
+    <div class="monster-reward" id="monster-reward">처치 시: 🪙10 + ✨20 EXP</div>
+  </div>
+
+  <div class="auto-toggle">
+    <span style="font-weight:700;font-size:0.9rem;">🤖 자동전투</span>
+    <button class="toggle-btn" id="auto-btn" onclick="toggleAuto()">시작</button>
+  </div>
+
+  <div class="players-section">
+    <div class="section-title">🧙 나의 용사</div>
+    <div class="player-card">
+      <div class="player-row">
+        <div class="player-emoji">🧑‍⚔️</div>
+        <div class="player-info">
+          <div class="player-name">뭉이 용사</div>
+          <div class="player-stats" id="player-stats-text">공격력: 10 | 최대HP: 100 | 스킬데미지: 25</div>
+        </div>
+      </div>
+      <div class="player-hp-wrap">
+        <div class="hp-label"><span>나의 HP</span><span id="player-hp-num">100/100</span></div>
+        <div class="hp-bar"><div class="hp-fill player-hp-fill" id="player-hp-fill" style="width:100%"></div></div>
+      </div>
+      <div class="skills-row">
+        <button class="skill-btn skill-normal" id="btn-normal" onclick="useSkill('normal')">⚔️ 일반공격<span class="cooldown-text">즉시</span></button>
+        <button class="skill-btn skill-power" id="btn-power" onclick="useSkill('power')">💥 스킬<span class="cooldown-text" id="cd-power">5초 쿨</span></button>
+        <button class="skill-btn skill-heal" id="btn-heal" onclick="useSkill('heal')">💚 힐<span class="cooldown-text" id="cd-heal">10초 쿨</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">⬆️ 스탯 업그레이드</div>
+  <div class="upgrade-grid">
+    <div class="upg-card">
+      <div class="upg-icon">⚔️</div>
+      <div class="upg-name">공격력</div>
+      <div class="upg-level">Lv.<span id="atk-lv">1</span></div>
+      <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);" id="atk-val">10</div>
+      <button class="upg-btn" onclick="upgradeStat('atk')">🪙<span id="atk-cost">50</span></button>
+    </div>
+    <div class="upg-card">
+      <div class="upg-icon">❤️</div>
+      <div class="upg-name">최대 HP</div>
+      <div class="upg-level">Lv.<span id="hp-lv">1</span></div>
+      <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);" id="hp-val">100</div>
+      <button class="upg-btn" onclick="upgradeStat('hp')">🪙<span id="hp-cost">60</span></button>
+    </div>
+    <div class="upg-card">
+      <div class="upg-icon">💥</div>
+      <div class="upg-name">스킬 데미지</div>
+      <div class="upg-level">Lv.<span id="sk-lv">1</span></div>
+      <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);" id="sk-val">25</div>
+      <button class="upg-btn" onclick="upgradeStat('skill')">🪙<span id="sk-cost">80</span></button>
+    </div>
+  </div>
+
+  <div class="section-title">📜 전투 로그</div>
+  <div class="battle-log" id="battle-log"></div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SK = 'mungyi_town_save';
+const RPG_KEY = 'mungyi_rpg_save';
+
+function loadSave() { try { return JSON.parse(localStorage.getItem(SK)) || {}; } catch { return {}; } }
+function addCoins(n) {
+  const s = loadSave(); s.coins = (s.coins || 100) + n;
+  localStorage.setItem(SK, JSON.stringify(s));
+  document.getElementById('coin-count').textContent = (s.coins || 0).toLocaleString();
+}
+function getCoins() { return loadSave().coins || 100; }
+function spendCoins(n) {
+  const s = loadSave();
+  if ((s.coins || 100) < n) return false;
+  s.coins = (s.coins || 100) - n;
+  localStorage.setItem(SK, JSON.stringify(s));
+  document.getElementById('coin-count').textContent = (s.coins || 0).toLocaleString();
+  return true;
+}
+
+function loadRpg() { try { return JSON.parse(localStorage.getItem(RPG_KEY)) || {}; } catch { return {}; } }
+function saveRpg() { localStorage.setItem(RPG_KEY, JSON.stringify(rpg)); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.display = 'none'; }, 2000);
+}
+
+const MONSTERS = [
+  { emoji:'🐺', name:'늑대',  hp:80,  reward:10, exp:20, stage:1 },
+  { emoji:'🐗', name:'멧돼지',hp:200, reward:25, exp:50, stage:2 },
+  { emoji:'🦁', name:'사자',  hp:500, reward:60, exp:120,stage:3 },
+  { emoji:'🐉', name:'드래곤',hp:1200,reward:150,exp:300,stage:4 },
+  { emoji:'👹', name:'마왕',  hp:3000,reward:400,exp:800,stage:5 },
+];
+
+let rpg = {
+  level: 1, exp: 0,
+  atkLv: 1, hpLv: 1, skillLv: 1,
+  stage: 0,
+  playerHp: 100,
+  monsterHp: 80,
+  autoOn: false,
+  powerCd: 0, healCd: 0,
+  lastVisit: Date.now(),
+  ...loadRpg()
+};
+
+function getAtk() { return 10 + (rpg.atkLv - 1) * 8 + (rpg.level - 1) * 3; }
+function getMaxHp() { return 100 + (rpg.hpLv - 1) * 40 + (rpg.level - 1) * 15; }
+function getSkillDmg() { return 25 + (rpg.skillLv - 1) * 20 + (rpg.level - 1) * 8; }
+function getMonster() { return MONSTERS[rpg.stage]; }
+function getMonsterMaxHp() { return getMonster().hp * Math.pow(1.5, Math.floor(rpg.stage / MONSTERS.length)); }
+
+function log(msg, cls) {
+  const logEl = document.getElementById('battle-log');
+  const p = document.createElement('p');
+  p.className = cls || '';
+  p.textContent = msg;
+  logEl.prepend(p);
+  if (logEl.children.length > 30) logEl.removeChild(logEl.lastChild);
+}
+
+function updateUI() {
+  const m = getMonster();
+  const maxHp = getMonsterMaxHp();
+  document.getElementById('stage-num').textContent = rpg.stage + 1;
+  document.getElementById('monster-emoji').textContent = m.emoji;
+  document.getElementById('monster-name').textContent = m.name;
+  document.getElementById('monster-hp-num').textContent = `${Math.max(0,rpg.monsterHp)}/${Math.round(maxHp)}`;
+  document.getElementById('monster-hp-fill').style.width = Math.max(0, (rpg.monsterHp / maxHp) * 100) + '%';
+  document.getElementById('monster-reward').textContent = `처치 시: 🪙${m.reward} + ✨${m.exp} EXP`;
+
+  const maxPHp = getMaxHp();
+  document.getElementById('player-hp-num').textContent = `${Math.max(0,rpg.playerHp)}/${maxPHp}`;
+  document.getElementById('player-hp-fill').style.width = Math.max(0, (rpg.playerHp / maxPHp) * 100) + '%';
+  document.getElementById('player-stats-text').textContent = `공격력: ${getAtk()} | 최대HP: ${maxPHp} | 스킬데미지: ${getSkillDmg()}`;
+  document.getElementById('player-level').textContent = rpg.level;
+  const expNeeded = rpg.level * 100;
+  document.getElementById('exp-text').textContent = `${rpg.exp}/${expNeeded}`;
+  document.getElementById('coin-count').textContent = getCoins().toLocaleString();
+
+  document.getElementById('atk-lv').textContent = rpg.atkLv;
+  document.getElementById('atk-val').textContent = getAtk();
+  document.getElementById('atk-cost').textContent = 50 * rpg.atkLv;
+  document.getElementById('hp-lv').textContent = rpg.hpLv;
+  document.getElementById('hp-val').textContent = getMaxHp();
+  document.getElementById('hp-cost').textContent = 60 * rpg.hpLv;
+  document.getElementById('sk-lv').textContent = rpg.skillLv;
+  document.getElementById('sk-val').textContent = getSkillDmg();
+  document.getElementById('sk-cost').textContent = 80 * rpg.skillLv;
+
+  const autoBtn = document.getElementById('auto-btn');
+  autoBtn.textContent = rpg.autoOn ? '정지' : '시작';
+  autoBtn.className = 'toggle-btn' + (rpg.autoOn ? ' active' : '');
+
+  const now = Date.now() / 1000;
+  const powerReady = rpg.powerCd <= now;
+  const healReady = rpg.healCd <= now;
+  document.getElementById('btn-power').disabled = !powerReady;
+  document.getElementById('cd-power').textContent = powerReady ? '즉시' : `${Math.ceil(rpg.powerCd - now)}초`;
+  document.getElementById('btn-heal').disabled = !healReady;
+  document.getElementById('cd-heal').textContent = healReady ? '즉시' : `${Math.ceil(rpg.healCd - now)}초`;
+}
+
+function dealDamageToMonster(dmg) {
+  rpg.monsterHp -= dmg;
+  const el = document.getElementById('monster-emoji');
+  el.classList.remove('hit');
+  void el.offsetWidth;
+  el.classList.add('hit');
+  if (rpg.monsterHp <= 0) {
+    const m = getMonster();
+    addCoins(m.reward);
+    rpg.exp += m.exp;
+    log(`${m.name} 처치! 🪙+${m.reward} ✨+${m.exp}`, 'log-coin');
+    checkLevelUp();
+    rpg.stage = (rpg.stage + 1) % MONSTERS.length;
+    rpg.monsterHp = getMonsterMaxHp();
+    showToast(`${m.name} 처치! +${m.reward} 코인`);
+  }
+}
+
+function monsterAttack() {
+  if (rpg.playerHp <= 0) return;
+  const dmg = Math.max(1, Math.round(3 + rpg.stage * 2 - rpg.hpLv));
+  rpg.playerHp -= dmg;
+  log(`${getMonster().name}이(가) ${dmg} 데미지!`, 'log-dmg');
+  if (rpg.playerHp <= 0) {
+    rpg.playerHp = 0;
+    log('💀 쓰러졌습니다! 체력 회복 중...', 'log-heal');
+    setTimeout(() => {
+      rpg.playerHp = Math.round(getMaxHp() * 0.5);
+      rpg.monsterHp = getMonsterMaxHp();
+      updateUI(); saveRpg();
+    }, 3000);
+  }
+}
+
+function useSkill(type) {
+  const now = Date.now() / 1000;
+  if (rpg.playerHp <= 0) return;
+  if (type === 'normal') {
+    const dmg = getAtk() + Math.floor(Math.random() * 5);
+    dealDamageToMonster(dmg);
+    log(`⚔️ 일반공격 ${dmg} 데미지!`);
+    monsterAttack();
+  } else if (type === 'power') {
+    if (rpg.powerCd > now) return;
+    const dmg = getSkillDmg() + Math.floor(Math.random() * 10);
+    dealDamageToMonster(dmg);
+    log(`💥 스킬 ${dmg} 데미지!`, 'log-dmg');
+    monsterAttack();
+    rpg.powerCd = now + 5;
+  } else if (type === 'heal') {
+    if (rpg.healCd > now) return;
+    const heal = Math.round(getMaxHp() * 0.3);
+    rpg.playerHp = Math.min(getMaxHp(), rpg.playerHp + heal);
+    log(`💚 HP +${heal} 회복!`, 'log-heal');
+    rpg.healCd = now + 10;
+  }
+  updateUI(); saveRpg();
+}
+
+function checkLevelUp() {
+  const needed = rpg.level * 100;
+  if (rpg.exp >= needed) {
+    rpg.exp -= needed;
+    rpg.level++;
+    rpg.playerHp = getMaxHp();
+    log(`🎉 레벨 업! Lv.${rpg.level}`, 'log-level');
+    showToast(`레벨 업! Lv.${rpg.level}`);
+  }
+}
+
+function upgradeStat(type) {
+  if (type === 'atk') {
+    const cost = 50 * rpg.atkLv;
+    if (!spendCoins(cost)) { showToast('코인 부족!'); return; }
+    rpg.atkLv++;
+    showToast(`공격력 업그레이드! Lv.${rpg.atkLv}`);
+  } else if (type === 'hp') {
+    const cost = 60 * rpg.hpLv;
+    if (!spendCoins(cost)) { showToast('코인 부족!'); return; }
+    rpg.hpLv++;
+    rpg.playerHp = getMaxHp();
+    showToast(`최대HP 업그레이드! Lv.${rpg.hpLv}`);
+  } else if (type === 'skill') {
+    const cost = 80 * rpg.skillLv;
+    if (!spendCoins(cost)) { showToast('코인 부족!'); return; }
+    rpg.skillLv++;
+    showToast(`스킬 데미지 업그레이드! Lv.${rpg.skillLv}`);
+  }
+  updateUI(); saveRpg();
+}
+
+function toggleAuto() {
+  rpg.autoOn = !rpg.autoOn;
+  updateUI(); saveRpg();
+}
+
+let autoTimer = null;
+function startAutoLoop() {
+  autoTimer = setInterval(() => {
+    if (rpg.autoOn && rpg.playerHp > 0) {
+      const dmg = getAtk() + Math.floor(Math.random() * 3);
+      dealDamageToMonster(dmg);
+      monsterAttack();
+      updateUI(); saveRpg();
+    }
+    updateUI();
+  }, 1000);
+}
+
+function checkOffline() {
+  const saved = loadRpg();
+  if (!saved.lastVisit) return;
+  const offlineSec = Math.min((Date.now() - saved.lastVisit) / 1000, 3600);
+  if (offlineSec < 30) return;
+  const battles = Math.floor(offlineSec / 3);
+  let totalCoins = 0;
+  let totalExp = 0;
+  let stage = saved.stage || 0;
+  for (let i = 0; i < battles; i++) {
+    const m = MONSTERS[stage % MONSTERS.length];
+    totalCoins += m.reward;
+    totalExp += m.exp;
+    stage = (stage + 1) % MONSTERS.length;
+  }
+  if (totalCoins > 0) {
+    addCoins(totalCoins);
+    rpg.exp += totalExp;
+    checkLevelUp();
+    const notice = document.getElementById('offline-notice');
+    notice.style.display = 'block';
+    notice.textContent = `🌙 오프라인 ${Math.round(offlineSec/60)}분: ${battles}번 전투, 🪙+${totalCoins} ✨+${totalExp}`;
+    setTimeout(() => { notice.style.display = 'none'; }, 5000);
+  }
+}
+
+function init() {
+  const saved = loadRpg();
+  Object.assign(rpg, saved);
+  if (!rpg.monsterHp || rpg.monsterHp <= 0) rpg.monsterHp = getMonsterMaxHp();
+  if (!rpg.playerHp || rpg.playerHp <= 0) rpg.playerHp = getMaxHp();
+  checkOffline();
+  rpg.lastVisit = Date.now();
+  updateUI();
+  log('⚔️ 전투 시작! 뭉이 용사를 응원해주세요!');
+  startAutoLoop();
+  saveRpg();
+}
+
+init();
+</script>
+</body>
+</html>
