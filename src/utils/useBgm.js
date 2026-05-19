@@ -16,8 +16,10 @@ function ensureAudio() {
   if (_lobby) return;
   _lobby = new Audio('/audio/bgm_lobby_main.mp3');
   _lobby.loop = true; _lobby.volume = MAX_VOL; _lobby.preload = 'auto';
+  _lobby.addEventListener('error', () => { _bgmOn = false; });
   _game  = new Audio('/audio/bgm_gameplay_fast.mp3');
   _game.loop  = true; _game.volume  = MAX_VOL; _game.preload  = 'auto';
+  _game.addEventListener('error', () => { _bgmOn = false; });
 }
 
 function fadeOutAll() {
@@ -81,6 +83,8 @@ export function useBgm(isGameActive) {
     return () => {
       document.removeEventListener('click',      handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
+      clearInterval(_fadeTimer);
+      _fadeTimer = null;
     };
   }, []);
 

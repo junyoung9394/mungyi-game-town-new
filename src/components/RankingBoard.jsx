@@ -69,7 +69,7 @@ export default function RankingBoard() {
       q,
       (snap) => {
         const rows = snap.docs.map((d, i) => ({ rank: i + 1, ...d.data() }));
-        console.log(`[RankingBoard:${active}] 실시간 업데이트: ${rows.length}명`);
+        if (import.meta.env.DEV) console.log(`[RankingBoard:${active}] 실시간 업데이트: ${rows.length}명`);
         setScores(rows);
         setLoading(false);
       },

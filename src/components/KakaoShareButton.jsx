@@ -11,11 +11,12 @@ const GAME_NAMES = {
 export default function KakaoShareButton({ gameId, score, size = 'md' }) {
   const handleShare = () => {
     const Kakao = window.Kakao;
+    const origin = window.location.origin;
     if (!Kakao?.isInitialized?.()) {
       /* 미로그인·SDK 미로드 시 → 웹 공유 fallback */
-      const text = `나 방금 '무명이 게임 타운'에서 ${score.toLocaleString()}점 찍음! 너도 나 이길 수 있어? 🔥\nhttps://game.luckygrampus.com`;
+      const text = `나 방금 '무명이 게임 타운'에서 ${score.toLocaleString()}점 찍음! 너도 나 이길 수 있어? 🔥\n${origin}`;
       if (navigator.share) {
-        navigator.share({ title: '무명이 게임 타운', text, url: 'https://game.luckygrampus.com' })
+        navigator.share({ title: '무명이 게임 타운', text, url: origin })
           .catch(() => {});
       } else {
         navigator.clipboard?.writeText(text);
@@ -32,18 +33,18 @@ export default function KakaoShareButton({ gameId, score, size = 'md' }) {
         content: {
           title: `${gameName} — ${score.toLocaleString()}점 달성! 🏆`,
           description: `나 방금 '무명이 게임 타운'에서 ${score.toLocaleString()}점 찍음!\n너도 나 이길 수 있어? 🔥`,
-          imageUrl: 'https://game.luckygrampus.com/logo.png',
+          imageUrl: `${origin}/logo.png`,
           link: {
-            mobileWebUrl: 'https://game.luckygrampus.com',
-            webUrl:       'https://game.luckygrampus.com',
+            mobileWebUrl: origin,
+            webUrl:       origin,
           },
         },
         buttons: [
           {
             title: '🎮 게임하러 가기',
             link: {
-              mobileWebUrl: 'https://game.luckygrampus.com',
-              webUrl:       'https://game.luckygrampus.com',
+              mobileWebUrl: origin,
+              webUrl:       origin,
             },
           },
         ],

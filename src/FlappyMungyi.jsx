@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useSyncedRef } from './utils/useSyncedRef';
+import { VW, VH } from './constants';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
 import KakaoShareButton from './components/KakaoShareButton';
 
 /* ── 상수 ─────────────────────────────────────────── */
-const VW=360, VH=640, NEON='#39FF14';
+const NEON='#39FF14';
 const BIRD_X=80, BIRD_W=28, BIRD_H=22;
 const GRAVITY=0.38, JUMP=-8;
 const PIPE_W=54, PIPE_GAP=170, PIPE_SPEED=2.6;
@@ -112,19 +114,18 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
   const [status, setStatus]   = useState('idle');
   const [isNewHi, setIsNewHi] = useState(false);
 
-  const gRef = useRef(null), scoreRef=useRef(0), hiRef=useRef(0), statusRef=useRef('idle');
-  const timerRef = useRef(null); // gameover 자동복귀 타이머
-
-  useEffect(()=>{ scoreRef.current=score; },[score]);
-  useEffect(()=>{ hiRef.current=hiScore; },[hiScore]);
-  useEffect(()=>{ statusRef.current=status; },[status]);
+  const gRef      = useRef(null);
+  const scoreRef  = useSyncedRef(score);
+  const hiRef     = useSyncedRef(hiScore);
+  const statusRef = useSyncedRef(status);
+  const timerRef  = useRef(null); // gameover 자동복귀 타이머
 
   // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
   useAutoSave('flappy', scoreRef, statusRef);
 
   useEffect(()=>{
     const v=parseInt(localStorage.getItem('flappy_hi')||'0',10);
-    setHiScore(v); hiRef.current=v;
+    setHiScore(v);
   },[]);
 
   const doJump = useCallback(()=>{

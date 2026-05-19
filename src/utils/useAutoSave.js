@@ -22,12 +22,8 @@ export function useAutoSave(gameId, scoreRef, statusRef) {
     const pendingKey = `${gameId}_pending`;
     const pending = parseInt(localStorage.getItem(pendingKey) || '0', 10);
     if (pending > 0) {
-      console.log(`[AutoSave:${gameId}] 미전송 점수(${pending}) 재전송 시도`);
       saveLeaderboardScore(gameId, pending).then(saved => {
-        if (saved) {
-          localStorage.removeItem(pendingKey);
-          console.log(`[AutoSave:${gameId}] 미전송 점수 Firestore 반영 완료`);
-        }
+        if (saved) localStorage.removeItem(pendingKey);
       });
     }
 
@@ -37,20 +33,12 @@ export function useAutoSave(gameId, scoreRef, statusRef) {
       const s = scoreRef.current;
       if (s <= 0) return;
 
-      console.log(`[AutoSave:${gameId}] 중간 저장 → score: ${s}`);
-
       // localStorage 동기 백업 (창 닫힘에도 보존)
       localStorage.setItem(pendingKey, String(s));
 
       // Firestore 비동기 저장 (최고점 초과 시에만 갱신)
-      saveLeaderboardScore(gameId, s).then(saved => {
-        if (saved) {
-          localStorage.removeItem(pendingKey);
-          console.log(`[AutoSave:${gameId}] ✅ Firestore 갱신 완료 (신기록)`);
-        } else {
-          console.log(`[AutoSave:${gameId}] 기존 최고점 이하 - Firestore 스킵 (로컬 백업은 유지)`);
-          localStorage.removeItem(pendingKey); // 기존 최고점 이하면 지워도 됨
-        }
+      saveLeaderboardScore(gameId, s).then(() => {
+        localStorage.removeItem(pendingKey);
       });
     };
 

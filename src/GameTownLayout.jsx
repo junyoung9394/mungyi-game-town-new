@@ -143,7 +143,6 @@ export default function GameTownLayout() {
       success: async (authObj) => {
         clearTimeout(timer);
         console.log('[Kakao] ✅ Auth.login 성공');
-        console.log('[Kakao] access_token 앞 10자:', String(authObj?.access_token ?? '').slice(0, 10));
 
         try {
           // ── Kakao REST API 프로필 조회 ────────────

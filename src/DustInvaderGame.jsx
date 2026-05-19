@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useSyncedRef } from './utils/useSyncedRef';
 import { getAuth } from 'firebase/auth';
 import {
   getFirestore,
@@ -19,8 +20,9 @@ import KakaoShareButton from './components/KakaoShareButton';
 const NEON = '#39FF14';
 const NEON_SOFT = '#90FFA0';
 
-const VW = 360;
-const VH = 640;
+import { VW, VH } from './constants';
+
+const MAX_PARTICLES = 500;
 
 const PLAYER_W = 28;
 const PLAYER_H = 18;
@@ -119,13 +121,14 @@ function drawBullet(ctx, x, y) {
 }
 
 function drawParticles(ctx, particles) {
+  ctx.save();
   ctx.fillStyle = NEON;
   for (const p of particles) {
     if (p.life <= 0) continue;
     ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
     ctx.fillRect(p.x | 0, p.y | 0, 2, 2);
   }
-  ctx.globalAlpha = 1;
+  ctx.restore();
 }
 
 function drawBackground(ctx) {
@@ -198,19 +201,13 @@ export function useDustInvaderGame({ canvasRef, onExit }) {
 
   // === 게임 루프 내부에서 참조용 ref들 (re-render 없이 최신값 사용) ===
   const gameRef = useRef(null);
-  const stageRef = useRef(1);
-  const scoreRef = useRef(0);
-  const livesRef = useRef(3);
-  const hiScoreRef = useRef(0);
-  const statusRef = useRef('idle');
+  const stageRef = useSyncedRef(stage);
+  const scoreRef = useSyncedRef(score);
+  const livesRef = useSyncedRef(lives);
+  const hiScoreRef = useSyncedRef(hiScore);
+  const statusRef = useSyncedRef(status);
   const inputRef = useRef({ left: false, right: false, touchDir: 0 });
   const goTimer = useRef(null);
-
-  useEffect(() => { stageRef.current = stage; }, [stage]);
-  useEffect(() => { scoreRef.current = score; }, [score]);
-  useEffect(() => { livesRef.current = lives; }, [lives]);
-  useEffect(() => { hiScoreRef.current = hiScore; }, [hiScore]);
-  useEffect(() => { statusRef.current = status; }, [status]);
 
   // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
   useAutoSave('dustInvader', scoreRef, statusRef);
@@ -543,15 +540,17 @@ export function useDustInvaderGame({ canvasRef, onExit }) {
             b.dead = true;
             const pts = 10 * stageRef.current;
             setScore((s) => s + pts);
-            for (let i = 0; i < 8; i++) {
-              game.particles.push({
-                x: e.x + ENEMY_W / 2,
-                y: e.y + ENEMY_H / 2,
-                vx: (Math.random() - 0.5) * 4,
-                vy: (Math.random() - 0.5) * 4,
-                life: 400,
-                maxLife: 400,
-              });
+            if (game.particles.length < MAX_PARTICLES) {
+              for (let i = 0; i < 8; i++) {
+                game.particles.push({
+                  x: e.x + ENEMY_W / 2,
+                  y: e.y + ENEMY_H / 2,
+                  vx: (Math.random() - 0.5) * 4,
+                  vy: (Math.random() - 0.5) * 4,
+                  life: 400,
+                  maxLife: 400,
+                });
+              }
             }
             break;
           }

@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useSyncedRef } from './utils/useSyncedRef';
+import { VW, VH } from './constants';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
 import KakaoShareButton from './components/KakaoShareButton';
 
 const NEON = '#39FF14';
-const VW = 360, VH = 640;
 const COLS = 10, ROWS = 20, CELL = 28;
 const BX = (VW - COLS * CELL) / 2; // 40
 const BY = 44;
@@ -50,8 +51,10 @@ function clearLines(board) {
 
 /* ── 드로잉 ────────────────────────────────────────── */
 function drawCell(ctx, x, y, color, s=CELL) {
+  ctx.save();
   ctx.globalAlpha=0.18; ctx.fillStyle=color; ctx.fillRect(x,y,s,s);
-  ctx.globalAlpha=1;    ctx.fillStyle=color; ctx.fillRect(x+1,y+1,s-2,s-2);
+  ctx.restore();
+  ctx.fillStyle=color; ctx.fillRect(x+1,y+1,s-2,s-2);
   ctx.fillStyle='rgba(255,255,255,0.2)';
   ctx.fillRect(x+2,y+2,s-4,3); ctx.fillRect(x+2,y+2,3,s-4);
 }
@@ -69,7 +72,7 @@ function drawPiece(ctx, piece, ox, oy, s=CELL) {
 function drawGhost(ctx, board, p) {
   let gy=p.y; while(isValid(board,p.grid,p.x,gy+1)) gy++;
   if(gy===p.y) return;
-  ctx.globalAlpha=0.15; drawPiece(ctx,p,BX+p.x*CELL,BY+gy*CELL); ctx.globalAlpha=1;
+  ctx.save(); ctx.globalAlpha=0.15; drawPiece(ctx,p,BX+p.x*CELL,BY+gy*CELL); ctx.restore();
 }
 function drawHUD(ctx, score, level, lines, next, hi) {
   ctx.fillStyle='#000'; ctx.fillRect(0,0,VW,BY);
@@ -96,17 +99,16 @@ export function useClassicTetris({ canvasRef, onExit }) {
   const [status,setStatus] = useState('idle');
   const [isNewHi,setNewHi] = useState(false);
 
-  const gameRef=useRef(null); const scoreRef=useRef(0); const levelRef=useRef(1);
-  const linesRef=useRef(0);  const hiRef=useRef(0);    const statusRef=useRef('idle');
+  const gameRef=useRef(null);
+  const scoreRef =useSyncedRef(score);
+  const levelRef =useSyncedRef(level);
+  const linesRef =useSyncedRef(lines);
+  const hiRef    =useSyncedRef(hiScore);
+  const statusRef=useSyncedRef(status);
   const inp=useRef({left:false,right:false,down:false,la:80,ra:80});
   const goTimer=useRef(null);
 
-  useEffect(()=>{scoreRef.current=score;},[score]);
-  useEffect(()=>{levelRef.current=level;},[level]);
-  useEffect(()=>{linesRef.current=lines;},[lines]);
-  useEffect(()=>{hiRef.current=hiScore;},[hiScore]);
-  useEffect(()=>{statusRef.current=status;},[status]);
-  useEffect(()=>{const v=parseInt(localStorage.getItem('tetris_hi')||'0',10);setHi(v);hiRef.current=v;},[]);
+  useEffect(()=>{const v=parseInt(localStorage.getItem('tetris_hi')||'0',10);setHi(v);},[]);
 
   // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
   useAutoSave('tetris', scoreRef, statusRef);
