@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useSyncedRef } from './utils/useSyncedRef';
+import { VW, VH } from './constants';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
 import KakaoShareButton from './components/KakaoShareButton';
 
 const NEON = '#39FF14';
-const VW = 360, VH = 640;
 const COLS = 18, ROWS = 28, CELL = 20;
 const BX = 0, BY = 44; // 보드 오프셋 (44px HUD)
 
@@ -35,6 +36,7 @@ function drawSnake(ctx, snake) {
   snake.forEach((seg, i) => {
     const x=BX+seg.x*CELL, y=BY+seg.y*CELL;
     const isHead=(i===0);
+    ctx.save();
     ctx.globalAlpha=isHead?1:Math.max(0.4,1-i*0.015);
     ctx.fillStyle=isHead?'#fff':NEON;
     ctx.fillRect(x+1,y+1,CELL-2,CELL-2);
@@ -50,16 +52,17 @@ function drawSnake(ctx, snake) {
     ctx.globalAlpha=0.15;
     ctx.fillStyle=NEON;
     ctx.fillRect(x,y,CELL,CELL);
-    ctx.globalAlpha=1;
+    ctx.restore();
   });
 }
 function drawFood(ctx, food, t) {
   const x=BX+food.x*CELL+CELL/2, y=BY+food.y*CELL+CELL/2;
   const pulse=Math.sin(t*0.006)*2;
+  ctx.save();
   ctx.globalAlpha=0.3;
   ctx.fillStyle='#FF2D55';
   ctx.beginPath();ctx.arc(x,y,CELL/2-1+pulse,0,Math.PI*2);ctx.fill();
-  ctx.globalAlpha=1;
+  ctx.restore();
   ctx.fillStyle='#FF6B88';
   ctx.beginPath();ctx.arc(x,y,CELL/2-3,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='rgba(255,255,255,0.6)';
@@ -88,15 +91,13 @@ export function useNeonSnake({ canvasRef, onExit }) {
   const [isNewHi,setNewHi] = useState(false);
 
   const gameRef   = useRef(null);
-  const scoreRef  = useRef(0); const hiRef  = useRef(0);
-  const statusRef = useRef('idle');
+  const scoreRef  = useSyncedRef(score);
+  const hiRef     = useSyncedRef(hiScore);
+  const statusRef = useSyncedRef(status);
   const dirBuf    = useRef(null); // 다음 방향 버퍼
   const goTimer   = useRef(null); // 게임오버 자동복귀 타이머
 
-  useEffect(()=>{scoreRef.current=score;},[score]);
-  useEffect(()=>{hiRef.current=hiScore;},[hiScore]);
-  useEffect(()=>{statusRef.current=status;},[status]);
-  useEffect(()=>{const v=parseInt(localStorage.getItem('snake_hi')||'0',10);setHi(v);hiRef.current=v;},[]);
+  useEffect(()=>{const v=parseInt(localStorage.getItem('snake_hi')||'0',10);setHi(v);},[]);
 
   // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
   useAutoSave('snake', scoreRef, statusRef);

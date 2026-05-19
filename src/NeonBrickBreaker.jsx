@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useSyncedRef } from './utils/useSyncedRef';
+import { VW, VH } from './constants';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { saveLeaderboardScore } from './utils/saveScore';
@@ -7,8 +9,6 @@ import KakaoShareButton from './components/KakaoShareButton';
 
 /* ── 상수 ──────────────────────────────────────────────── */
 const NEON = '#39FF14';
-const VW = 360;
-const VH = 640;
 
 const BRICK_COLS = 8;
 const BRICK_ROWS = 6;
@@ -65,10 +65,11 @@ function drawHUD(ctx, score, hiScore, stage, lives) {
 
 function drawBrick(ctx, brick) {
   const color = BRICK_COLORS[brick.row];
+  ctx.save();
   ctx.globalAlpha = 0.25;
   ctx.fillStyle = color;
   ctx.fillRect(brick.x - 1, brick.y - 1, BRICK_W + 2, BRICK_H + 2);
-  ctx.globalAlpha = 1;
+  ctx.restore();
   ctx.fillStyle = color;
   ctx.fillRect(brick.x, brick.y, BRICK_W, BRICK_H);
   ctx.fillStyle = 'rgba(255,255,255,0.25)';
@@ -80,19 +81,21 @@ function drawPaddle(ctx, paddle) {
   ctx.fillRect(paddle.x, PADDLE_Y, PADDLE_W, PADDLE_H);
   ctx.fillStyle = 'rgba(255,255,255,0.35)';
   ctx.fillRect(paddle.x + 2, PADDLE_Y + 1, PADDLE_W - 4, 2);
+  ctx.save();
   ctx.globalAlpha = 0.35;
   ctx.fillStyle = NEON;
   ctx.fillRect(paddle.x - 2, PADDLE_Y - 2, PADDLE_W + 4, PADDLE_H + 4);
-  ctx.globalAlpha = 1;
+  ctx.restore();
 }
 
 function drawBall(ctx, ball) {
+  ctx.save();
   ctx.globalAlpha = 0.35;
   ctx.fillStyle = NEON;
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, BALL_R + 3, 0, Math.PI * 2);
   ctx.fill();
-  ctx.globalAlpha = 1;
+  ctx.restore();
   ctx.fillStyle = NEON;
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2);
@@ -104,13 +107,14 @@ function drawBall(ctx, ball) {
 }
 
 function drawParticles(ctx, particles) {
+  ctx.save();
   for (const p of particles) {
     if (p.life <= 0) continue;
     ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
     ctx.fillStyle = p.color;
     ctx.fillRect(p.x | 0, p.y | 0, 3, 3);
   }
-  ctx.globalAlpha = 1;
+  ctx.restore();
 }
 
 function drawCenterBanner(ctx, title, subtitle) {
@@ -137,23 +141,17 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
   const [isNewHi, setIsNewHi] = useState(false);
 
   const gameRef     = useRef(null);
-  const stageRef    = useRef(1);
-  const scoreRef    = useRef(0);
-  const livesRef    = useRef(3);
-  const hiScoreRef  = useRef(0);
-  const statusRef   = useRef('idle');
+  const stageRef    = useSyncedRef(stage);
+  const scoreRef    = useSyncedRef(score);
+  const livesRef    = useSyncedRef(lives);
+  const hiScoreRef  = useSyncedRef(hiScore);
+  const statusRef   = useSyncedRef(status);
   const inputRef    = useRef({ left: false, right: false });
   const paddleXRef  = useRef(null); // mouse/touch 직접 위치
   const goTimer     = useRef(null);
 
-  useEffect(() => { stageRef.current = stage; }, [stage]);
-  useEffect(() => { scoreRef.current = score; }, [score]);
-  useEffect(() => { livesRef.current = lives; }, [lives]);
-  useEffect(() => { hiScoreRef.current = hiScore; }, [hiScore]);
-
   // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
   useAutoSave('brickBreaker', scoreRef, statusRef);
-  useEffect(() => { statusRef.current = status; }, [status]);
 
   /* Firestore: 하이스코어 로드 */
   useEffect(() => {
