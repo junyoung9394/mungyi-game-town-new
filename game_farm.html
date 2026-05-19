@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>뭉이 농장 🌾</title>
+<meta name="theme-color" content="#FF85A1">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Jua&display=swap" rel="stylesheet">
+<script src="ad_manager.js" onerror="console.log('ad_manager not found')"></script>
+<script src="firebase_ranking.js" onerror="console.log('firebase_ranking not found')"></script>
+<style>
+:root {
+  --bg:#0c0820; --surface:rgba(255,255,255,0.07); --border:rgba(255,255,255,0.13);
+  --pink:#FF85A1; --mint:#5EDFCA; --lav:#C4B5FF; --peach:#FFB07C; --yellow:#FFE97F;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:#fff;font-family:'Nunito',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 20% 20%,rgba(255,133,161,0.12) 0%,transparent 50%),
+             radial-gradient(ellipse at 80% 80%,rgba(94,223,202,0.12) 0%,transparent 50%);
+  pointer-events:none;z-index:0;
+}
+#home-fab{
+  position:fixed;top:12px;left:12px;z-index:999;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:50%;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;text-decoration:none;
+  backdrop-filter:blur(10px);transition:transform 0.2s;
+}
+#home-fab:hover{transform:scale(1.1);}
+header{
+  position:relative;z-index:1;
+  text-align:center;padding:16px 20px 12px;
+  background:rgba(255,255,255,0.04);
+  border-bottom:1px solid var(--border);
+}
+header h1{font-family:'Jua',sans-serif;font-size:1.6rem;color:var(--yellow);}
+header .subtitle{font-size:0.8rem;color:rgba(255,255,255,0.5);margin-top:2px;}
+.coin-display{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,224,127,0.12);border:1px solid rgba(255,224,127,0.3);
+  border-radius:20px;padding:6px 14px;margin-top:8px;font-size:0.95rem;font-weight:700;color:var(--yellow);
+}
+main{position:relative;z-index:1;padding:16px;max-width:700px;margin:0 auto;}
+.farmer-wrap{text-align:center;font-size:3rem;margin-bottom:12px;animation:farmer-walk 1.5s ease-in-out infinite;}
+@keyframes farmer-walk{0%,100%{transform:translateX(-8px);}50%{transform:translateX(8px);}}
+.section-title{font-family:'Jua',sans-serif;font-size:1.1rem;color:var(--lav);margin:16px 0 10px;display:flex;align-items:center;gap:6px;}
+.crops-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.crop-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:14px;backdrop-filter:blur(10px);
+  transition:transform 0.2s;
+}
+.crop-card:hover{transform:translateY(-2px);}
+.crop-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.crop-icon{font-size:2.2rem;}
+.crop-name{font-weight:700;font-size:1rem;}
+.crop-reward{font-size:0.75rem;color:var(--yellow);}
+.progress-wrap{margin-bottom:10px;}
+.progress-label{font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:4px;display:flex;justify-content:space-between;}
+.progress-bar{background:rgba(255,255,255,0.08);border-radius:10px;height:8px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:10px;transition:width 0.5s;background:linear-gradient(90deg,var(--pink),var(--lav));}
+.crop-btn{
+  width:100%;padding:8px;border:none;border-radius:10px;
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;
+  transition:all 0.2s;
+}
+.btn-plant{background:linear-gradient(135deg,var(--mint),#3bb5a3);color:#fff;}
+.btn-harvest{background:linear-gradient(135deg,var(--yellow),var(--peach));color:#0c0820;animation:pulse-btn 0.8s ease-in-out infinite;}
+@keyframes pulse-btn{0%,100%{transform:scale(1);}50%{transform:scale(1.03);}}
+.btn-growing{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);cursor:not-allowed;}
+.upgrade-section{margin-top:6px;}
+.upgrade-row{display:flex;justify-content:space-between;align-items:center;font-size:0.72rem;color:rgba(255,255,255,0.6);}
+.upgrade-btn{
+  background:rgba(196,181,255,0.15);border:1px solid rgba(196,181,255,0.3);
+  color:var(--lav);border-radius:8px;padding:3px 8px;font-size:0.7rem;
+  cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;transition:all 0.2s;
+}
+.upgrade-btn:hover{background:rgba(196,181,255,0.25);}
+.auto-row{display:flex;justify-content:space-between;align-items:center;font-size:0.72rem;margin-top:6px;color:rgba(255,255,255,0.6);}
+.auto-btn{
+  background:rgba(94,223,202,0.15);border:1px solid rgba(94,223,202,0.3);
+  color:var(--mint);border-radius:8px;padding:3px 8px;font-size:0.7rem;
+  cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;transition:all 0.2s;
+}
+.auto-btn.active{background:rgba(94,223,202,0.3);}
+.auto-btn:hover{background:rgba(94,223,202,0.25);}
+.offline-notice{
+  background:rgba(255,176,124,0.12);border:1px solid rgba(255,176,124,0.3);
+  border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:0.85rem;color:var(--peach);
+  display:none;
+}
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:rgba(255,224,127,0.18);border:1px solid rgba(255,224,127,0.4);
+  border-radius:20px;padding:10px 22px;font-size:0.9rem;font-weight:700;color:var(--yellow);
+  backdrop-filter:blur(12px);z-index:999;pointer-events:none;
+  animation:toast-in 0.3s ease;display:none;
+}
+@keyframes toast-in{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+</style>
+</head>
+<body>
+<a href="index.html" id="home-fab">🏠</a>
+
+<header>
+  <h1>🌾 뭉이 농장</h1>
+  <div class="subtitle">씨앗을 심고 수확하여 코인을 모으세요!</div>
+  <div class="coin-display">🪙 <span id="coin-count">0</span></div>
+</header>
+
+<main>
+  <div class="offline-notice" id="offline-notice"></div>
+  <div class="farmer-wrap">🧑‍🌾</div>
+
+  <div class="section-title">🌱 나의 밭</div>
+  <div class="crops-grid" id="crops-grid"></div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SK = 'mungyi_town_save';
+const FARM_KEY = 'mungyi_farm_save';
+
+function loadSave() { try { return JSON.parse(localStorage.getItem(SK)) || {}; } catch { return {}; } }
+function addCoins(n) {
+  const s = loadSave();
+  s.coins = (s.coins || 100) + n;
+  localStorage.setItem(SK, JSON.stringify(s));
+  document.getElementById('coin-count').textContent = (s.coins || 0).toLocaleString();
+}
+function getCoins() { return loadSave().coins || 100; }
+function spendCoins(n) {
+  const s = loadSave();
+  if ((s.coins || 100) < n) return false;
+  s.coins = (s.coins || 100) - n;
+  localStorage.setItem(SK, JSON.stringify(s));
+  document.getElementById('coin-count').textContent = (s.coins || 0).toLocaleString();
+  return true;
+}
+
+function loadFarm() { try { return JSON.parse(localStorage.getItem(FARM_KEY)) || {}; } catch { return {}; } }
+function saveFarm(d) { localStorage.setItem(FARM_KEY, JSON.stringify(d)); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.display = 'none'; }, 2000);
+}
+
+const CROPS = [
+  { id:'wheat',  emoji:'🌾', name:'밀',    baseTime:10,  reward:2,  upgCost:30,  autoCost:50  },
+  { id:'carrot', emoji:'🥕', name:'당근',  baseTime:20,  reward:5,  upgCost:60,  autoCost:100 },
+  { id:'tomato', emoji:'🍅', name:'토마토',baseTime:40,  reward:12, upgCost:120, autoCost:200 },
+  { id:'corn',   emoji:'🌽', name:'옥수수',baseTime:80,  reward:30, upgCost:250, autoCost:400 },
+  { id:'berry',  emoji:'🍓', name:'딸기',  baseTime:150, reward:70, upgCost:500, autoCost:800 },
+];
+
+let farmData = loadFarm();
+let timers = {};
+
+function getCropState(id) {
+  if (!farmData[id]) farmData[id] = { level:1, auto:false, planted:null };
+  return farmData[id];
+}
+
+function getGrowTime(crop, level) {
+  return Math.max(3, Math.round(crop.baseTime / level));
+}
+
+function renderCrops() {
+  const grid = document.getElementById('crops-grid');
+  grid.innerHTML = '';
+  CROPS.forEach(crop => {
+    const st = getCropState(crop.id);
+    const card = document.createElement('div');
+    card.className = 'crop-card';
+    card.id = 'card-' + crop.id;
+
+    let progressHTML = '';
+    let btnHTML = '';
+    const growTime = getGrowTime(crop, st.level);
+
+    if (!st.planted) {
+      progressHTML = `<div class="progress-wrap"><div class="progress-label"><span>준비됨</span></div><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div></div>`;
+      btnHTML = `<button class="crop-btn btn-plant" onclick="plantCrop('${crop.id}')">심기 🌱</button>`;
+    } else {
+      const elapsed = (Date.now() - st.planted) / 1000;
+      const pct = Math.min(100, (elapsed / growTime) * 100);
+      const ready = pct >= 100;
+      const remaining = ready ? 0 : Math.ceil(growTime - elapsed);
+      progressHTML = `<div class="progress-wrap"><div class="progress-label"><span>${ready ? '수확 가능!' : '성장 중...'}</span><span>${ready ? '' : remaining + 's'}</span></div><div class="progress-bar"><div class="progress-fill" id="pfill-${crop.id}" style="width:${pct}%"></div></div></div>`;
+      btnHTML = ready
+        ? `<button class="crop-btn btn-harvest" onclick="harvestCrop('${crop.id}')">수확 🎉 +${crop.reward * st.level}</button>`
+        : `<button class="crop-btn btn-growing">성장 중... ⏳</button>`;
+    }
+
+    card.innerHTML = `
+      <div class="crop-header">
+        <span class="crop-icon">${crop.emoji}</span>
+        <div><div class="crop-name">${crop.name}</div><div class="crop-reward">+${crop.reward * st.level} 코인 | ${growTime}초</div></div>
+      </div>
+      ${progressHTML}
+      ${btnHTML}
+      <div class="upgrade-section">
+        <div class="upgrade-row">
+          <span>⚡ 속도 Lv.${st.level}</span>
+          <button class="upgrade-btn" onclick="upgradeCrop('${crop.id}')">업그레이드 🪙${crop.upgCost * st.level}</button>
+        </div>
+        <div class="auto-row">
+          <span>🤖 자동수확 ${st.auto ? 'ON' : 'OFF'}</span>
+          <button class="auto-btn ${st.auto ? 'active' : ''}" onclick="toggleAuto('${crop.id}')">${st.auto ? '✅ 활성' : `활성화 🪙${crop.autoCost}`}</button>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function plantCrop(id) {
+  const st = getCropState(id);
+  st.planted = Date.now();
+  saveFarm(farmData);
+  renderCrops();
+  startTimer(id);
+}
+
+function harvestCrop(id) {
+  const crop = CROPS.find(c => c.id === id);
+  const st = getCropState(id);
+  const coins = crop.reward * st.level;
+  addCoins(coins);
+  showToast(`+${coins} 코인! ${crop.emoji}`);
+  st.planted = null;
+  saveFarm(farmData);
+  renderCrops();
+  if (st.auto) {
+    setTimeout(() => { plantCrop(id); }, 500);
+  }
+}
+
+function upgradeCrop(id) {
+  const crop = CROPS.find(c => c.id === id);
+  const st = getCropState(id);
+  const cost = crop.upgCost * st.level;
+  if (!spendCoins(cost)) { showToast('코인이 부족합니다!'); return; }
+  st.level++;
+  saveFarm(farmData);
+  renderCrops();
+  showToast(`${crop.name} 업그레이드! Lv.${st.level}`);
+}
+
+function toggleAuto(id) {
+  const crop = CROPS.find(c => c.id === id);
+  const st = getCropState(id);
+  if (!st.auto) {
+    if (!spendCoins(crop.autoCost)) { showToast('코인이 부족합니다!'); return; }
+    st.auto = true;
+    showToast(`${crop.name} 자동 수확 활성화!`);
+  } else {
+    st.auto = false;
+    showToast(`${crop.name} 자동 수확 비활성화`);
+  }
+  saveFarm(farmData);
+  renderCrops();
+}
+
+function startTimer(id) {
+  if (timers[id]) clearInterval(timers[id]);
+  timers[id] = setInterval(() => {
+    const st = getCropState(id);
+    if (!st.planted) { clearInterval(timers[id]); return; }
+    const crop = CROPS.find(c => c.id === id);
+    const growTime = getGrowTime(crop, st.level);
+    const elapsed = (Date.now() - st.planted) / 1000;
+    const pct = Math.min(100, (elapsed / growTime) * 100);
+    const fill = document.getElementById('pfill-' + id);
+    if (fill) fill.style.width = pct + '%';
+    if (pct >= 100) {
+      clearInterval(timers[id]);
+      if (st.auto) {
+        harvestCrop(id);
+      } else {
+        renderCrops();
+      }
+    }
+  }, 1000);
+}
+
+function checkOffline() {
+  const fd = loadFarm();
+  const lastTime = fd._lastVisit;
+  if (!lastTime) return;
+  const offlineSec = Math.min((Date.now() - lastTime) / 1000, 7200);
+  if (offlineSec < 30) return;
+
+  let totalCoins = 0;
+  CROPS.forEach(crop => {
+    const st = fd[crop.id];
+    if (!st) return;
+    const growTime = getGrowTime(crop, st.level || 1);
+    const harvests = Math.floor(offlineSec / growTime);
+    if (harvests > 0 && st.auto) {
+      totalCoins += harvests * crop.reward * (st.level || 1);
+    }
+  });
+
+  if (totalCoins > 0) {
+    addCoins(totalCoins);
+    const notice = document.getElementById('offline-notice');
+    notice.style.display = 'block';
+    const mins = Math.round(offlineSec / 60);
+    notice.textContent = `🌙 ${mins}분 동안 자동 수확으로 +${totalCoins} 코인을 획득했어요!`;
+    setTimeout(() => { notice.style.display = 'none'; }, 5000);
+  }
+}
+
+function init() {
+  farmData = loadFarm();
+  checkOffline();
+  document.getElementById('coin-count').textContent = getCoins().toLocaleString();
+  renderCrops();
+  CROPS.forEach(crop => {
+    const st = getCropState(crop.id);
+    if (st.planted) startTimer(crop.id);
+  });
+  farmData._lastVisit = Date.now();
+  saveFarm(farmData);
+
+  setInterval(() => {
+    document.getElementById('coin-count').textContent = getCoins().toLocaleString();
+    farmData._lastVisit = Date.now();
+    saveFarm(farmData);
+  }, 5000);
+}
+
+init();
+</script>
+</body>
+</html>

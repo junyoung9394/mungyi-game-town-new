@@ -478,10 +478,12 @@ function initCanvas() {
     const availH = window.innerHeight - 80;
     size = Math.min(availW - 32, availH - 32);
   } else {
-    const dpadH = document.getElementById('dpad').offsetHeight || 180;
-    const hudH  = 100;
-    const availH = window.innerHeight - dpadH - hudH - 60;
-    size = Math.min(window.innerWidth - 16, availH);
+    const dpadH = document.getElementById('dpad').offsetHeight || 168;
+    const hudH  = 90;
+    const headerH = document.querySelector('.header') ? document.querySelector('.header').offsetHeight : 56;
+    const speedH  = 30;
+    const availH = window.innerHeight - dpadH - hudH - headerH - speedH - 12;
+    size = Math.min(window.innerWidth - 12, availH);
   }
   size = Math.max(280, Math.floor(size / CELL) * CELL);
   canvas.width = size; canvas.height = size;

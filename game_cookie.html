@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>뭉이 쿠키 🍪</title>
+<meta name="theme-color" content="#FF85A1">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Jua&display=swap" rel="stylesheet">
+<script src="ad_manager.js" onerror="console.log('ad_manager not found')"></script>
+<script src="firebase_ranking.js" onerror="console.log('firebase_ranking not found')"></script>
+<style>
+:root {
+  --bg:#0c0820; --surface:rgba(255,255,255,0.07); --border:rgba(255,255,255,0.13);
+  --pink:#FF85A1; --mint:#5EDFCA; --lav:#C4B5FF; --peach:#FFB07C; --yellow:#FFE97F;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:#fff;font-family:'Nunito',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 50% 20%,rgba(255,176,124,0.12) 0%,transparent 50%),
+             radial-gradient(ellipse at 50% 80%,rgba(255,133,161,0.10) 0%,transparent 50%);
+  pointer-events:none;z-index:0;
+}
+#home-fab{
+  position:fixed;top:12px;left:12px;z-index:999;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:50%;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;text-decoration:none;
+  backdrop-filter:blur(10px);transition:transform 0.2s;
+}
+#home-fab:hover{transform:scale(1.1);}
+header{
+  position:relative;z-index:1;
+  text-align:center;padding:16px 20px 12px;
+  background:rgba(255,255,255,0.04);
+  border-bottom:1px solid var(--border);
+}
+header h1{font-family:'Jua',sans-serif;font-size:1.6rem;color:var(--peach);}
+.header-stats{display:flex;justify-content:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
+.stat-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  border-radius:20px;padding:5px 12px;font-size:0.8rem;font-weight:700;
+}
+.pill-cookie{background:rgba(255,176,124,0.15);border:1px solid rgba(255,176,124,0.35);color:var(--peach);}
+.pill-cps{background:rgba(94,223,202,0.12);border:1px solid rgba(94,223,202,0.3);color:var(--mint);}
+.pill-coin{background:rgba(255,224,127,0.12);border:1px solid rgba(255,224,127,0.3);color:var(--yellow);}
+main{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;padding:16px;max-width:700px;margin:0 auto;}
+.cookie-area{position:relative;margin-bottom:16px;}
+#big-cookie{
+  font-size:7rem;cursor:pointer;user-select:none;
+  display:block;text-align:center;
+  transition:transform 0.08s;
+  filter:drop-shadow(0 0 20px rgba(255,176,124,0.4));
+}
+#big-cookie:active{transform:scale(0.92);}
+#big-cookie:hover{filter:drop-shadow(0 0 30px rgba(255,176,124,0.6));}
+.particles-container{position:absolute;inset:0;pointer-events:none;overflow:visible;}
+.particle{
+  position:absolute;font-size:0.85rem;font-weight:800;color:var(--yellow);
+  pointer-events:none;animation:particle-float 0.9s ease-out forwards;
+  text-shadow:0 0 8px rgba(255,224,127,0.6);
+}
+@keyframes particle-float{
+  0%{opacity:1;transform:translateY(0) scale(1);}
+  100%{opacity:0;transform:translateY(-60px) scale(0.7);}
+}
+.convert-btn{
+  background:linear-gradient(135deg,var(--yellow),var(--peach));
+  color:#0c0820;border:none;border-radius:14px;
+  padding:10px 24px;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.9rem;
+  cursor:pointer;transition:all 0.2s;margin-bottom:16px;
+}
+.convert-btn:hover{opacity:0.85;transform:scale(1.02);}
+.section-title{font-family:'Jua',sans-serif;font-size:1.1rem;color:var(--lav);margin:4px 0 10px;display:flex;align-items:center;gap:6px;align-self:flex-start;}
+.buildings-list{width:100%;}
+.building-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:12px 14px;backdrop-filter:blur(10px);
+  margin-bottom:8px;display:flex;align-items:center;gap:12px;
+  transition:transform 0.15s;
+}
+.building-card:hover{transform:translateX(2px);}
+.building-icon{font-size:2rem;min-width:40px;text-align:center;}
+.building-info{flex:1;}
+.building-name{font-weight:700;font-size:0.95rem;}
+.building-desc{font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:1px;}
+.building-count{font-size:1.1rem;font-weight:800;color:var(--lav);min-width:28px;text-align:center;}
+.buy-btn{
+  background:linear-gradient(135deg,var(--lav),#9b87e8);
+  color:#fff;border:none;border-radius:10px;
+  padding:8px 14px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.8rem;
+  cursor:pointer;transition:all 0.2s;white-space:nowrap;
+}
+.buy-btn:hover{opacity:0.85;}
+.buy-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.cookie-count-big{
+  font-family:'Jua',sans-serif;font-size:2rem;color:var(--peach);
+  margin-bottom:4px;text-align:center;
+}
+.cps-display{font-size:0.82rem;color:rgba(255,255,255,0.5);text-align:center;margin-bottom:10px;}
+</style>
+</head>
+<body>
+<a href="index.html" id="home-fab">🏠</a>
+
+<header>
+  <h1>🍪 뭉이 쿠키</h1>
+  <div class="header-stats">
+    <div class="stat-pill pill-cookie">🍪 <span id="cookie-count">0</span></div>
+    <div class="stat-pill pill-cps">⚡ <span id="cps-display">0</span>/s</div>
+    <div class="stat-pill pill-coin">🪙 <span id="coin-count">0</span></div>
+  </div>
+</header>
+
+<main>
+  <div class="cookie-area">
+    <div id="big-cookie" onclick="clickCookie(event)">🍪</div>
+    <div class="particles-container" id="particles"></div>
+  </div>
+
+  <div class="cookie-count-big"><span id="cookie-count-big">0</span> 쿠키</div>
+  <div class="cps-display">초당 <span id="cps-big">0</span>개 생산 중</div>
+
+  <button class="convert-btn" onclick="convertCookies()">🪙 쿠키 → 코인 변환 (1000🍪 = 10🪙)</button>
+
+  <div class="section-title">🏗️ 생산 건물</div>
+  <div class="buildings-list" id="buildings-list"></div>
+</main>
+
+<script>
+const SK = 'mungyi_town_save';
+const COOKIE_KEY = 'mungyi_cookie_save';
+
+function loadSave() { try { return JSON.parse(localStorage.getItem(SK)) || {}; } catch { return {}; } }
+function addCoins(n) {
+  const s = loadSave(); s.coins = (s.coins || 100) + n;
+  localStorage.setItem(SK, JSON.stringify(s));
+  document.getElementById('coin-count').textContent = (s.coins || 0).toLocaleString();
+}
+function getCoins() { return loadSave().coins || 100; }
+
+function loadCookie() { try { return JSON.parse(localStorage.getItem(COOKIE_KEY)) || {}; } catch { return {}; } }
+function saveCookie() { localStorage.setItem(COOKIE_KEY, JSON.stringify(state)); }
+
+function fmt(n) {
+  if (n >= 1e9) return (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return Math.floor(n).toLocaleString();
+}
+
+const BUILDINGS = [
+  { id:'mungy',   emoji:'🐾', name:'뭉이',   desc:'뭉이가 쿠키를 굽습니다',     cps:1,    baseCost:15    },
+  { id:'farm',    emoji:'🌾', name:'농장',   desc:'밀밭에서 쿠키 원료 수확',    cps:5,    baseCost:100   },
+  { id:'factory', emoji:'🏭', name:'공장',   desc:'대량 쿠키 자동 생산',       cps:20,   baseCost:500   },
+  { id:'wizard',  emoji:'🧙', name:'마법사', desc:'마법으로 쿠키를 소환',       cps:100,  baseCost:2000  },
+  { id:'furnace', emoji:'🔥', name:'용광로', desc:'쿠키 에너지 극대화',         cps:500,  baseCost:10000 },
+  { id:'rocket',  emoji:'🚀', name:'우주선', desc:'우주에서 쿠키 채굴',         cps:2000, baseCost:50000 },
+];
+
+let state = {
+  cookies: 0,
+  buildings: {},
+  lastTick: Date.now(),
+  ...loadCookie()
+};
+
+function getBuildingCost(b) {
+  const count = state.buildings[b.id] || 0;
+  return Math.round(b.baseCost * Math.pow(1.15, count));
+}
+
+function getTotalCps() {
+  let total = 0;
+  BUILDINGS.forEach(b => {
+    total += (state.buildings[b.id] || 0) * b.cps;
+  });
+  return total;
+}
+
+function renderBuildings() {
+  const list = document.getElementById('buildings-list');
+  list.innerHTML = '';
+  BUILDINGS.forEach(b => {
+    const count = state.buildings[b.id] || 0;
+    const cost = getBuildingCost(b);
+    const card = document.createElement('div');
+    card.className = 'building-card';
+    card.innerHTML = `
+      <div class="building-icon">${b.emoji}</div>
+      <div class="building-info">
+        <div class="building-name">${b.name}</div>
+        <div class="building-desc">+${fmt(b.cps * (count||1))}/s | 보유: ${count}개</div>
+      </div>
+      <div class="building-count">${count}</div>
+      <button class="buy-btn" onclick="buyBuilding('${b.id}')" ${state.cookies < cost ? 'disabled' : ''}>🍪${fmt(cost)}</button>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function updateStats() {
+  document.getElementById('cookie-count').textContent = fmt(state.cookies);
+  document.getElementById('cookie-count-big').textContent = fmt(state.cookies);
+  const cps = getTotalCps();
+  document.getElementById('cps-display').textContent = fmt(cps);
+  document.getElementById('cps-big').textContent = fmt(cps);
+  document.getElementById('coin-count').textContent = getCoins().toLocaleString();
+}
+
+function clickCookie(e) {
+  state.cookies += 1;
+  spawnParticle(e);
+  updateStats();
+  renderBuildings();
+}
+
+function spawnParticle(e) {
+  const container = document.getElementById('particles');
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.textContent = '+1';
+  const rect = document.getElementById('big-cookie').getBoundingClientRect();
+  const mainRect = container.parentElement.getBoundingClientRect();
+  const x = e.clientX - mainRect.left + (Math.random() * 40 - 20);
+  const y = e.clientY - mainRect.top - 10;
+  p.style.left = x + 'px';
+  p.style.top = y + 'px';
+  container.appendChild(p);
+  setTimeout(() => p.remove(), 900);
+}
+
+function buyBuilding(id) {
+  const b = BUILDINGS.find(x => x.id === id);
+  const cost = getBuildingCost(b);
+  if (state.cookies < cost) return;
+  state.cookies -= cost;
+  state.buildings[id] = (state.buildings[id] || 0) + 1;
+  updateStats();
+  renderBuildings();
+  saveCookie();
+}
+
+function convertCookies() {
+  if (state.cookies < 1000) {
+    alert('쿠키가 1000개 이상 있어야 합니다!');
+    return;
+  }
+  const batches = Math.floor(state.cookies / 1000);
+  state.cookies -= batches * 1000;
+  addCoins(batches * 10);
+  updateStats();
+  saveCookie();
+}
+
+// Production tick
+setInterval(() => {
+  const now = Date.now();
+  const elapsed = (now - state.lastTick) / 1000;
+  state.lastTick = now;
+  state.cookies += getTotalCps() * elapsed;
+  updateStats();
+  renderBuildings();
+  saveCookie();
+}, 200);
+
+function init() {
+  const saved = loadCookie();
+  Object.assign(state, saved);
+  // Offline production
+  if (state.lastTick) {
+    const offlineSec = Math.min((Date.now() - state.lastTick) / 1000, 3600 * 8);
+    if (offlineSec > 5) {
+      state.cookies += getTotalCps() * offlineSec;
+    }
+  }
+  state.lastTick = Date.now();
+  updateStats();
+  renderBuildings();
+}
+
+init();
+</script>
+</body>
+</html>
