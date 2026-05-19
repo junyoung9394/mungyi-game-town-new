@@ -453,7 +453,8 @@ function getCell(evt) {
   const rect = canvas.getBoundingClientRect();
   const scaleX = BSIZE/rect.width, scaleY = BSIZE/rect.height;
   let cx, cy;
-  if (evt.touches) { cx = evt.touches[0].clientX; cy = evt.touches[0].clientY; }
+  if (evt.changedTouches && evt.changedTouches.length) { cx = evt.changedTouches[0].clientX; cy = evt.changedTouches[0].clientY; }
+  else if (evt.touches && evt.touches.length) { cx = evt.touches[0].clientX; cy = evt.touches[0].clientY; }
   else             { cx = evt.clientX;             cy = evt.clientY; }
   const x = (cx - rect.left)*scaleX, y = (cy - rect.top)*scaleY;
   const c = Math.round(x/CELL) - 1, r = Math.round(y/CELL) - 1;

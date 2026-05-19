@@ -179,6 +179,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);display:flex;justify-c
   <div class="hud">
     <div class="hud-stat"><div class="hud-n pink" id="score">0</div><div class="hud-l">점수</div></div>
     <div class="hud-stat"><div class="hud-n yellow" id="combo" style="color:var(--yellow)">x1</div><div class="hud-l">콤보</div></div>
+    <div class="hud-stat"><div class="hud-n mint" id="time-display" style="color:var(--mint)">60</div><div class="hud-l">남은 시간</div></div>
     <div class="hud-stat"><div class="hud-n lav" id="miss">0</div><div class="hud-l">미스</div></div>
   </div>
   <div class="timer-wrap">
@@ -222,7 +223,7 @@ const DIFF = {
 };
 let diff = 'easy';
 let score=0, combo=1, misses=0;
-let gameTime=30, timeLeft=30;
+let gameTime=60, timeLeft=60;
 let timerId=null, moleTimers=[], holes=[];
 let coins = (()=>{ try{ const s=localStorage.getItem('mungyi_town_save'); return s?JSON.parse(s).coins||100:100; }catch(e){return 100;} })();
 let gameActive=false;
@@ -269,6 +270,7 @@ function startTimer(){
     timeLeft-=0.1;
     const pct=Math.max(0,timeLeft/gameTime*100);
     document.getElementById('timer-fill').style.width=pct+'%';
+    document.getElementById('time-display').textContent=Math.ceil(Math.max(0,timeLeft));
     if(timeLeft<=0){clearInterval(timerId);endGame();}
   },100);
 }

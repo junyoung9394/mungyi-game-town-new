@@ -653,7 +653,8 @@ function draw(){
       ctx.strokeStyle='rgba(94,223,202,0.7)';ctx.lineWidth=2;ctx.stroke();
     }
     if(isBoss){
-      ctx.font=`${e.w}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(e.emoji,0,0);
+      ctx.font=`${e.w}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.shadowColor=e.color;ctx.shadowBlur=20;ctx.fillText(e.emoji,0,0);ctx.shadowBlur=0;
       if(!e.trapped){
         const barW=e.w;
         ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(-barW/2,e.h/2+4,barW,6);
@@ -662,7 +663,7 @@ function draw(){
     } else {
       ctx.font=`${e.w-4}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
       const bounce=e.trapped?Math.sin(e.wobble)*3:e.onGround?Math.sin(e.wobble)*2:0;
-      ctx.fillText(e.emoji,0,bounce);
+      ctx.shadowColor=e.color;ctx.shadowBlur=14;ctx.fillText(e.emoji,0,bounce);ctx.shadowBlur=0;
       if(e.maxHp>1){for(let i=0;i<e.hp;i++){ctx.fillStyle='#FF85A1';ctx.beginPath();ctx.arc(-e.w/4+i*8,e.h/2+5,3,0,Math.PI*2);ctx.fill();}}
     }
     ctx.globalAlpha=1;ctx.restore();
