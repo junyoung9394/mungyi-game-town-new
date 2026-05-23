@@ -89,15 +89,15 @@ function drawBackground(ctx, bgOffset) {
   }
   ctx.globalAlpha = 1;
 
-  // 먼 산 (느린 시차)
-  const fo = (bgOffset * 0.12) % VW;
-  drawMountains(ctx, MTN_PEAKS_FAR, fo, GROUND_Y - 60, 70, C.mtn1, 0.6);
-  drawMountains(ctx, MTN_PEAKS_FAR, fo - VW, GROUND_Y - 60, 70, C.mtn1, 0.6);
+  // 먼 산 (느린 시차) — 왼쪽으로 스크롤
+  const fo = -((bgOffset * 0.12) % VW);
+  drawMountains(ctx, MTN_PEAKS_FAR, fo,       GROUND_Y - 60, 70, C.mtn1, 0.6);
+  drawMountains(ctx, MTN_PEAKS_FAR, fo + VW,  GROUND_Y - 60, 70, C.mtn1, 0.6);
 
-  // 가까운 산 (빠른 시차)
-  const mo = (bgOffset * 0.28) % VW;
-  drawMountains(ctx, MTN_PEAKS_MID, mo, GROUND_Y - 30, 90, C.mtn2, 0.85);
-  drawMountains(ctx, MTN_PEAKS_MID, mo - VW, GROUND_Y - 30, 90, C.mtn2, 0.85);
+  // 가까운 산 (빠른 시차) — 왼쪽으로 스크롤
+  const mo = -((bgOffset * 0.28) % VW);
+  drawMountains(ctx, MTN_PEAKS_MID, mo,       GROUND_Y - 30, 90, C.mtn2, 0.85);
+  drawMountains(ctx, MTN_PEAKS_MID, mo + VW,  GROUND_Y - 30, 90, C.mtn2, 0.85);
 }
 
 function drawMountains(ctx, peaks, offsetX, baseY, maxH, color, alpha) {
@@ -137,7 +137,7 @@ function drawGround(ctx, offset) {
   ctx.strokeStyle = 'rgba(139,92,246,0.3)';
   ctx.lineWidth = 1;
   const laneW = 40;
-  const off = ((offset * 1.0) % laneW);
+  const off = laneW - ((offset * 1.0) % laneW);
   for (let x = -laneW + off; x < VW + laneW; x += laneW) {
     ctx.beginPath();
     ctx.moveTo(x, GROUND_Y);
