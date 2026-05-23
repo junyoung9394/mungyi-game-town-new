@@ -739,11 +739,12 @@ body::before {
         <div class="daily-icon">📅</div>
         <div class="daily-title">출석 체크</div>
         <div class="daily-desc" id="attend-desc">출석하고<br>+30🪙 받기!</div>
+        <div id="home-streak" style="font-size:10px;margin-top:5px;color:rgba(255,255,255,0.45);"></div>
       </div>
-      <div class="daily-card mission">
-        <div class="daily-icon">🎮</div>
+      <div class="daily-card mission" id="mission-card" style="cursor:pointer;">
+        <div class="daily-icon" id="mission-icon">🎮</div>
         <div class="daily-title">오늘의 미션</div>
-        <div class="daily-desc" id="mission-text">뽀글뽀글에서<br>스테이지 클리어!</div>
+        <div class="daily-desc" id="mission-text">로딩 중...</div>
       </div>
     </div>
 
@@ -1007,6 +1008,13 @@ function updateAllUI() {
     const desc = document.getElementById('attend-desc');
     if (desc) desc.textContent = '오늘 출석 완료!';
   }
+
+  // 홈 스트릭 표시
+  const homeStreak = document.getElementById('home-streak');
+  if (homeStreak) {
+    const n = s.stats.streak || 0;
+    homeStreak.innerHTML = n >= 3 ? `🔥 ${n}일 연속 접속중!` : n > 0 ? `🔥 ${n}일 접속` : '';
+  }
 }
 
 // ── Quick actions ──
@@ -1083,12 +1091,15 @@ function doAttend() {
   const s = loadState(), today = new Date().toDateString();
   if (s.stats.lastAttendDate === today) { showToast('이미 출석했어요!'); return; }
   s.coins += 30;
-  s.mungyi.happy    = Math.min(100, s.mungyi.happy + 10);
-  s.stats.attendDays  = (s.stats.attendDays  || 0) + 1;
-  s.stats.streak      = (s.stats.streak      || 0) + 1;
+  s.mungyi.happy   = Math.min(100, s.mungyi.happy + 10);
+  s.stats.attendDays = (s.stats.attendDays || 0) + 1;
+  // 연속 출석 체크 — 어제 출석한 경우만 스트릭 증가, 아니면 리셋
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  s.stats.streak = (s.stats.lastAttendDate === yesterday) ? (s.stats.streak || 0) + 1 : 1;
   s.stats.lastAttendDate = today;
   saveState(s); buildWeekGrid(); updateAllUI();
-  showToast('출석 완료! +30🪙 뭉이도 기뻐해요! 😊');
+  const n = s.stats.streak;
+  showToast(n >= 7 ? `🔥🔥 ${n}일 연속! 대단해요! +30🪙` : n >= 3 ? `🔥 ${n}일 연속 출석! +30🪙` : '출석 완료! +30🪙 😊');
 }
 
 // ── Tab / Nav ──
@@ -1113,6 +1124,27 @@ function handleResize() {
 }
 window.addEventListener('resize', handleResize);
 handleResize();
+
+// ── Daily Mission (스탠드얼론) ──
+const STANDALONE_MISSIONS = [
+  { game:'game_bogle.html',  icon:'🫧', text:'뽀글뽀글 대작전<br>스테이지 클리어!',  label:'액션' },
+  { game:'game_mole.html',   icon:'🐹', text:'두더지 10마리<br>잡기 도전!',          label:'아케이드' },
+  { game:'game_omok.html',   icon:'⚫', text:'오목 AI에서<br>1판 이기기!',            label:'보드' },
+  { game:'game_bubble.html', icon:'🎯', text:'버블 슈터<br>30개 터뜨리기!',          label:'퍼즐' },
+  { game:'game_memory.html', icon:'🃏', text:'카드 짝맞추기<br>전부 완료!',           label:'메모리' },
+];
+function buildDailyMission() {
+  const d = new Date();
+  const seed = d.getFullYear() * 10000 + (d.getMonth()+1) * 100 + d.getDate();
+  const m = STANDALONE_MISSIONS[seed % STANDALONE_MISSIONS.length];
+  const card = document.getElementById('mission-card');
+  const icon = document.getElementById('mission-icon');
+  const text = document.getElementById('mission-text');
+  if (!card || !icon || !text) return;
+  icon.textContent = m.icon;
+  text.innerHTML   = m.text;
+  card.onclick     = () => { window.location.href = m.game; };
+}
 
 // ── Game Grid ──
 const GAMES = [
@@ -1185,8 +1217,9 @@ if (localStorage.getItem(bonusKey) !== _today) {
 // ── 초기화 ──
 function safeInit() {
   if (typeof AdManager !== 'undefined') AdManager.init(true);
-  try { buildGameGrid(); } catch(e) { console.error(e); }
-  try { updateAllUI(); }  catch(e) { console.error(e); }
+  try { buildGameGrid(); }    catch(e) { console.error(e); }
+  try { buildDailyMission(); } catch(e) { console.error(e); }
+  try { updateAllUI(); }      catch(e) { console.error(e); }
   setInterval(() => { try { updateAllUI(); } catch(e) {} }, 5000);
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', safeInit);

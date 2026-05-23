@@ -4,6 +4,9 @@ import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
   signInAnonymously, updateProfile,
 } from 'firebase/auth';
+import { useStreak }                                        from './utils/useStreak';
+import { useDailyMission }                                  from './utils/useDailyMission';
+import { useAchievements, checkGameAchievements, checkStreakAchievements } from './utils/useAchievements';
 import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import NeonBrickBreaker from './NeonBrickBreaker';
 import ClassicTetris    from './ClassicTetris';
@@ -58,10 +61,16 @@ export default function GameTownLayout() {
   const [user, setUser]               = useState(null);
   const [loading, setLoading]         = useState(false);
   const [currentGame, setCurrentGame] = useState(null);
-  const [pendingGame, setPendingGame] = useState(null); // 조작법 안내 중인 게임
+  const [pendingGame, setPendingGame] = useState(null);
+  const currentGameRef                = useRef(null);
 
   // BGM: 게임 화면일 때 gameplay BGM, 그 외(로비·가이드)는 lobby BGM
   const { bgmOn, toggleBgm } = useBgm(currentGame !== null);
+
+  // 스트릭 / 미션 / 업적
+  const { streak, attendedToday, claim: claimStreak } = useStreak();
+  const { mission, completed: missionCompleted, checkComplete } = useDailyMission();
+  const { unlocked: achievements, unlock, toast: achToast } = useAchievements();
 
   /* Firebase Auth 상태 */
   useEffect(() => {
@@ -201,9 +210,26 @@ export default function GameTownLayout() {
     });
   }, []);
 
+  const handleGuest = async () => {
+    setLoading(true);
+    try { await signInAnonymously(auth); } catch (e) { console.error('[Guest]', e); }
+    finally { setLoading(false); }
+  };
+
   const handleLogout = () => signOut(auth);
 
-  const goLobby = () => { setCurrentGame(null); setPendingGame(null); };
+  // 게임 종료 후 로비 복귀 — score가 있으면 업적/미션 체크
+  const goLobby = useCallback((score) => {
+    const gameId = currentGameRef.current;
+    if (gameId && typeof score === 'number' && score > 0) {
+      checkGameAchievements(gameId, score, unlock);
+      const missionCleared = checkComplete(gameId, score);
+      if (missionCleared) unlock('mission_done');
+    }
+    currentGameRef.current = null;
+    setCurrentGame(null);
+    setPendingGame(null);
+  }, [unlock, checkComplete]);
 
   /* 로비 카드 클릭 → 조작법 안내 먼저 */
   const handleSelectGame = (gameId) => {
@@ -213,9 +239,17 @@ export default function GameTownLayout() {
 
   /* 조작법 안내에서 START → 게임 실행 */
   const handleGuideStart = () => {
+    currentGameRef.current = pendingGame;
     setCurrentGame(pendingGame);
     setPendingGame(null);
   };
+
+  /* 스트릭 출석 체크 + 업적 */
+  const handleClaimStreak = useCallback(() => {
+    const n = claimStreak();
+    if (n > 0) checkStreakAchievements(n, unlock);
+    return n;
+  }, [claimStreak, unlock]);
 
   return (
     <div className="relative min-h-screen w-full bg-black font-pixel text-neon overflow-hidden">
@@ -292,12 +326,34 @@ export default function GameTownLayout() {
             style={{ boxShadow: '0 0 8px rgba(57,255,20,0.6),0 0 24px rgba(57,255,20,0.25),inset 0 0 6px rgba(57,255,20,0.2)' }}>
             <CornerDots />
 
+            {/* 업적 토스트 */}
+            {achToast && (
+              <div className="absolute top-14 left-3 right-3 z-50 flex items-center gap-3 px-3 py-2.5 pointer-events-none"
+                style={{ background: 'rgba(0,0,0,0.95)', border: '1px solid rgba(255,215,0,0.6)', boxShadow: '0 0 16px rgba(255,215,0,0.3)', animation: 'achSlide 0.4s ease-out' }}>
+                <span className="text-2xl shrink-0">{achToast.icon}</span>
+                <div>
+                  <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 7, color: 'rgba(255,215,0,0.6)', marginBottom: 2 }}>🏆 업적 달성!</div>
+                  <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 9, color: '#ffd700' }}>{achToast.name}</div>
+                  <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 7, color: 'rgba(255,215,0,0.5)' }}>{achToast.desc}</div>
+                </div>
+              </div>
+            )}
+
             {/* 로그인 전 */}
-            {!user && <LoginScreen loading={loading} onGoogle={handleGoogle} onKakao={handleKakao} />}
+            {!user && <LoginScreen loading={loading} onGoogle={handleGoogle} onKakao={handleKakao} onGuest={handleGuest} />}
 
             {/* 로그인 후 – 로비 */}
             {user && currentGame === null && pendingGame === null &&
-              <GameLobby user={user} onSelect={handleSelectGame} />}
+              <GameLobby
+                user={user}
+                onSelect={handleSelectGame}
+                streak={streak}
+                attendedToday={attendedToday}
+                onClaimStreak={handleClaimStreak}
+                mission={mission}
+                missionCompleted={missionCompleted}
+                achievements={achievements}
+              />}
 
             {/* 조작법 안내 오버레이 */}
             {user && pendingGame !== null &&
@@ -517,12 +573,11 @@ function ControlGuide({ gameId, onStart, onBack }) {
 }
 
 /* ── 로그인 화면 ──────────────────────────────────── */
-function LoginScreen({ loading, onGoogle, onKakao }) {
+function LoginScreen({ loading, onGoogle, onKakao, onGuest }) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-between px-6 py-8 bg-black">
       {/* 타이틀 + 로고 영역 */}
       <div className="flex flex-col items-center gap-3 mt-4">
-        {/* 로고 이미지 (없으면 픽셀 마스코트로 대체) */}
         <img
           src="/logo.png"
           alt="무명이 게임 타운 로고"
@@ -550,7 +605,26 @@ function LoginScreen({ loading, onGoogle, onKakao }) {
         <KakaoButton onClick={onKakao} disabled={loading} loading={loading} />
         <GoogleButton onClick={onGoogle} disabled={loading} />
 
-        {/* 로딩 중 안내 */}
+        {/* 구분선 */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-px bg-neon/15" />
+          <span className="text-neon/30 text-[7px]" style={{ fontFamily: '"Press Start 2P",monospace' }}>또는</span>
+          <div className="flex-1 h-px bg-neon/15" />
+        </div>
+
+        {/* 게스트 버튼 */}
+        <button
+          onClick={onGuest}
+          disabled={loading}
+          className="w-full border border-neon/30 text-neon/50 hover:border-neon hover:text-neon transition-colors text-[10px] tracking-wider py-3 bg-transparent disabled:opacity-40"
+          style={{ fontFamily: '"Press Start 2P",monospace' }}>
+          👾 게스트로 시작하기
+        </button>
+        <p className="text-center text-neon/20 text-[7px]"
+          style={{ fontFamily: '"Press Start 2P",monospace' }}>
+          기록 저장 없이 바로 플레이
+        </p>
+
         {loading && (
           <div className="flex flex-col items-center gap-2 mt-1">
             <p className="text-center text-[#FEE500]/80 text-[8px] blink"
@@ -677,6 +751,10 @@ function GlobalStyles() {
       }
       .blink { animation: blink 1.1s steps(2,start) infinite; }
       @keyframes blink { to { visibility: hidden; } }
+      @keyframes achSlide {
+        0%   { opacity:0; transform: translateY(-12px); }
+        100% { opacity:1; transform: translateY(0); }
+      }
     `}</style>
   );
 }

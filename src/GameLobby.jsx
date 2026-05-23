@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import RankingBoard from './components/RankingBoard';
+import { ACHIEVEMENT_DEFS } from './utils/useAchievements';
 
 /* ── AdSense 컴포넌트 ─────────────────────────────── */
 function AdUnit({ slot, format = 'auto', style = {}, className = '' }) {
@@ -32,8 +33,151 @@ const GAMES = [
   { id: 'omok',         title: 'NEON OMOK',       desc: '5목으로 승부하라',     available: true, preview: <OmokPreview /> },
 ];
 
+/* ── 스트릭 배너 ───────────────────────────────────── */
+function StreakBanner({ streak, attendedToday, onClaim }) {
+  const [claimed, setClaimed] = useState(false);
+  const flames = streak >= 7 ? '🔥🔥🔥' : streak >= 3 ? '🔥🔥' : streak >= 1 ? '🔥' : '❄️';
+
+  const handleClaim = () => {
+    const n = onClaim();
+    if (n > 0) setClaimed(true);
+  };
+
+  return (
+    <div className="mx-3 mb-2 flex items-center justify-between px-3 py-2.5"
+      style={{ border: '1px solid rgba(251,146,60,0.35)', background: 'rgba(251,146,60,0.07)' }}>
+      <div className="flex items-center gap-2.5">
+        <span className="text-lg leading-none">{flames}</span>
+        <div>
+          <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 9, color: '#fb923c', lineHeight: 1.6 }}>
+            {streak > 0 ? `${streak}일 연속 접속` : '오늘 첫 접속!'}
+          </div>
+          {streak > 0 && (
+            <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 7, color: 'rgba(251,146,60,0.5)' }}>
+              {streak >= 7 ? '🏆 7일 달성! 대단해요' : streak >= 3 ? '👏 3일 달성!' : `계속하면 +보너스`}
+            </div>
+          )}
+        </div>
+      </div>
+      {attendedToday || claimed ? (
+        <span style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: 'rgba(251,146,60,0.5)' }}>
+          ✓ 완료
+        </span>
+      ) : (
+        <button
+          onClick={handleClaim}
+          style={{
+            fontFamily: '"Press Start 2P",monospace', fontSize: 8,
+            background: '#fb923c', color: '#000', border: 'none',
+            padding: '6px 10px', cursor: 'pointer', letterSpacing: 1,
+          }}>
+          출석 +30
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ── 데일리 미션 카드 ──────────────────────────────── */
+function DailyMissionCard({ mission, completed, onGo }) {
+  if (!mission) return null;
+  return (
+    <div className="mx-3 mb-3 px-3 py-2.5"
+      style={{ border: '1px solid rgba(168,85,247,0.35)', background: 'rgba(168,85,247,0.07)' }}>
+      <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 7, color: 'rgba(196,181,255,0.55)', marginBottom: 6 }}>
+        ⚡ 오늘의 미션
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xl leading-none">{mission.emoji}</span>
+          <div>
+            <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 9, color: '#c4b5fd', lineHeight: 1.6 }}>
+              {mission.label}
+            </div>
+            <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: 'rgba(196,181,255,0.7)' }}>
+              {mission.goal}{mission.unit} 달성 → +{mission.reward}🪙
+            </div>
+          </div>
+        </div>
+        {completed ? (
+          <span style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: '#a855f7' }}>✓ 달성!</span>
+        ) : (
+          <button
+            onClick={() => onGo(mission.gameId)}
+            style={{
+              fontFamily: '"Press Start 2P",monospace', fontSize: 8,
+              background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff',
+              border: 'none', padding: '6px 10px', cursor: 'pointer', letterSpacing: 1,
+            }}>
+            ▶ GO
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── 업적 섹션 ─────────────────────────────────────── */
+function AchievementsSection({ unlocked }) {
+  const [open, setOpen] = useState(false);
+  const count = Object.keys(unlocked).length;
+  const total = Object.keys(ACHIEVEMENT_DEFS).length;
+
+  return (
+    <div className="mx-3 mb-3">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-2.5"
+        style={{ border: '1px solid rgba(57,255,20,0.2)', background: 'rgba(57,255,20,0.04)' }}>
+        <div className="flex items-center gap-2">
+          <span className="text-base">🏆</span>
+          <span style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 9, color: '#39FF14' }}>
+            업적 {count}/{total}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex gap-0.5">
+            {Object.entries(ACHIEVEMENT_DEFS).slice(0, 6).map(([id]) => (
+              <span key={id} className="text-[10px]" style={{ opacity: unlocked[id] ? 1 : 0.2 }}>
+                {ACHIEVEMENT_DEFS[id].icon}
+              </span>
+            ))}
+          </div>
+          <span style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: 'rgba(57,255,20,0.5)' }}>
+            {open ? '▲' : '▼'}
+          </span>
+        </div>
+      </button>
+
+      {open && (
+        <div className="border border-t-0 border-neon/20 bg-black/60 px-3 py-3 grid grid-cols-3 gap-2">
+          {Object.entries(ACHIEVEMENT_DEFS).map(([id, def]) => (
+            <div key={id}
+              className="flex flex-col items-center gap-1 py-2 px-1 text-center"
+              style={{
+                background: unlocked[id] ? 'rgba(57,255,20,0.08)' : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${unlocked[id] ? 'rgba(57,255,20,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                opacity: unlocked[id] ? 1 : 0.4,
+              }}>
+              <span className="text-xl">{def.icon}</span>
+              <span style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 6, color: unlocked[id] ? '#39FF14' : '#666', lineHeight: 1.5 }}>
+                {def.name}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── 메인 로비 ────────────────────────────────────── */
-export default function GameLobby({ onSelect, user }) {
+export default function GameLobby({
+  onSelect, user,
+  streak = 0, attendedToday = false, onClaimStreak,
+  mission, missionCompleted,
+  achievements = {},
+}) {
   return (
     <div className="absolute inset-0 bg-black overflow-y-auto">
 
@@ -43,7 +187,7 @@ export default function GameLobby({ onSelect, user }) {
       </div>
 
       {/* 타이틀 */}
-      <div className="px-4 pt-4 pb-3 text-center">
+      <div className="px-4 pt-4 pb-2 text-center">
         <div
           className="text-neon title-glow-pulse text-xl tracking-widest leading-loose"
           style={{ fontFamily: '"Press Start 2P", monospace' }}
@@ -51,7 +195,7 @@ export default function GameLobby({ onSelect, user }) {
           무명이<br/>게임 타운
         </div>
         <div
-          className="text-neon/50 text-[9px] tracking-widest mt-2"
+          className="text-neon/50 text-[9px] tracking-widest mt-1"
           style={{ fontFamily: '"Press Start 2P", monospace' }}
         >
           {user?.displayName
@@ -61,7 +205,16 @@ export default function GameLobby({ onSelect, user }) {
       </div>
 
       {/* 구분선 */}
-      <div className="mx-4 h-px bg-neon/30 mb-4" />
+      <div className="mx-4 h-px bg-neon/20 mb-3" />
+
+      {/* 스트릭 배너 */}
+      <StreakBanner streak={streak} attendedToday={attendedToday} onClaim={onClaimStreak} />
+
+      {/* 데일리 미션 */}
+      <DailyMissionCard mission={mission} completed={missionCompleted} onGo={onSelect} />
+
+      {/* 구분선 */}
+      <div className="mx-4 h-px bg-neon/20 mb-3" />
 
       {/* 게임 카드 그리드 (2×2) + 와이드 카드 목록 */}
       <div className="px-3 grid grid-cols-2 gap-3 mb-3">
@@ -74,7 +227,10 @@ export default function GameLobby({ onSelect, user }) {
       ))}
 
       {/* 구분선 */}
-      <div className="mx-4 h-px bg-neon/30 mb-4" />
+      <div className="mx-4 h-px bg-neon/20 mb-3" />
+
+      {/* 업적 */}
+      <AchievementsSection unlocked={achievements} />
 
       {/* 랭킹 보드 */}
       <div className="px-3 mb-4">
