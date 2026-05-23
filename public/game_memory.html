@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="기억력을 테스트하는 카드 뒤집기 게임! 난이도 3단계 타임어택">
+<meta name="keywords" content="카드게임,메모리게임,짝맞추기,기억력게임">
+<meta name="author" content="뭉이 게임타운">
+<meta name="robots" content="index, follow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="뭉이 게임타운">
+<meta property="og:title" content="🃏 카드 짝맞추기">
+<meta property="og:description" content="기억력을 테스트하는 카드 뒤집기 게임! 난이도 3단계 타임어택">
+<meta property="og:image" content="https://game.luckygrampus.com/icons/icon-512.png">
+<meta property="og:url" content="https://game.luckygrampus.com/game_memory.html">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="🃏 카드 짝맞추기">
+<meta name="twitter:description" content="기억력을 테스트하는 카드 뒤집기 게임! 난이도 3단계 타임어택">
+<meta name="twitter:image" content="https://game.luckygrampus.com/icons/icon-512.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FF85A1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="뭉이타운">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>카드 짝맞추기 - 뭉이 게임타운</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@400;600;700;800;900&display=swap');
+:root{
+  --bg:#0c0820;--surface:rgba(255,255,255,0.07);--border:rgba(255,255,255,0.13);
+  --pink:#FF85A1;--mint:#5EDFCA;--lavender:#C4B5FF;--peach:#FFB07C;--yellow:#FFE97F;
+  --glass-bg:rgba(255,255,255,0.07);--glass-blur:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);display:flex;justify-content:center;min-height:100vh;}
+.app{width:100%;max-width:100%;min-height:100vh;background:linear-gradient(160deg,#110828 0%,#0c0820 60%,#160a30 100%);display:flex;flex-direction:column;position:relative;overflow-y:auto;overflow-x:hidden;}
+
+.header{background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));border-bottom:1px solid var(--border);padding:14px 62px 14px 18px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:10;}
+.title{font-family:'Jua',sans-serif;font-size:20px;background:linear-gradient(135deg,var(--lavender),var(--mint));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.coin-box{background:rgba(255,231,127,0.12);border:1px solid rgba(255,231,127,0.25);border-radius:20px;padding:6px 14px;color:var(--yellow);font-weight:800;font-size:15px;}
+
+.hud{display:flex;gap:8px;padding:12px 16px 8px;}
+.hud-stat{background:var(--glass-bg);border:1px solid var(--border);border-radius:16px;padding:10px 12px;flex:1;text-align:center;backdrop-filter:blur(10px);}
+.hud-n{font-family:'Jua',sans-serif;font-size:20px;color:var(--lavender);}
+.hud-n.pink{color:var(--pink);}
+.hud-n.mint{color:var(--mint);}
+.hud-l{font-size:10px;color:rgba(255,255,255,0.5);font-weight:700;margin-top:2px;}
+
+.timer-wrap{padding:0 16px 10px;}
+.timer-bar-bg{height:10px;background:rgba(255,255,255,0.08);border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+.timer-bar{height:100%;background:linear-gradient(90deg,var(--mint),var(--yellow),var(--pink));border-radius:8px;transition:width 0.5s linear;position:relative;}
+.timer-bar::after{content:'';position:absolute;top:1px;left:4px;right:4px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;}
+
+.diff-row{display:flex;gap:8px;padding:0 16px 10px;}
+.diff-btn{flex:1;padding:10px;border:1px solid var(--border);border-radius:14px;background:var(--glass-bg);color:rgba(255,255,255,0.5);font-family:'Jua',sans-serif;font-size:12px;cursor:pointer;transition:all 0.18s;}
+.diff-btn.active{background:linear-gradient(135deg,rgba(196,181,255,0.2),rgba(94,223,202,0.2));border-color:var(--lavender);color:white;}
+
+/* Card grid */
+.card-grid{display:grid;gap:6px;padding:0 12px 16px;}
+
+/* Card - 3D flip */
+.card{
+  cursor:pointer;
+  perspective:600px;
+  position:relative;
+  aspect-ratio:1;
+  min-height:0;
+}
+.card-inner{
+  width:100%;height:100%;
+  position:relative;
+  transform-style:preserve-3d;
+  transition:transform 0.35s cubic-bezier(.34,1.2,.64,1);
+  border-radius:14px;
+}
+.card.flipped .card-inner{transform:rotateY(180deg);}
+.card.matched .card-inner{transform:rotateY(180deg);}
+.card-face{
+  position:absolute;inset:0;
+  border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
+.card-back-face{
+  background:linear-gradient(135deg,rgba(196,181,255,0.25),rgba(255,133,161,0.2));
+  border:1px solid rgba(196,181,255,0.3);
+  box-shadow:0 4px 16px rgba(0,0,0,0.3);
+  font-size:22px;
+}
+.card-front-face{
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.15);
+  box-shadow:0 4px 16px rgba(0,0,0,0.3);
+  transform:rotateY(180deg);
+  font-size:inherit;
+}
+.card.matched .card-front-face{
+  background:linear-gradient(135deg,rgba(94,223,202,0.2),rgba(255,233,127,0.15));
+  border-color:rgba(94,223,202,0.5);
+  box-shadow:0 0 16px rgba(94,223,202,0.25),0 4px 16px rgba(0,0,0,0.3);
+  animation:match-pop 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+.card.wrong .card-inner{animation:shake 0.35s ease;}
+
+@keyframes match-pop{0%{transform:rotateY(180deg)scale(1);}50%{transform:rotateY(180deg)scale(1.12);}100%{transform:rotateY(180deg)scale(1);}}
+@keyframes shake{0%,100%{transform:rotateY(180deg)rotate(0);}25%{transform:rotateY(180deg)rotate(-4deg);}75%{transform:rotateY(180deg)rotate(4deg);}}
+
+/* Result */
+.overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,4,20,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:100;}
+.overlay.show{display:flex;}
+.result-card{
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:28px;padding:32px 28px;text-align:center;
+  width:85%;max-width:320px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  backdrop-filter:blur(20px);
+}
+.r-emoji{font-size:64px;display:block;margin-bottom:12px;}
+.r-title{font-family:'Jua',sans-serif;font-size:24px;background:linear-gradient(135deg,var(--lavender),var(--mint));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;}
+.r-stats{font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:8px;}
+.r-coin{font-size:20px;font-weight:800;color:var(--yellow);margin-bottom:20px;}
+.r-btn{background:linear-gradient(135deg,var(--lavender),var(--mint));color:white;border:none;border-radius:18px;padding:14px 36px;font-family:'Jua',sans-serif;font-size:18px;cursor:pointer;box-shadow:0 6px 20px rgba(196,181,255,0.3);transition:all 0.18s cubic-bezier(.34,1.56,.64,1);}
+.r-btn:active{transform:scale(0.94);}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--glass-bg);backdrop-filter:blur(12px);border:1px solid var(--border);color:white;border-radius:20px;padding:10px 20px;font-size:13px;font-weight:700;transition:transform 0.3s;z-index:500;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+@media(min-width:600px){
+  .app{max-width:600px;}
+}
+@media(min-width:900px){
+  body{background:radial-gradient(ellipse at center,#1a0a2e,#06030f);}
+  .app{max-width:860px;margin:0 auto;box-shadow:0 0 80px rgba(0,0,0,0.6);}
+  .card-grid{grid-template-columns:repeat(6,1fr)!important;max-width:700px;margin:0 auto;}
+  .diff-row{max-width:500px;margin:0 auto 10px;}
+  .hud{max-width:600px;margin:0 auto;}
+}
+@media(min-width:1200px){
+  .card-grid{grid-template-columns:repeat(8,1fr)!important;}
+}
+@media(max-width:899px){
+  .result-card{margin-bottom:62px;}
+}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8518556382646891" crossorigin="anonymous"></script>
+<style>.ad-wrap{width:100%;overflow:hidden;background:rgba(0,0,0,0.15);border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);}.ad-label{font-size:9px;color:rgba(255,255,255,0.2);text-align:center;padding:2px 0;font-family:sans-serif;}</style>
+<script src="ad_manager.js" onerror="console.warn('ad_manager.js 로드 실패')"></script>
+<script src="firebase_ranking.js" onerror="console.warn('firebase_ranking.js 로드 실패')"></script>
+<script src="invite_push.js" onerror="console.warn('invite_push.js 로드 실패')"></script>
+<style>
+#home-fab{
+  position:fixed;top:12px;left:12px;z-index:9990;
+  width:44px;height:44px;border-radius:50%;
+  background:rgba(0,0,0,0.65);
+  border:2px solid rgba(255,255,255,0.18);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;text-decoration:none;
+  backdrop-filter:blur(10px);
+  box-shadow:0 2px 12px rgba(0,0,0,0.4);
+  transition:all 0.18s;
+}
+#home-fab:hover{background:rgba(255,133,161,0.4);border-color:var(--pink);transform:scale(1.1);}
+#home-fab:active{transform:scale(0.92);}
+</style>
+</head>
+<body>
+<a href="index.html" id="home-fab" title="홈으로">🏠</a>
+<div class="app">
+  <div class="header">
+    <div class="title">🃏 카드 짝 맞추기</div>
+    <div class="coin-box">🪙 <span id="coins">100</span></div>
+  </div>
+
+  <div class="hud">
+    <div class="hud-stat"><div class="hud-n pink" id="moves">0</div><div class="hud-l">시도 횟수</div></div>
+    <div class="hud-stat"><div class="hud-n mint" id="pairs">0</div><div class="hud-l">맞춘 쌍</div></div>
+    <div class="hud-stat"><div class="hud-n" id="time">60</div><div class="hud-l">남은 시간</div></div>
+  </div>
+
+  <div class="timer-wrap">
+    <div class="timer-bar-bg"><div class="timer-bar" id="timer-bar" style="width:100%"></div></div>
+  </div>
+
+  <div class="diff-row">
+    <button class="diff-btn active" onclick="setDiff(4,4,this)">쉬움 4×4</button>
+    <button class="diff-btn" onclick="setDiff(4,5,this)">보통 4×5</button>
+    <button class="diff-btn" onclick="setDiff(5,6,this)">어려움 5×6</button>
+  </div>
+
+  <div class="card-grid" id="card-grid"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="result-card">
+    <span class="r-emoji" id="r-emoji"></span>
+    <div class="r-title" id="r-title"></div>
+    <div class="r-stats" id="r-stats"></div>
+    <div class="r-coin" id="r-coin"></div>
+    <button class="r-btn" onclick="startGame()">다시하기!</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const EMOJIS=['🐱','🐶','🐸','🦊','🐼','🐨','🐯','🦁','🐮','🐷','🐧','🦆','🦋','🌸','⭐','🍓','🍩','🎸','🎈','🚀','🌈','💎','🔥','👑'];
+
+let cols=4,rows=4,totalTime=60;
+let cards=[],flipped=[],matched=0,moves=0,timeLeft,timerInterval;
+let canFlip=true;
+let coins=(()=>{ try{ const s=localStorage.getItem('mungyi_town_save'); return s?JSON.parse(s).coins||100:100; }catch(e){return 100;} })();
+
+function setDiff(c,r,btn){
+  cols=c;rows=r;
+  totalTime=c===4&&r===4?60:c===4?90:120;
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  startGame();
+}
+
+function startGame(){
+  document.getElementById('overlay').classList.remove('show');
+  clearInterval(timerInterval);
+  timeLeft=totalTime;
+  moves=0;matched=0;flipped=[];canFlip=true;
+  updateHUD();
+
+  const grid=document.getElementById('card-grid');
+  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+
+  const numPairs=(cols*rows)/2;
+  const pool=EMOJIS.slice(0,numPairs);
+  cards=[...pool,...pool].sort(()=>Math.random()-0.5);
+
+  grid.innerHTML='';
+  cards.forEach((emoji,i)=>{
+    const card=document.createElement('div');
+    card.className='card';
+    const fs = cols<=4 ? 'clamp(20px,5.5vw,34px)' : 'clamp(15px,3.8vw,26px)';
+    card.innerHTML=`
+      <div class="card-inner">
+        <div class="card-face card-back-face">✨</div>
+        <div class="card-face card-front-face" style="font-size:${fs}">${emoji}</div>
+      </div>`;
+    card.dataset.idx=i;
+    card.addEventListener('click',()=>flipCard(card,i));
+    grid.appendChild(card);
+  });
+
+  // Preview briefly
+  canFlip=false;
+  document.querySelectorAll('.card').forEach(c=>c.classList.add('flipped'));
+  setTimeout(()=>{
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('flipped'));
+    canFlip=true;
+    startTimer();
+  },1200);
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    timeLeft--;
+    document.getElementById('time').textContent=timeLeft;
+    document.getElementById('timer-bar').style.width=(timeLeft/totalTime*100)+'%';
+    if(timeLeft<=0){clearInterval(timerInterval);endGame(false);}
+  },1000);
+}
+
+function vib(ms=40){if(navigator.vibrate)navigator.vibrate(ms);}
+
+function flipCard(card,idx){
+  if(!canFlip||card.classList.contains('flipped')||card.classList.contains('matched')) return;
+  card.classList.add('flipped');
+  vib(20);
+  flipped.push({card,idx});
+
+  if(flipped.length===2){
+    canFlip=false;
+    moves++;
+    document.getElementById('moves').textContent=moves;
+    const [a,b]=flipped;
+
+    if(cards[a.idx]===cards[b.idx]){
+      a.card.classList.add('matched');
+      b.card.classList.add('matched');
+      matched++;
+      vib([40,20,60]);
+      document.getElementById('pairs').textContent=matched;
+      flipped=[];canFlip=true;
+
+      if(matched===(cols*rows)/2){
+        clearInterval(timerInterval);
+        setTimeout(()=>endGame(true),600);
+      }
+    } else {
+      vib([60,30,60]);
+      a.card.classList.add('wrong');
+      b.card.classList.add('wrong');
+      setTimeout(()=>{
+        a.card.classList.remove('flipped','wrong');
+        b.card.classList.remove('flipped','wrong');
+        flipped=[];canFlip=true;
+      },900);
+    }
+  }
+}
+
+function updateHUD(){
+  document.getElementById('moves').textContent=moves;
+  document.getElementById('pairs').textContent=matched;
+  document.getElementById('time').textContent=timeLeft;
+}
+
+function endGame(won){
+  clearInterval(timerInterval);
+  if(typeof saveGameScore!=='undefined') saveGameScore('memory', matched*10);
+  const efficiency=moves>0?Math.round(matched/moves*100):0;
+  const base=won?(cols*rows)*5:matched*3;
+  const timeBonus=won?timeLeft*2:0;
+  const reward=base+timeBonus;
+  coins+=reward;
+  localStorage.setItem('memory_coins',coins);
+  townAddCoins(reward);
+  townBoostMungyi('happy',7);
+  townRecordGame();
+  document.getElementById('coins').textContent=coins;
+
+  document.getElementById('r-emoji').textContent=won?'🎉':'😢';
+  document.getElementById('r-title').textContent=won?'완성!':'시간 초과!';
+  document.getElementById('r-stats').textContent=`${matched}쌍 맞춤 · ${moves}번 시도 · 정확도 ${efficiency}%`;
+  document.getElementById('r-coin').textContent='+'+reward+'🪙 획득!';
+  document.getElementById('overlay').classList.add('show');
+}
+
+let toastTimer;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2000);}
+
+document.getElementById('coins').textContent=coins;
+startGame();
+
+const _SK="mungyi_town_save";
+function _load(){try{const s=localStorage.getItem(_SK);return s?JSON.parse(s):{coins:100,items:{snack:0,toy:0,medicine:0},mungyi:{hunger:80,happy:80,energy:80,clean:100},stats:{totalGamesPlayed:0}};}catch(e){return {coins:100,items:{},mungyi:{},stats:{}};}}
+function _save(s){try{localStorage.setItem(_SK,JSON.stringify(s));}catch(e){}}
+function townAddCoins(n){const s=_load();s.coins=Math.max(0,(s.coins||0)+n);_save(s);}
+function townBoostMungyi(type,n){const s=_load();if(s.mungyi){s.mungyi[type]=Math.min(100,(s.mungyi[type]||0)+n);_save(s);}}
+function townRecordGame(){const s=_load();s.stats=s.stats||{};s.stats.totalGamesPlayed=(s.stats.totalGamesPlayed||0)+1;_save(s);}
+</script>
+</body>
+</html>

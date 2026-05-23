@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="뭉이를 키우며 즐기는 14가지 무료 미니게임! 오목 AI, 버블슈터, 두더지잡기, 스네이크 등 다양한 게임!">
+<meta name="keywords" content="무료게임,미니게임,뭉이키우기,온라인게임,모바일게임,퍼즐게임,아케이드게임">
+<meta name="author" content="뭉이 게임타운">
+<meta name="robots" content="index, follow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="뭉이 게임타운">
+<meta property="og:title" content="🍬 뭉이 게임타운 - 무료 미니게임 14종">
+<meta property="og:description" content="뭉이를 키우며 즐기는 14가지 무료 미니게임! 오목 AI, 버블슈터, 두더지잡기, 스네이크 등!">
+<meta property="og:image" content="https://game.luckygrampus.com/icons/icon-512.png">
+<meta property="og:url" content="https://game.luckygrampus.com/index.html">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="🍬 뭉이 게임타운 - 무료 미니게임 14종">
+<meta name="twitter:description" content="뭉이를 키우며 즐기는 14가지 무료 미니게임!">
+<meta name="twitter:image" content="https://game.luckygrampus.com/icons/icon-512.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FF85A1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="뭉이타운">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>뭉이 게임타운 - 무료 미니게임 14종 + 뭉이 키우기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Jua&display=swap" rel="stylesheet">
+<script src="ad_manager.js" defer onerror="console.warn('ad_manager.js 로드 실패')"></script>
+<script src="character_system.js" defer onerror="console.warn('character_system.js 로드 실패')"></script>
+<script src="firebase_ranking.js" defer onerror="console.warn('firebase_ranking.js 로드 실패')"></script>
+<script src="invite_push.js" defer onerror="console.warn('invite_push.js 로드 실패')"></script>
+<style>
+/* ══════════════════════════════════════════════
+   🍬 CANDY GALAXY — 뭉이 게임타운 디자인 시스템
+══════════════════════════════════════════════ */
+:root {
+  --bg:        #0c0820;
+  --bg2:       #170934;
+  --surface:   rgba(255,255,255,0.07);
+  --surface2:  rgba(255,255,255,0.12);
+  --border:    rgba(255,255,255,0.13);
+  --border2:   rgba(255,255,255,0.22);
+
+  --pink:      #FF85A1;
+  --pink-d:    #FF4D8D;
+  --mint:      #5EDFCA;
+  --mint-d:    #3CBBA8;
+  --lav:       #C4B5FF;
+  --lav-d:     #9F89FF;
+  --peach:     #FFB07C;
+  --yellow:    #FFE97F;
+  --sky:       #87CEEB;
+  --green:     #76EBA0;
+  --coral:     #FF7060;
+
+  --white:     #FFFFFF;
+  --dim:       rgba(255,255,255,0.55);
+  --dim2:      rgba(255,255,255,0.32);
+
+  --r-sm:   12px;
+  --r-md:   18px;
+  --r-lg:   26px;
+  --r-xl:   36px;
+  --r-pill: 100px;
+
+  --shadow:     0 8px 32px rgba(0,0,0,0.4);
+  --shadow-sm:  0 4px 16px rgba(0,0,0,0.3);
+}
+
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  overflow-x: hidden;
+}
+
+/* Ambient glow */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 5%,  rgba(255,133,161,0.13) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 50% at 85% 85%, rgba(196,181,255,0.10) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 60% at 50% 50%, rgba(94,223,202,0.06) 0%, transparent 65%);
+}
+
+.app {
+  width: 100%; max-width: 420px; min-height: 100vh;
+  position: relative; z-index: 1;
+  overflow-x: hidden;
+  padding-bottom: 80px;
+}
+
+/* ── Candy particles ── */
+.particle {
+  position: fixed; border-radius: 50%;
+  pointer-events: none; z-index: 0;
+  animation: pfloat var(--d) ease-in-out infinite var(--del);
+}
+@keyframes pfloat {
+  0%   { transform: translateY(105vh) scale(0); opacity: 0; }
+  10%  { opacity: .7; }
+  90%  { opacity: .3; }
+  100% { transform: translateY(-10vh) scale(1.3); opacity: 0; }
+}
+
+/* ── Marquee ── */
+.marquee-strip {
+  background: linear-gradient(90deg,
+    var(--pink-d), var(--lav-d), var(--mint-d), var(--pink-d));
+  background-size: 300% 100%;
+  animation: grad-move 5s linear infinite;
+  padding: 6px 0; overflow: hidden; white-space: nowrap;
+  position: relative; z-index: 10;
+}
+@keyframes grad-move { to { background-position: 300% 0; } }
+.marquee-inner {
+  display: inline-block;
+  animation: marquee 18s linear infinite;
+  font-family: 'Nunito', sans-serif;
+  font-size: 11px; font-weight: 900;
+  color: #fff; letter-spacing: 2px;
+}
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* ── Header ── */
+.header {
+  position: relative; z-index: 10;
+  padding: 22px 20px 4px;
+  text-align: center;
+}
+.logo-main {
+  font-family: 'Nunito', sans-serif;
+  font-size: 27px; font-weight: 900; line-height: 1.2;
+  background: linear-gradient(135deg, var(--pink), var(--lav), var(--mint));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(255,133,161,0.5));
+  animation: logo-glow 3s ease-in-out infinite;
+  display: block;
+}
+@keyframes logo-glow {
+  0%,100% { filter: drop-shadow(0 2px 10px rgba(255,133,161,0.5)); }
+  50%      { filter: drop-shadow(0 2px 18px rgba(196,181,255,0.7)); }
+}
+.logo-sub {
+  font-size: 12px; font-weight: 700; color: var(--dim);
+  letter-spacing: 1px; margin-top: 3px; display: block;
+}
+.candy-row {
+  display: flex; justify-content: center; gap: 10px;
+  margin: 10px 0 4px;
+}
+.candy-row span {
+  font-size: 15px;
+  animation: cbounce 1.8s ease-in-out infinite;
+}
+.candy-row span:nth-child(2) { animation-delay: .15s; }
+.candy-row span:nth-child(3) { animation-delay: .30s; }
+.candy-row span:nth-child(4) { animation-delay: .45s; }
+.candy-row span:nth-child(5) { animation-delay: .60s; }
+@keyframes cbounce {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-6px); }
+}
+
+/* ── Mungyi Card ── */
+.mungyi-card {
+  position: relative; z-index: 10;
+  margin: 14px 16px;
+  background: var(--surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.mungyi-card::before {
+  content: '';
+  position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+}
+.mungyi-top {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
+}
+.mungyi-avatar {
+  width: 62px; height: 62px; border-radius: 20px; flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(255,133,161,.22), rgba(196,181,255,.22));
+  border: 2px solid rgba(255,133,161,0.45);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; cursor: pointer;
+  transition: transform .2s cubic-bezier(.34,1.56,.64,1);
+  animation: avatar-pulse 3s ease-in-out infinite;
+}
+.mungyi-avatar:active { transform: scale(.88); }
+@keyframes avatar-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,133,161,.4); }
+  50%      { box-shadow: 0 0 0 10px rgba(255,133,161,0); }
+}
+.mungyi-info { flex: 1; min-width: 0; }
+.mungyi-name  { font-size: 11px; font-weight: 800; color: var(--dim); margin-bottom: 3px; }
+.mungyi-level { font-size: 15px; font-weight: 900; color: var(--white); margin-bottom: 3px; }
+.mungyi-mood  { font-size: 12px; font-weight: 700; color: var(--dim); }
+
+.coin-display {
+  background: linear-gradient(135deg, rgba(255,233,127,.15), rgba(255,176,124,.15));
+  border: 1px solid rgba(255,233,127,.35);
+  border-radius: var(--r-md); padding: 8px 13px;
+  text-align: center; flex-shrink: 0;
+}
+.coin-amount {
+  font-size: 18px; font-weight: 900; color: var(--yellow);
+  display: block; line-height: 1;
+}
+.coin-label {
+  font-size: 9px; font-weight: 700; color: var(--dim2);
+  margin-top: 3px; display: block;
+}
+
+/* Status bars — jelly gel style */
+.status-bars {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 9px;
+  margin-bottom: 14px;
+}
+.sbar { display: flex; align-items: center; gap: 8px; }
+.sbar-icon { font-size: 14px; flex-shrink: 0; }
+.sbar-bg {
+  flex: 1; height: 9px;
+  background: rgba(0,0,0,0.35);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+}
+.sbar-fill {
+  height: 100%; border-radius: var(--r-pill);
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+.sbar-fill::after {
+  content: '';
+  position: absolute; top: 2px; left: 5px; right: 5px; height: 3px;
+  background: rgba(255,255,255,.4); border-radius: 2px;
+}
+.sbar-hunger { background: linear-gradient(90deg,#FF9F43,#FFD93D); box-shadow: 0 0 8px rgba(255,159,67,.5); }
+.sbar-happy  { background: linear-gradient(90deg,#FF85A1,#FF4D8D); box-shadow: 0 0 8px rgba(255,133,161,.5); }
+.sbar-energy { background: linear-gradient(90deg,#5EDFCA,#87CEEB); box-shadow: 0 0 8px rgba(94,223,202,.5); }
+.sbar-clean  { background: linear-gradient(90deg,#C4B5FF,#9F89FF); box-shadow: 0 0 8px rgba(196,181,255,.5); }
+
+/* Quick actions */
+.quick-actions {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 8px;
+}
+.qa-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 10px 6px;
+  text-align: center; cursor: pointer;
+  transition: transform .15s cubic-bezier(.34,1.56,.64,1);
+}
+.qa-btn:active { transform: scale(.88); }
+.qa-icon  { font-size: 20px; display: block; }
+.qa-label { font-size: 9px; font-weight: 800; color: var(--dim); margin-top: 3px; }
+.qa-cost  { font-size: 9px; font-weight: 700; color: var(--yellow); margin-top: 1px; }
+
+/* ── Section label ── */
+.section-label {
+  position: relative; z-index: 10;
+  margin: 16px 16px 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+.section-label-text {
+  font-size: 13px; font-weight: 900; color: var(--white);
+  white-space: nowrap;
+}
+.section-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border2), transparent);
+}
+
+/* ── Daily zone ── */
+.daily-zone {
+  position: relative; z-index: 10;
+  margin: 0 16px 14px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.daily-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 14px 12px;
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1);
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.daily-card::before {
+  content: '';
+  position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+}
+.daily-card:active { transform: scale(.94); }
+.daily-card.attend  { border-color: rgba(118,235,160,.4); }
+.daily-card.mission { border-color: rgba(255,133,161,.4); }
+.daily-icon  { font-size: 26px; margin-bottom: 7px; }
+.daily-title { font-size: 12px; font-weight: 900; color: var(--white); margin-bottom: 4px; }
+.daily-desc  { font-size: 11px; font-weight: 600; color: var(--dim); line-height: 1.5; }
+.daily-badge {
+  position: absolute; top: 10px; right: 10px;
+  font-size: 9px; font-weight: 900;
+  padding: 3px 9px; border-radius: var(--r-pill);
+}
+
+/* ── Social zone ── */
+.social-zone {
+  position: relative; z-index: 10;
+  margin: 0 16px 14px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.social-btn {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 14px 10px;
+  cursor: pointer; text-align: center;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1);
+}
+.social-btn:active { transform: scale(.94); }
+.social-icon  { font-size: 26px; margin-bottom: 6px; display: block; }
+.social-label { font-size: 12px; font-weight: 900; margin-bottom: 3px; }
+.social-desc  { font-size: 10px; font-weight: 600; color: var(--dim); line-height: 1.5; }
+
+/* ── Game grid ── */
+.game-grid {
+  position: relative; z-index: 10;
+  margin: 0 16px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.game-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  cursor: pointer; text-decoration: none; display: block;
+  overflow: hidden; position: relative;
+  transition: transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+.game-card:active { transform: scale(.93); }
+.game-thumb {
+  height: 84px; display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.game-thumb::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 36px;
+  background: linear-gradient(transparent, rgba(0,0,0,.35));
+}
+.game-emoji {
+  font-size: 40px; position: relative; z-index: 1;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,.4));
+  transition: transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+.game-card:active .game-emoji { transform: scale(1.25) rotate(-6deg); }
+.game-body { padding: 10px 12px 13px; }
+.game-name { font-size: 13px; font-weight: 900; color: var(--white); line-height: 1.4; margin-bottom: 4px; }
+.game-desc { font-size: 10px; font-weight: 600; color: var(--dim); line-height: 1.4; margin-bottom: 8px; }
+.game-tag  {
+  display: inline-block; font-size: 10px; font-weight: 800;
+  padding: 3px 11px; border-radius: var(--r-pill);
+}
+.game-badge {
+  position: absolute; top: 8px; right: 8px; z-index: 2;
+  font-size: 10px; font-weight: 900;
+  padding: 3px 9px; border-radius: var(--r-pill);
+}
+.badge-new {
+  background: var(--pink-d); color: #fff;
+  animation: badge-flash 1.6s ease-in-out infinite;
+}
+.badge-hot { background: var(--coral); color: #fff; }
+@keyframes badge-flash {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .6; }
+}
+
+/* ── Bottom nav ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 100%; max-width: 420px;
+  background: rgba(10,6,26,.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid var(--border);
+  display: flex; padding: 10px 0 20px; z-index: 100;
+  box-shadow: 0 -8px 32px rgba(0,0,0,.45);
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  cursor: pointer; padding: 6px 0;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1);
+}
+.nav-item:active { transform: scale(.84); }
+.nav-icon  { font-size: 22px; transition: filter .2s; }
+.nav-label { font-size: 10px; font-weight: 800; color: var(--dim2); transition: color .2s; }
+.nav-item.active .nav-label { color: var(--pink); }
+.nav-item.active .nav-icon  { filter: drop-shadow(0 0 8px var(--pink)); }
+
+/* Tabs */
+.tab-content        { display: none; }
+.tab-content.active { display: block; }
+
+/* ── Shop ── */
+.shop-header { padding: 20px 16px 12px; text-align: center; }
+.shop-title  { font-size: 20px; font-weight: 900; color: var(--white); margin-bottom: 4px; }
+.shop-sub    { font-size: 12px; font-weight: 600; color: var(--dim); }
+.shop-grid {
+  position: relative; z-index: 10;
+  margin: 0 16px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  padding-bottom: 20px;
+}
+.shop-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 16px 12px;
+  text-align: center; cursor: pointer; overflow: hidden; position: relative;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1);
+}
+.shop-item::before {
+  content: '';
+  position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+}
+.shop-item:active { transform: scale(.94); }
+.shop-icon   { font-size: 36px; display: block; margin-bottom: 8px; }
+.shop-name   { font-size: 11px; font-weight: 900; color: var(--white); margin-bottom: 5px; line-height: 1.5; }
+.shop-effect { font-size: 10px; font-weight: 600; color: var(--dim); margin-bottom: 8px; }
+.shop-price  { font-size: 15px; font-weight: 900; color: var(--yellow); margin-bottom: 10px; }
+.shop-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--pink-d), var(--peach));
+  border: none; border-radius: var(--r-pill);
+  color: #fff; padding: 9px;
+  font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 900;
+  cursor: pointer; position: relative; overflow: hidden;
+  box-shadow: 0 4px 12px rgba(255,77,141,.35);
+}
+.shop-btn::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 50%;
+  background: rgba(255,255,255,.18); border-radius: var(--r-pill);
+}
+
+/* ── Profile ── */
+.profile-section { padding: 18px 16px 90px; position: relative; z-index: 10; }
+.profile-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 24px;
+  text-align: center; margin-bottom: 12px; overflow: hidden; position: relative;
+}
+.profile-card::before {
+  content: '';
+  position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
+}
+.prof-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;
+}
+.prof-stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 14px 8px; text-align: center;
+}
+.prof-stat-n { font-size: 22px; font-weight: 900; display: block; }
+.prof-stat-l { font-size: 10px; font-weight: 700; color: var(--dim); margin-top: 4px; }
+.info-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 16px; margin-bottom: 12px;
+}
+.info-box-title { font-size: 12px; font-weight: 900; margin-bottom: 12px; }
+
+/* ── Attend modal ── */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: none; align-items: flex-end; justify-content: center; z-index: 500;
+}
+.modal-bg.show { display: flex; }
+.modal-box {
+  background: rgba(20,10,48,.97);
+  border-top: 1px solid var(--border2);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: 26px 20px 38px;
+  width: 100%; max-width: 420px; position: relative;
+}
+.modal-box::before {
+  content: '';
+  position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+}
+.modal-title {
+  font-size: 17px; font-weight: 900; color: var(--white);
+  text-align: center; margin-bottom: 22px;
+}
+.week-grid {
+  display: grid; grid-template-columns: repeat(7,1fr);
+  gap: 6px; margin-bottom: 22px;
+}
+.day-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 8px 2px; text-align: center;
+}
+.day-box.done  { border-color: rgba(118,235,160,.5); background: rgba(118,235,160,.08); }
+.day-box.today {
+  border-color: var(--yellow);
+  animation: day-glow 1.5s ease-in-out infinite;
+}
+@keyframes day-glow {
+  0%,100% { box-shadow: 0 0 8px rgba(255,233,127,.35); }
+  50%      { box-shadow: 0 0 18px rgba(255,233,127,.7); }
+}
+.day-name { font-size: 9px; font-weight: 800; color: var(--dim2); margin-bottom: 4px; }
+.day-dot  { font-size: 14px; display: block; }
+.attend-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--green), var(--mint-d));
+  border: none; border-radius: var(--r-pill);
+  color: #0c2010; padding: 15px;
+  font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 900;
+  cursor: pointer; margin-bottom: 10px;
+  box-shadow: 0 4px 18px rgba(118,235,160,.45);
+  position: relative; overflow: hidden;
+}
+.attend-btn::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 50%;
+  background: rgba(255,255,255,.18); border-radius: var(--r-pill);
+}
+.modal-close {
+  width: 100%; background: transparent;
+  border: 1px solid var(--border); border-radius: var(--r-pill);
+  color: var(--dim); padding: 13px;
+  font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 90px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: rgba(255,77,141,.95);
+  backdrop-filter: blur(12px);
+  color: #fff; font-size: 13px; font-weight: 800;
+  padding: 12px 26px; border-radius: var(--r-pill);
+  transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+  z-index: 1000; pointer-events: none; white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(255,77,141,.5);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ──────── PC Layout (900px+) ──────── */
+@media (min-width: 900px) {
+  body { background: #080618; align-items: flex-start; }
+  body::before {
+    background:
+      radial-gradient(ellipse 30% 50% at 10% 30%, rgba(255,133,161,.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 90% 70%, rgba(196,181,255,.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 50% 50%, rgba(94,223,202,.04) 0%, transparent 60%);
+  }
+  .pc-wrapper { display: flex; width: 100%; max-width: 1200px; margin: 0 auto; min-height: 100vh; z-index: 1; position: relative; }
+  .pc-sidebar {
+    width: 280px; flex-shrink: 0;
+    padding: 28px 20px; border-right: 1px solid var(--border);
+    position: sticky; top: 0; height: 100vh;
+    overflow-y: auto; display: flex; flex-direction: column; gap: 16px;
+    background: rgba(12,8,32,.65); backdrop-filter: blur(24px);
+  }
+  .pc-sidebar::-webkit-scrollbar { width: 3px; }
+  .pc-sidebar::-webkit-scrollbar-thumb { background: rgba(255,133,161,.3); border-radius: 2px; }
+  .pc-logo { text-align: center; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .pc-logo .logo-main { font-size: 18px; }
+  .pc-sidebar .mungyi-card { margin: 0; padding: 14px; }
+  .pc-sidebar .mungyi-avatar { width: 46px; height: 46px; font-size: 24px; }
+  .pc-nav { display: flex; flex-direction: column; gap: 6px; }
+  .pc-nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; border-radius: var(--r-md);
+    background: transparent; border: 1px solid transparent;
+    cursor: pointer; transition: all .15s;
+    font-size: 14px; font-weight: 800; color: var(--dim);
+  }
+  .pc-nav-item:hover  { background: var(--surface); border-color: var(--border); color: var(--white); }
+  .pc-nav-item.active { background: rgba(255,133,161,.12); border-color: rgba(255,133,161,.35); color: var(--pink); }
+  .pc-nav-icon { font-size: 20px; }
+  .pc-sidebar-qa { border-top: 1px solid var(--border); padding-top: 16px; }
+  .pc-sidebar-qa-label { font-size: 11px; font-weight: 800; color: var(--dim2); margin-bottom: 10px; }
+  .pc-sidebar-qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pc-main { flex: 1; max-width: 760px; overflow-y: auto; height: 100vh; padding-bottom: 40px; }
+  .pc-main::-webkit-scrollbar { width: 4px; }
+  .pc-main::-webkit-scrollbar-thumb { background: rgba(255,133,161,.3); border-radius: 2px; }
+  .app { max-width: 100%; padding-bottom: 40px; }
+  .bottom-nav { display: none !important; }
+  #tab-home .header      { display: none; }
+  #tab-home .mungyi-card { display: none; }
+  .marquee-strip { position: sticky; top: 0; z-index: 20; }
+  .game-grid   { grid-template-columns: repeat(3,1fr); gap: 14px; margin: 0 24px; }
+  .shop-grid   { grid-template-columns: repeat(3,1fr); margin: 0 24px; }
+  .section-label { margin: 18px 24px 10px; }
+  .daily-zone  { margin: 0 24px 14px; }
+  .social-zone { margin: 0 24px 14px; }
+  .modal-box   { max-width: 480px; }
+  .game-card:hover { transform: translateY(-5px); box-shadow: 0 12px 32px rgba(0,0,0,.4); border-color: var(--border2); }
+  .game-card:hover .game-emoji { transform: scale(1.18); }
+  .shop-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); }
+}
+
+@media (min-width: 1400px) {
+  .pc-wrapper { max-width: 1400px; }
+  .pc-sidebar { width: 320px; }
+  .pc-main    { max-width: 900px; }
+  .game-grid  { grid-template-columns: repeat(4,1fr); }
+  .shop-grid  { grid-template-columns: repeat(4,1fr); }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+  .app        { max-width: 540px; }
+  .bottom-nav { max-width: 540px; }
+  .modal-box  { max-width: 540px; }
+  .game-grid  { grid-template-columns: repeat(3,1fr); }
+  .shop-grid  { grid-template-columns: repeat(3,1fr); }
+  .prof-stats { grid-template-columns: repeat(4,1fr); }
+}
+</style>
+</head>
+<body>
+<div id="particles-container"></div>
+
+<div class="pc-wrapper">
+
+<!-- ── PC 사이드바 ── -->
+<aside class="pc-sidebar" id="pc-sidebar" style="display:none;">
+  <div class="pc-logo">
+    <div class="logo-main">🍬 MUNGYI<br>GAME TOWN</div>
+    <div class="logo-sub">뭉이 게임타운</div>
+  </div>
+
+  <div class="mungyi-card">
+    <div class="mungyi-top">
+      <div class="mungyi-avatar" onclick="goToMungyi()" style="width:46px;height:46px;font-size:24px;">🐱</div>
+      <div class="mungyi-info">
+        <div class="mungyi-level" id="sb-level">⭐ 아기 뭉이</div>
+        <div class="mungyi-mood"  id="sb-mood">😊 기분 좋아!</div>
+      </div>
+      <div class="coin-display" style="padding:6px 10px;">
+        <span class="coin-amount" style="font-size:14px;">🪙<span id="sb-coins">100</span></span>
+      </div>
+    </div>
+    <div class="status-bars">
+      <div class="sbar"><span class="sbar-icon">🍖</span><div class="sbar-bg"><div class="sbar-fill sbar-hunger" id="sb-hunger" style="width:80%"></div></div></div>
+      <div class="sbar"><span class="sbar-icon">💖</span><div class="sbar-bg"><div class="sbar-fill sbar-happy"  id="sb-happy"  style="width:80%"></div></div></div>
+      <div class="sbar"><span class="sbar-icon">⚡</span><div class="sbar-bg"><div class="sbar-fill sbar-energy" id="sb-energy" style="width:80%"></div></div></div>
+      <div class="sbar"><span class="sbar-icon">🛁</span><div class="sbar-bg"><div class="sbar-fill sbar-clean"  id="sb-clean"  style="width:100%"></div></div></div>
+    </div>
+  </div>
+
+  <nav class="pc-nav">
+    <div class="pc-nav-item active" id="pcnav-home"    onclick="switchTab('home',null,'home')">   <span class="pc-nav-icon">🏠</span> 홈</div>
+    <div class="pc-nav-item"        id="pcnav-shop"    onclick="switchTab('shop',null,'shop')">   <span class="pc-nav-icon">🛒</span> 상점</div>
+    <div class="pc-nav-item"        id="pcnav-profile" onclick="switchTab('profile',null,'profile')"><span class="pc-nav-icon">👤</span> 프로필</div>
+  </nav>
+
+  <div class="pc-sidebar-qa">
+    <div class="pc-sidebar-qa-label">⚡ 빠른 행동</div>
+    <div class="pc-sidebar-qa-grid">
+      <div class="qa-btn" onclick="quickFeed()"><div class="qa-icon">🍖</div><div class="qa-label">밥주기</div><div class="qa-cost">-5🪙</div></div>
+      <div class="qa-btn" onclick="quickPlay()"><div class="qa-icon">🎾</div><div class="qa-label">놀기</div><div class="qa-cost">무료</div></div>
+      <div class="qa-btn" onclick="quickBath()"><div class="qa-icon">🛁</div><div class="qa-label">목욕</div><div class="qa-cost">-10🪙</div></div>
+      <div class="qa-btn" onclick="goToMungyi()"><div class="qa-icon">🐱</div><div class="qa-label">키우기</div><div class="qa-cost">이동</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── 메인 컨텐츠 ── -->
+<div class="pc-main" id="pc-main">
+<div class="app">
+  <div class="marquee-strip">
+    <div class="marquee-inner">🍬 뭉이 게임타운 🍭 PLAY &amp; GROW MUNGYI 🧁 뭉이 게임타운 🍭 PLAY &amp; GROW MUNGYI 🍬 뭉이 게임타운 🍭 PLAY &amp; GROW MUNGYI &nbsp;</div>
+  </div>
+
+  <!-- ═══ HOME 탭 ═══ -->
+  <div class="tab-content active" id="tab-home">
+
+    <div class="header">
+      <div class="logo-main">🍬 MUNGYI GAME TOWN</div>
+      <div class="logo-sub">뭉이 게임타운</div>
+      <div class="candy-row"><span>🍬</span><span>🍭</span><span>🧁</span><span>🍭</span><span>🍬</span></div>
+    </div>
+
+    <!-- 뭉이 카드 -->
+    <div class="mungyi-card">
+      <div class="mungyi-top">
+        <div class="mungyi-avatar" id="mungyi-avatar" onclick="goToMungyi()">🐱</div>
+        <div class="mungyi-info">
+          <div class="mungyi-name">나의 뭉이</div>
+          <div class="mungyi-level" id="mungyi-level">⭐ 아기 뭉이</div>
+          <div class="mungyi-mood"  id="mungyi-mood">😊 기분 좋아!</div>
+        </div>
+        <div class="coin-display">
+          <span class="coin-amount">🪙<span id="total-coins">100</span></span>
+          <span class="coin-label">보유 코인</span>
+        </div>
+      </div>
+      <div class="status-bars">
+        <div class="sbar"><span class="sbar-icon">🍖</span><div class="sbar-bg"><div class="sbar-fill sbar-hunger" id="bar-hunger" style="width:80%"></div></div></div>
+        <div class="sbar"><span class="sbar-icon">💖</span><div class="sbar-bg"><div class="sbar-fill sbar-happy"  id="bar-happy"  style="width:80%"></div></div></div>
+        <div class="sbar"><span class="sbar-icon">⚡</span><div class="sbar-bg"><div class="sbar-fill sbar-energy" id="bar-energy" style="width:80%"></div></div></div>
+        <div class="sbar"><span class="sbar-icon">🛁</span><div class="sbar-bg"><div class="sbar-fill sbar-clean"  id="bar-clean"  style="width:100%"></div></div></div>
+      </div>
+      <div class="quick-actions">
+        <div class="qa-btn" onclick="quickFeed()"><div class="qa-icon">🍖</div><div class="qa-label">밥주기</div><div class="qa-cost">-5🪙</div></div>
+        <div class="qa-btn" onclick="quickPlay()"><div class="qa-icon">🎾</div><div class="qa-label">놀기</div><div class="qa-cost">무료</div></div>
+        <div class="qa-btn" onclick="quickBath()"><div class="qa-icon">🛁</div><div class="qa-label">목욕</div><div class="qa-cost">-10🪙</div></div>
+        <div class="qa-btn" onclick="goToMungyi()"><div class="qa-icon">🐱</div><div class="qa-label">키우기</div><div class="qa-cost">이동</div></div>
+      </div>
+    </div>
+
+    <!-- 오늘의 미션 -->
+    <div class="section-label"><div class="section-label-text">🎯 오늘의 미션</div><div class="section-line"></div></div>
+    <div class="daily-zone">
+      <div class="daily-card attend" onclick="openAttend()">
+        <div class="daily-badge" id="attend-badge" style="background:var(--green);color:#0c2010;">GO!</div>
+        <div class="daily-icon">📅</div>
+        <div class="daily-title">출석 체크</div>
+        <div class="daily-desc" id="attend-desc">출석하고<br>+30🪙 받기!</div>
+        <div id="home-streak" style="font-size:10px;margin-top:5px;color:rgba(255,255,255,0.45);"></div>
+      </div>
+      <div class="daily-card mission" id="mission-card" style="cursor:pointer;">
+        <div class="daily-icon" id="mission-icon">🎮</div>
+        <div class="daily-title">오늘의 미션</div>
+        <div class="daily-desc" id="mission-text">로딩 중...</div>
+      </div>
+    </div>
+
+    <!-- 소셜 -->
+    <div class="social-zone">
+      <div class="social-btn" onclick="typeof InviteSystem!=='undefined'&&InviteSystem.showSharePopup()" style="border-color:rgba(255,133,161,.35);">
+        <span class="social-icon">🔗</span>
+        <div class="social-label" style="color:var(--pink);">친구 초대</div>
+        <div class="social-desc">초대하고<br>🪙100 코인!</div>
+      </div>
+      <div class="social-btn" onclick="typeof PushSystem!=='undefined'&&PushSystem.requestPermission()" style="border-color:rgba(118,235,160,.35);">
+        <span class="social-icon">🔔</span>
+        <div class="social-label" style="color:var(--green);">알림 설정</div>
+        <div class="social-desc">뭉이 상태<br>알림 받기!</div>
+      </div>
+    </div>
+
+    <!-- 게임 목록 -->
+    <div class="section-label"><div class="section-label-text">🕹️ 게임 목록</div><div class="section-line"></div></div>
+    <div class="game-grid" id="game-grid"></div>
+
+  </div><!-- /tab-home -->
+
+  <!-- ═══ SHOP 탭 ═══ -->
+  <div class="tab-content" id="tab-shop">
+    <div class="shop-header">
+      <div class="shop-title">🛒 뭉이 상점</div>
+      <div class="shop-sub">게임 코인으로 뭉이 아이템 구매!</div>
+    </div>
+    <div class="shop-grid">
+      <div class="shop-item" onclick="buyShopItem('snack',1,15,'뭉이 간식')">
+        <span class="shop-icon">🍪</span>
+        <div class="shop-name">뭉이 간식</div>
+        <div class="shop-effect">행복+10 배고픔+15</div>
+        <div class="shop-price">🪙 15</div>
+        <button class="shop-btn">구매</button>
+      </div>
+      <div class="shop-item" onclick="buyShopItem('toy',1,20,'장난감')">
+        <span class="shop-icon">🧸</span>
+        <div class="shop-name">뭉이 장난감</div>
+        <div class="shop-effect">행복+25 에너지-10</div>
+        <div class="shop-price">🪙 20</div>
+        <button class="shop-btn">구매</button>
+      </div>
+      <div class="shop-item" onclick="buyShopItem('medicine',1,25,'비타민')">
+        <span class="shop-icon">💊</span>
+        <div class="shop-name">뭉이 비타민</div>
+        <div class="shop-effect">에너지+30 배고픔+10</div>
+        <div class="shop-price">🪙 25</div>
+        <button class="shop-btn">구매</button>
+      </div>
+      <div class="shop-item" onclick="getEventCoin()">
+        <span class="shop-icon">🎁</span>
+        <div class="shop-name">접속 보너스</div>
+        <div class="shop-effect">+50🪙 (이벤트)</div>
+        <div class="shop-price" style="color:var(--green);">무료!</div>
+        <button class="shop-btn" style="background:linear-gradient(135deg,var(--green),var(--mint-d));color:#0c2010;box-shadow:0 4px 12px rgba(118,235,160,.35);">받기</button>
+      </div>
+      <div class="shop-item" onclick="buyShopItem('snack',5,50,'간식 5개')">
+        <span class="shop-icon">🍬</span>
+        <div class="shop-name">간식 묶음 ×5</div>
+        <div class="shop-effect">간식 5개 한번에!</div>
+        <div class="shop-price">🪙 50</div>
+        <button class="shop-btn">구매</button>
+      </div>
+      <div class="shop-item" onclick="buyShopItem('medicine',3,60,'비타민 3개')">
+        <span class="shop-icon">💉</span>
+        <div class="shop-name">비타민 묶음 ×3</div>
+        <div class="shop-effect">비타민 3개 한번에!</div>
+        <div class="shop-price">🪙 60</div>
+        <button class="shop-btn">구매</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PROFILE 탭 ═══ -->
+  <div class="tab-content" id="tab-profile">
+    <div class="profile-section">
+      <div style="font-size:20px;font-weight:900;color:var(--white);text-align:center;margin-bottom:18px;">👤 내 프로필</div>
+      <div class="profile-card">
+        <div style="font-size:58px;margin-bottom:12px;" id="prof-char-emoji">🐱</div>
+        <a href="character_select.html" style="display:inline-block;margin-bottom:16px;background:linear-gradient(135deg,var(--pink-d),var(--peach));color:#fff;border-radius:var(--r-pill);padding:10px 26px;font-size:13px;font-weight:900;text-decoration:none;box-shadow:0 4px 14px rgba(255,77,141,.4);">🐾 캐릭터 선택</a>
+        <div style="font-size:17px;font-weight:900;color:var(--white);margin-bottom:5px;">뭉이</div>
+        <div style="font-size:14px;font-weight:700;color:var(--yellow);" id="prof-level">⭐ 아기 뭉이</div>
+      </div>
+      <div class="prof-stats">
+        <div class="prof-stat"><span class="prof-stat-n" id="p-coins" style="color:var(--yellow);">100</span><div class="prof-stat-l">보유 코인</div></div>
+        <div class="prof-stat"><span class="prof-stat-n" id="p-days"  style="color:var(--mint);">0</span><div class="prof-stat-l">출석 일수</div></div>
+        <div class="prof-stat"><span class="prof-stat-n" id="p-games" style="color:var(--pink);">0</span><div class="prof-stat-l">게임 횟수</div></div>
+        <div class="prof-stat"><span class="prof-stat-n" id="p-streak" style="color:var(--green);">0</span><div class="prof-stat-l">연속 출석</div></div>
+      </div>
+      <div class="info-box">
+        <div class="info-box-title" style="color:var(--lav);">보유 아이템</div>
+        <div style="display:flex;gap:24px;">
+          <div style="text-align:center;"><div style="font-size:30px;">🍪</div><div style="font-size:10px;color:var(--dim);margin-top:4px;">간식</div><div style="font-size:17px;font-weight:900;color:var(--yellow);margin-top:2px;" id="p-snack">0</div></div>
+          <div style="text-align:center;"><div style="font-size:30px;">🧸</div><div style="font-size:10px;color:var(--dim);margin-top:4px;">장난감</div><div style="font-size:17px;font-weight:900;color:var(--yellow);margin-top:2px;" id="p-toy">0</div></div>
+          <div style="text-align:center;"><div style="font-size:30px;">💊</div><div style="font-size:10px;color:var(--dim);margin-top:4px;">비타민</div><div style="font-size:17px;font-weight:900;color:var(--yellow);margin-top:2px;" id="p-medicine">0</div></div>
+        </div>
+      </div>
+      <div class="info-box">
+        <div class="info-box-title" style="color:var(--pink);">뭉이 상태</div>
+        <div id="mungyi-detail" style="font-size:12px;font-weight:600;color:var(--dim);line-height:2.3;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('home',this)"> <span class="nav-icon">🏠</span><span class="nav-label">홈</span></div>
+    <div class="nav-item"        onclick="switchTab('shop',this)"> <span class="nav-icon">🛒</span><span class="nav-label">상점</span></div>
+    <div class="nav-item"        onclick="goRanking()">            <span class="nav-icon">🏆</span><span class="nav-label">랭킹</span></div>
+    <div class="nav-item"        onclick="switchTab('profile',this)"><span class="nav-icon">👤</span><span class="nav-label">프로필</span></div>
+  </nav>
+
+</div><!-- /app -->
+</div><!-- /pc-main -->
+</div><!-- /pc-wrapper -->
+
+<!-- Attend Modal -->
+<div class="modal-bg" id="attend-modal">
+  <div class="modal-box">
+    <div class="modal-title">📅 이번 주 출석</div>
+    <div class="week-grid" id="week-grid"></div>
+    <button class="attend-btn" id="attend-main-btn" onclick="doAttend()">오늘 출석하기 (+30 코인)</button>
+    <button class="modal-close" onclick="closeAttend()">닫기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 공유 저장소 ──
+const STORE_KEY = 'mungyi_town_save';
+const STAGES_NAMES = ['아기 뭉이','꼬마 뭉이','청소년 뭉이','어른 뭉이'];
+const STAGE_AGES   = [0, 3, 7, 14];
+
+function defaultState() {
+  return {
+    coins: 100,
+    items: { snack:0, toy:0, medicine:0 },
+    mungyi: {
+      hunger:80, happy:80, energy:80, clean:100,
+      age:1, stage:0, feedCount:0, playCount:0,
+      isSleeping:false, isDead:false, hasPoop:false,
+      lastUpdate: Date.now(), _ageTimer: Date.now()
+    },
+    stats: { totalGamesPlayed:0, attendDays:0, streak:0, lastAttendDate:'' }
+  };
+}
+
+function loadState() {
+  try {
+    const s = localStorage.getItem(STORE_KEY);
+    if (!s) return defaultState();
+    const d = defaultState(), l = JSON.parse(s);
+    return { ...d, ...l,
+      items:  { ...d.items,  ...(l.items  || {}) },
+      mungyi: { ...d.mungyi, ...(l.mungyi || {}) },
+      stats:  { ...d.stats,  ...(l.stats  || {}) }
+    };
+  } catch(e) { return defaultState(); }
+}
+function saveState(s) { try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch(e) {} }
+
+function getStage(age) {
+  let st = 0;
+  for (let i = STAGE_AGES.length - 1; i >= 0; i--) {
+    if (age >= STAGE_AGES[i]) { st = i; break; }
+  }
+  return st;
+}
+function getMood(m) {
+  const avg = (m.hunger + m.happy + m.energy + m.clean) / 4;
+  if (m.isSleeping) return '💤 꿈나라';
+  if (avg >= 80)    return '😊 최고야!';
+  if (avg >= 60)    return '🙂 괜찮아';
+  if (avg >= 40)    return '😐 심심해...';
+  if (avg >= 20)    return '😢 슬퍼...';
+  return '😭 힘들어!';
+}
+
+function applyDecay() {
+  const s   = loadState();
+  const now = Date.now();
+  const elapsed = Math.min((now - (s.mungyi.lastUpdate || now)) / 1000, 300);
+  s.mungyi.lastUpdate = now;
+  if (!s.mungyi.isSleeping) {
+    s.mungyi.hunger = Math.max(0, s.mungyi.hunger - elapsed * 0.04);
+    s.mungyi.happy  = Math.max(0, s.mungyi.happy  - elapsed * 0.03);
+    s.mungyi.energy = Math.max(0, s.mungyi.energy - elapsed * 0.025);
+    s.mungyi.clean  = Math.max(0, s.mungyi.clean  - elapsed * 0.02);
+  } else {
+    s.mungyi.energy = Math.min(100, s.mungyi.energy + elapsed * 0.06);
+  }
+  if (!s.mungyi._ageTimer) s.mungyi._ageTimer = now;
+  if ((now - s.mungyi._ageTimer) / 1000 > 120) { s.mungyi.age++; s.mungyi._ageTimer = now; }
+  saveState(s);
+  return s;
+}
+
+function updateAllUI() {
+  const s      = applyDecay();
+  const m      = s.mungyi;
+  const stage  = getStage(m.age);
+  const sName  = STAGES_NAMES[stage];
+
+  if (typeof CharacterSystem !== 'undefined') {
+    const char = CharacterSystem.getSelected();
+    const av = document.getElementById('mungyi-avatar');
+    const pf = document.getElementById('prof-char-emoji');
+    if (av) av.textContent = char.emoji;
+    if (pf) pf.textContent = char.emoji;
+  }
+
+  document.getElementById('total-coins').textContent = s.coins;
+  document.getElementById('p-coins').textContent     = s.coins;
+  document.getElementById('mungyi-level').textContent = '⭐'.repeat(stage+1) + ' ' + sName;
+  document.getElementById('mungyi-mood').textContent  = getMood(m);
+  document.getElementById('prof-level').textContent   = '⭐'.repeat(stage+1) + ' ' + sName;
+
+  ['hunger','happy','energy','clean'].forEach(k => {
+    const el = document.getElementById('bar-' + k);
+    if (el) el.style.width = Math.round(m[k]) + '%';
+  });
+
+  document.getElementById('p-days').textContent    = s.stats.attendDays;
+  document.getElementById('p-games').textContent   = s.stats.totalGamesPlayed;
+  document.getElementById('p-streak').textContent  = s.stats.streak;
+  document.getElementById('p-snack').textContent   = s.items.snack    || 0;
+  document.getElementById('p-toy').textContent     = s.items.toy      || 0;
+  document.getElementById('p-medicine').textContent= s.items.medicine || 0;
+
+  const det = document.getElementById('mungyi-detail');
+  if (det) det.innerHTML =
+    `🍖 배고픔: <b style="color:var(--yellow)">${Math.round(m.hunger)}</b>&nbsp;&nbsp;` +
+    `💖 행복: <b style="color:var(--pink)">${Math.round(m.happy)}</b><br>` +
+    `⚡ 에너지: <b style="color:var(--mint)">${Math.round(m.energy)}</b>&nbsp;&nbsp;` +
+    `🛁 청결: <b style="color:var(--lav)">${Math.round(m.clean)}</b><br>` +
+    `🗓️ 나이: <b style="color:var(--yellow)">${m.age}일</b>&nbsp;&nbsp;` +
+    `🍖 밥: <b style="color:var(--peach)">${m.feedCount||0}회</b>`;
+
+  // PC 사이드바 동기화
+  const sbCoins = document.getElementById('sb-coins');
+  const sbLevel = document.getElementById('sb-level');
+  const sbMood  = document.getElementById('sb-mood');
+  if (sbCoins) sbCoins.textContent = s.coins;
+  if (sbLevel) sbLevel.textContent = '⭐'.repeat(stage+1) + ' ' + sName;
+  if (sbMood)  sbMood.textContent  = getMood(m);
+  ['hunger','happy','energy','clean'].forEach(k => {
+    const el = document.getElementById('sb-' + k);
+    if (el) el.style.width = Math.round(m[k]) + '%';
+  });
+
+  // 출석 배지
+  if (s.stats.lastAttendDate === new Date().toDateString()) {
+    const badge = document.getElementById('attend-badge');
+    if (badge) {
+      badge.textContent = '✓';
+      badge.style.cssText = 'background:#444;color:#888;font-size:9px;font-weight:900;padding:3px 9px;border-radius:100px;position:absolute;top:10px;right:10px;';
+    }
+    const desc = document.getElementById('attend-desc');
+    if (desc) desc.textContent = '오늘 출석 완료!';
+  }
+
+  // 홈 스트릭 표시
+  const homeStreak = document.getElementById('home-streak');
+  if (homeStreak) {
+    const n = s.stats.streak || 0;
+    homeStreak.innerHTML = n >= 3 ? `🔥 ${n}일 연속 접속중!` : n > 0 ? `🔥 ${n}일 접속` : '';
+  }
+}
+
+// ── Quick actions ──
+function quickFeed() {
+  const s = loadState();
+  if (s.coins < 5) { showToast('코인이 부족해요! 🪙'); return; }
+  s.coins -= 5;
+  s.mungyi.hunger = Math.min(100, s.mungyi.hunger + 25);
+  s.mungyi.happy  = Math.min(100, s.mungyi.happy  + 5);
+  s.mungyi.feedCount = (s.mungyi.feedCount || 0) + 1;
+  saveState(s); showToast('냠냠~ 뭉이가 밥 먹었어요! 🍖'); updateAllUI();
+}
+function quickPlay() {
+  const s = loadState();
+  if (s.mungyi.energy < 10) { showToast('뭉이가 너무 지쳐있어요 😪'); return; }
+  s.mungyi.happy  = Math.min(100, s.mungyi.happy  + 20);
+  s.mungyi.energy = Math.max(0,   s.mungyi.energy - 15);
+  s.mungyi.playCount = (s.mungyi.playCount || 0) + 1;
+  saveState(s); showToast('같이 놀자! 신난다! 🎾'); updateAllUI();
+}
+function quickBath() {
+  const s = loadState();
+  if (s.coins < 10) { showToast('코인이 부족해요! 🪙'); return; }
+  s.coins -= 10;
+  s.mungyi.clean = Math.min(100, s.mungyi.clean + 40);
+  s.mungyi.happy = Math.min(100, s.mungyi.happy + 5);
+  saveState(s); showToast('깨끗해졌다! 상쾌해~ 🛁'); updateAllUI();
+}
+function goToMungyi() { window.location.href = 'tamagotchi_game.html'; }
+
+// ── Shop ──
+function buyShopItem(type, count, price, name) {
+  const s = loadState();
+  if (s.coins < price) { showToast('코인이 부족해요! 🪙'); return; }
+  s.coins -= price;
+  s.items[type] = (s.items[type] || 0) + count;
+  saveState(s); showToast(`✅ ${name} 구매 완료!`); updateAllUI();
+}
+function getEventCoin() {
+  const key = 'mungyi_event_coin', today = new Date().toDateString();
+  if (localStorage.getItem(key) === today) { showToast('오늘 이미 받았어요!'); return; }
+  localStorage.setItem(key, today);
+  const s = loadState(); s.coins += 50; saveState(s);
+  showToast('🎁 +50🪙 이벤트 코인 획득!'); updateAllUI();
+}
+
+// ── Attend ──
+function openAttend()  { buildWeekGrid(); document.getElementById('attend-modal').classList.add('show'); }
+function closeAttend() { document.getElementById('attend-modal').classList.remove('show'); }
+function buildWeekGrid() {
+  const days = ['일','월','화','수','목','금','토'];
+  const todayIdx = new Date().getDay();
+  const grid = document.getElementById('week-grid'); grid.innerHTML = '';
+  days.forEach((d, i) => {
+    const isPast = i < todayIdx, isToday = i === todayIdx;
+    const div = document.createElement('div');
+    div.className = 'day-box' + (isPast ? ' done' : '') + (isToday ? ' today' : '');
+    div.innerHTML = `<div class="day-name">${d}</div><span class="day-dot">${isPast?'✅':isToday?'📅':'○'}</span>`;
+    grid.appendChild(div);
+  });
+  const s   = loadState();
+  const btn = document.getElementById('attend-main-btn');
+  if (s.stats.lastAttendDate === new Date().toDateString()) {
+    btn.textContent = '오늘 출석 완료! ✅';
+    btn.style.background = 'rgba(255,255,255,0.08)';
+    btn.style.color = 'rgba(255,255,255,0.35)';
+    btn.disabled = true;
+  } else {
+    btn.textContent = '오늘 출석하기 (+30 코인)';
+    btn.style.background = ''; btn.style.color = ''; btn.disabled = false;
+  }
+}
+function doAttend() {
+  const s = loadState(), today = new Date().toDateString();
+  if (s.stats.lastAttendDate === today) { showToast('이미 출석했어요!'); return; }
+  s.coins += 30;
+  s.mungyi.happy   = Math.min(100, s.mungyi.happy + 10);
+  s.stats.attendDays = (s.stats.attendDays || 0) + 1;
+  // 연속 출석 체크 — 어제 출석한 경우만 스트릭 증가, 아니면 리셋
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  s.stats.streak = (s.stats.lastAttendDate === yesterday) ? (s.stats.streak || 0) + 1 : 1;
+  s.stats.lastAttendDate = today;
+  saveState(s); buildWeekGrid(); updateAllUI();
+  const n = s.stats.streak;
+  showToast(n >= 7 ? `🔥🔥 ${n}일 연속! 대단해요! +30🪙` : n >= 3 ? `🔥 ${n}일 연속 출석! +30🪙` : '출석 완료! +30🪙 😊');
+}
+
+// ── Tab / Nav ──
+function goRanking() { window.location.href = 'ranking.html'; }
+function switchTab(name, el, pcName) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.pc-nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  const pcNav = document.getElementById('pcnav-' + (pcName || name));
+  if (pcNav) pcNav.classList.add('active');
+  const navs   = document.querySelectorAll('.nav-item');
+  const tabMap = { home:0, shop:1, profile:2 };
+  if (tabMap[name] !== undefined && navs[tabMap[name]]) navs[tabMap[name]].classList.add('active');
+  updateAllUI();
+}
+function handleResize() {
+  const isPC    = window.innerWidth >= 900;
+  const sidebar = document.getElementById('pc-sidebar');
+  if (sidebar) sidebar.style.display = isPC ? 'flex' : 'none';
+}
+window.addEventListener('resize', handleResize);
+handleResize();
+
+// ── Daily Mission (스탠드얼론) ──
+const STANDALONE_MISSIONS = [
+  { game:'game_bogle.html',  icon:'🫧', text:'뽀글뽀글 대작전<br>스테이지 클리어!',  label:'액션' },
+  { game:'game_mole.html',   icon:'🐹', text:'두더지 10마리<br>잡기 도전!',          label:'아케이드' },
+  { game:'game_omok.html',   icon:'⚫', text:'오목 AI에서<br>1판 이기기!',            label:'보드' },
+  { game:'game_bubble.html', icon:'🎯', text:'버블 슈터<br>30개 터뜨리기!',          label:'퍼즐' },
+  { game:'game_memory.html', icon:'🃏', text:'카드 짝맞추기<br>전부 완료!',           label:'메모리' },
+];
+function buildDailyMission() {
+  const d = new Date();
+  const seed = d.getFullYear() * 10000 + (d.getMonth()+1) * 100 + d.getDate();
+  const m = STANDALONE_MISSIONS[seed % STANDALONE_MISSIONS.length];
+  const card = document.getElementById('mission-card');
+  const icon = document.getElementById('mission-icon');
+  const text = document.getElementById('mission-text');
+  if (!card || !icon || !text) return;
+  icon.textContent = m.icon;
+  text.innerHTML   = m.text;
+  card.onclick     = () => { window.location.href = m.game; };
+}
+
+// ── Game Grid ──
+const GAMES = [
+  {name:'뽀글뽀글 대작전',emoji:'🫧',desc:'5스테이지+보스 격파!',     tag:'액션',   c1:'#00F5FF',c2:'#C77DFF', badge:'HOT', file:'game_bogle.html'},
+  {name:'두더지 잡기',  emoji:'🐹', desc:'콤보로 점수 폭발!',          tag:'아케이드',c1:'#6BCB77',c2:'#4CAF50',badge:'',   file:'game_mole.html'},
+  {name:'오목 AI 대전', emoji:'⚫', desc:'강력한 AI와 오목 대결!',     tag:'보드',   c1:'#C4B5FF',c2:'#9F89FF', badge:'',    file:'game_omok.html'},
+  {name:'버블 슈터',    emoji:'🎯', desc:'버블 3개 맞추면 팡!',        tag:'퍼즐',   c1:'#6BCB77',c2:'#00F5FF', badge:'',    file:'game_bubble.html'},
+  {name:'카드 짝맞추기',emoji:'🃏', desc:'기억력 테스트!',             tag:'메모리', c1:'#FF9F43',c2:'#FFD93D', badge:'',    file:'game_memory.html'},
+  {name:'뭉이 키우기',  emoji:'🐾', desc:'뭉이를 직접 키워요!',        tag:'육성',   c1:'#FF85A1',c2:'#FFB07C', badge:'',    file:'tamagotchi_game.html'},
+];
+
+function buildGameGrid() {
+  const grid = document.getElementById('game-grid'); grid.innerHTML = '';
+  GAMES.forEach(g => {
+    const card = document.createElement('a');
+    card.className = 'game-card'; card.href = g.file;
+    card.innerHTML = `
+      <div class="game-thumb" style="background:linear-gradient(135deg,${g.c1}44,${g.c2}55);">
+        ${g.badge==='NEW' ? `<div class="game-badge badge-new">NEW</div>` : g.badge==='HOT' ? `<div class="game-badge badge-hot">HOT</div>` : ''}
+        <span class="game-emoji">${g.emoji}</span>
+      </div>
+      <div class="game-body">
+        <div class="game-name">${g.name}</div>
+        <div class="game-desc">${g.desc}</div>
+        <span class="game-tag" style="background:${g.c1}22;color:${g.c1};border:1px solid ${g.c1}44;">${g.tag}</span>
+      </div>`;
+    card.addEventListener('click', () => {
+      const s = loadState();
+      s.stats.totalGamesPlayed = (s.stats.totalGamesPlayed || 0) + 1;
+      s.mungyi.energy = Math.max(0, s.mungyi.energy - 3);
+      saveState(s);
+    });
+    grid.appendChild(card);
+  });
+}
+
+// ── 캔디 파티클 ──
+const PCOLORS = [
+  'rgba(255,133,161,.75)', 'rgba(196,181,255,.75)',
+  'rgba(94,223,202,.75)',  'rgba(255,233,127,.75)', 'rgba(135,206,235,.75)'
+];
+const pc = document.getElementById('particles-container');
+for (let i = 0; i < 14; i++) {
+  const p = document.createElement('div'); p.className = 'particle';
+  const sz = 3 + Math.random() * 5;
+  p.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;`+
+    `background:${PCOLORS[Math.floor(Math.random()*5)]};`+
+    `--d:${6+Math.random()*10}s;--del:-${Math.random()*12}s;`+
+    `box-shadow:0 0 ${sz*2}px currentColor;`;
+  pc.appendChild(p);
+}
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ── 접속 보너스 ──
+const bonusKey = 'mungyi_daily_bonus', _today = new Date().toDateString();
+if (localStorage.getItem(bonusKey) !== _today) {
+  localStorage.setItem(bonusKey, _today);
+  const s = loadState(); s.coins += 10; saveState(s);
+  setTimeout(() => showToast('🎁 접속 보너스 +10🪙!'), 1000);
+}
+
+// ── 초기화 ──
+function safeInit() {
+  if (typeof AdManager !== 'undefined') AdManager.init(true);
+  try { buildGameGrid(); }    catch(e) { console.error(e); }
+  try { buildDailyMission(); } catch(e) { console.error(e); }
+  try { updateAllUI(); }      catch(e) { console.error(e); }
+  setInterval(() => { try { updateAllUI(); } catch(e) {} }, 5000);
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', safeInit);
+else safeInit();
+</script>
+</body>
+</html>

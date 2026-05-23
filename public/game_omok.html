@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="강력한 AI와 오목 한판! 난이도 3단계, 알파-베타 가지치기 AI">
+<meta name="keywords" content="오목게임,온라인오목,AI오목,무료오목">
+<meta name="author" content="뭉이 게임타운">
+<meta name="robots" content="index, follow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta property="og:type" content="website">
+<meta property="og:title" content="⚫ 오목 AI 대전 — 뭉이 게임타운">
+<meta property="og:description" content="강력한 AI와 오목 한판! 난이도 3단계, 알파-베타 가지치기 AI">
+<meta property="og:image" content="https://game.luckygrampus.com/icons/icon-512.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#C4B5FF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>오목 AI 대전 — 뭉이 게임타운</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Jua&display=swap" rel="stylesheet">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8518556382646891" crossorigin="anonymous"></script>
+<script src="ad_manager.js" onerror="console.warn('ad_manager.js 로드 실패')"></script>
+<style>
+/* ═══════════════════════════════════════
+   🍬 CANDY GALAXY — 오목 AI 대전
+═══════════════════════════════════════ */
+:root {
+  --bg:      #0c0820;
+  --bg2:     #170934;
+  --surface: rgba(255,255,255,0.07);
+  --border:  rgba(255,255,255,0.13);
+  --border2: rgba(255,255,255,0.22);
+  --pink:    #FF85A1;
+  --pink-d:  #FF4D8D;
+  --lav:     #C4B5FF;
+  --lav-d:   #9F89FF;
+  --mint:    #5EDFCA;
+  --yellow:  #FFE97F;
+  --peach:   #FFB07C;
+  --green:   #76EBA0;
+  --white:   #FFFFFF;
+  --dim:     rgba(255,255,255,0.55);
+  --dim2:    rgba(255,255,255,0.32);
+  --r-sm:  12px; --r-md: 18px; --r-lg: 26px; --r-pill: 100px;
+}
+
+*, *::before, *::after {
+  margin:0; padding:0; box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent; user-select:none;
+}
+body {
+  font-family:'Nunito',sans-serif;
+  background:var(--bg); min-height:100vh;
+  display:flex; justify-content:center; overflow-x:hidden;
+}
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 5%,  rgba(196,181,255,.14) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 60% at 85% 90%, rgba(255,133,161,.10) 0%,transparent 65%);
+}
+
+/* ── Layout ── */
+.app {
+  width:100%; max-width:460px; min-height:100vh;
+  position:relative; z-index:1;
+  display:flex; flex-direction:column;
+}
+
+/* ── Home FAB ── */
+#home-fab {
+  position:fixed; top:14px; left:14px; z-index:9990;
+  width:44px; height:44px; border-radius:50%;
+  background:rgba(12,8,32,.75);
+  border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; cursor:pointer; text-decoration:none;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  box-shadow:0 2px 16px rgba(0,0,0,.5);
+  transition:all .2s cubic-bezier(.34,1.56,.64,1);
+}
+#home-fab:hover  { background:rgba(255,77,141,.4); border-color:var(--pink-d); transform:scale(1.1); }
+#home-fab:active { transform:scale(.9); }
+
+/* ── Header ── */
+.header {
+  padding:18px 20px 14px; padding-left:72px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.title {
+  font-family:'Jua',sans-serif; font-size:22px;
+  background:linear-gradient(135deg,var(--lav),var(--pink));
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 2px 8px rgba(196,181,255,.4));
+}
+.coin-box {
+  background:linear-gradient(135deg,rgba(255,233,127,.15),rgba(255,176,124,.15));
+  border:1px solid rgba(255,233,127,.35);
+  border-radius:var(--r-pill); padding:7px 16px;
+  font-size:15px; font-weight:900; color:var(--yellow);
+}
+
+/* ── Status bar ── */
+.status-bar {
+  margin:0 16px 12px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:12px 18px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:relative; overflow:hidden;
+}
+.status-bar::before {
+  content:''; position:absolute; top:0; left:10%; right:10%; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+}
+.turn-block { display:flex; align-items:center; gap:10px; }
+.stone-dot {
+  width:26px; height:26px; border-radius:50%;
+  box-shadow:0 2px 10px rgba(0,0,0,.5);
+  transition:all .3s;
+}
+.turn-label { font-size:14px; font-weight:800; color:var(--white); }
+.score-row  { display:flex; gap:18px; }
+.score-item { text-align:center; }
+.score-n    { font-family:'Jua',sans-serif; font-size:20px; display:block; }
+.score-l    { font-size:9px; font-weight:700; color:var(--dim2); }
+
+/* ── Board wrap ── */
+.board-wrap {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  padding:8px;
+}
+#board {
+  border-radius:20px;
+  box-shadow:
+    0 0 0 2px rgba(196,181,255,.35),
+    0 12px 48px rgba(0,0,0,.6),
+    0 0 60px rgba(196,181,255,.08);
+  touch-action:none;
+  display:block;
+}
+
+/* ── Difficulty row ── */
+.diff-row {
+  display:flex; gap:8px; padding:0 16px 10px;
+}
+.diff-btn {
+  flex:1; padding:10px; border-radius:var(--r-md);
+  background:var(--surface); border:1px solid var(--border);
+  color:var(--dim); font-family:'Nunito',sans-serif;
+  font-size:13px; font-weight:800; cursor:pointer;
+  transition:all .18s cubic-bezier(.34,1.56,.64,1);
+}
+.diff-btn:active { transform:scale(.94); }
+.diff-btn.active {
+  background:rgba(196,181,255,.15);
+  border-color:rgba(196,181,255,.5);
+  color:var(--lav);
+  box-shadow:0 0 16px rgba(196,181,255,.2);
+}
+
+/* ── Control buttons ── */
+.controls {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  padding:0 16px 28px;
+}
+.ctrl-btn {
+  padding:15px; border:none; border-radius:var(--r-md);
+  font-family:'Nunito',sans-serif; font-size:15px; font-weight:900;
+  cursor:pointer; transition:all .18s cubic-bezier(.34,1.56,.64,1);
+  position:relative; overflow:hidden;
+}
+.ctrl-btn::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:50%;
+  background:rgba(255,255,255,.15); border-radius:var(--r-md) var(--r-md) 0 0;
+}
+.ctrl-btn:active { transform:scale(.94); }
+.btn-restart { background:linear-gradient(135deg,var(--pink-d),var(--peach)); color:#fff; box-shadow:0 4px 16px rgba(255,77,141,.35); }
+.btn-hint    { background:var(--surface); border:1px solid var(--border2); color:var(--white); }
+.btn-hint::after { background:rgba(255,255,255,.08); }
+
+/* ── AI thinking indicator ── */
+.thinking-bar {
+  height:3px;
+  background:linear-gradient(90deg,var(--lav-d),var(--pink-d),var(--lav-d));
+  background-size:200% 100%;
+  animation:think-move 1s linear infinite;
+  display:none;
+}
+.thinking-bar.active { display:block; }
+@keyframes think-move { to { background-position:-200% 0; } }
+
+/* ── Last move flash ── */
+@keyframes stone-pop {
+  0%   { transform:scale(0); opacity:0; }
+  60%  { transform:scale(1.15); }
+  100% { transform:scale(1); opacity:1; }
+}
+
+/* ── Result overlay ── */
+.overlay {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.75);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  display:none; align-items:center; justify-content:center; z-index:200;
+}
+.overlay.show { display:flex; }
+.result-card {
+  background:rgba(20,10,48,.96);
+  border:1px solid var(--border2);
+  border-radius:32px; padding:40px 32px;
+  text-align:center; width:85%; max-width:360px;
+  position:relative; overflow:hidden;
+}
+.result-card::before {
+  content:''; position:absolute; top:0; left:10%; right:10%; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+}
+.r-emoji  { font-size:72px; display:block; margin-bottom:14px; }
+.r-title  { font-family:'Jua',sans-serif; font-size:28px; color:var(--white); margin-bottom:8px; }
+.r-sub    { font-size:14px; font-weight:600; color:var(--dim); margin-bottom:16px; }
+.r-coin   { font-size:22px; font-weight:900; color:var(--yellow); margin-bottom:24px; }
+.r-btn    {
+  background:linear-gradient(135deg,var(--lav-d),var(--pink-d));
+  border:none; border-radius:var(--r-pill);
+  color:#fff; padding:15px 44px;
+  font-family:'Nunito',sans-serif; font-size:17px; font-weight:900;
+  cursor:pointer; box-shadow:0 4px 20px rgba(159,137,255,.45);
+  position:relative; overflow:hidden;
+}
+.r-btn::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:50%;
+  background:rgba(255,255,255,.18); border-radius:var(--r-pill);
+}
+
+/* ── PC layout ── */
+@media(min-width:900px) {
+  body { background:#080618; align-items:flex-start; }
+  .app {
+    max-width:960px; flex-direction:row; flex-wrap:wrap;
+    align-items:flex-start; min-height:100vh;
+  }
+  .header { width:100%; padding:22px 28px 14px; }
+  .title  { font-size:26px; }
+  .board-wrap {
+    flex:1; min-width:420px; padding:16px 20px;
+    align-items:flex-start;
+  }
+  .right-panel {
+    width:280px; padding:0 20px 24px;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .status-bar { margin:0; }
+  .diff-row   { padding:0; flex-direction:column; }
+  .controls   { padding:0; grid-template-columns:1fr; gap:8px; }
+  .ctrl-btn   { padding:16px; font-size:16px; }
+  .ctrl-btn:hover { opacity:.88; transform:translateY(-2px); }
+  .thinking-bar { margin:0; }
+}
+</style>
+</head>
+<body>
+
+<a href="index.html" id="home-fab" title="홈으로">🏠</a>
+
+<div class="app">
+  <div class="header">
+    <div class="title">⚫ 오목 AI 대전</div>
+    <div class="coin-box">🪙 <span id="coins">100</span></div>
+  </div>
+
+  <div class="thinking-bar" id="thinking-bar"></div>
+
+  <div class="board-wrap">
+    <canvas id="board" width="360" height="360"></canvas>
+  </div>
+
+  <!-- PC 오른쪽 패널 -->
+  <div class="right-panel">
+    <div class="status-bar">
+      <div class="turn-block">
+        <div class="stone-dot" id="turn-stone" style="background:radial-gradient(circle at 35% 35%,#555,#111);"></div>
+        <span class="turn-label" id="turn-text">내 차례</span>
+      </div>
+      <div class="score-row">
+        <div class="score-item"><span class="score-n" style="color:var(--lav);" id="my-wins">0</span><div class="score-l">내 승리</div></div>
+        <div class="score-item"><span class="score-n" style="color:var(--dim2);">:</span><div class="score-l">&nbsp;</div></div>
+        <div class="score-item"><span class="score-n" style="color:var(--pink);" id="ai-wins">0</span><div class="score-l">AI 승리</div></div>
+      </div>
+    </div>
+
+    <div class="diff-row">
+      <button class="diff-btn active" onclick="setDiff(0,this)">🐣 쉬움</button>
+      <button class="diff-btn" onclick="setDiff(1,this)">🔥 보통</button>
+      <button class="diff-btn" onclick="setDiff(2,this)">💀 어려움</button>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn btn-restart" onclick="restartGame()">🔄 다시하기</button>
+      <button class="ctrl-btn btn-hint"    onclick="showHint()">💡 힌트</button>
+    </div>
+  </div>
+</div>
+
+<!-- 결과 오버레이 -->
+<div class="overlay" id="overlay">
+  <div class="result-card">
+    <span class="r-emoji" id="r-emoji"></span>
+    <div class="r-title" id="r-title"></div>
+    <div class="r-sub"   id="r-sub"></div>
+    <div class="r-coin"  id="r-coin"></div>
+    <button class="r-btn" onclick="restartGame()">다시 도전!</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   오목 AI — 알파-베타 미니맥스 (depth 4 on Hard)
+═══════════════════════════════════════════════════ */
+const SIZE = 15;
+let BSIZE = 360, CELL;
+let board = [], turn = 0, gameOver = false, difficulty = 0;
+let myWins = 0, aiWins = 0;
+let hintCell = null, lastMove = null;
+
+let coins = (() => {
+  try { const s = localStorage.getItem('mungyi_town_save'); return s ? JSON.parse(s).coins || 100 : 100; } catch(e) { return 100; }
+})();
+
+const canvas = document.getElementById('board');
+const ctx    = canvas.getContext('2d');
+
+// ── 캔버스 크기 계산 ──
+function resizeCanvas() {
+  const isPC = window.innerWidth >= 900;
+  const avail = isPC
+    ? Math.min(window.innerWidth - 320, window.innerHeight - 80)
+    : Math.min(window.innerWidth - 24, window.innerHeight - 280);
+  BSIZE = Math.max(280, Math.min(600, avail));
+  canvas.width  = BSIZE; canvas.height = BSIZE;
+  canvas.style.width  = BSIZE + 'px';
+  canvas.style.height = BSIZE + 'px';
+  CELL = BSIZE / (SIZE + 1);
+  draw();
+}
+window.addEventListener('resize', resizeCanvas);
+
+// ── 보드 초기화 ──
+function initBoard() {
+  board    = Array.from({length:SIZE}, () => Array(SIZE).fill(0));
+  turn     = 0; gameOver = false; hintCell = null; lastMove = null;
+  setTurnUI();
+  draw();
+}
+
+// ── 그리기 ──
+function draw() {
+  ctx.clearRect(0, 0, BSIZE, BSIZE);
+
+  // 배경 — 고급 목재 느낌의 캔디 보드
+  const bgGrad = ctx.createLinearGradient(0, 0, BSIZE, BSIZE);
+  bgGrad.addColorStop(0, '#2a1f4e');
+  bgGrad.addColorStop(0.5, '#1e1640');
+  bgGrad.addColorStop(1, '#2a1f4e');
+  ctx.fillStyle = bgGrad;
+  ctx.beginPath(); ctx.roundRect(0, 0, BSIZE, BSIZE, 20); ctx.fill();
+
+  // 보드 글로우 테두리
+  ctx.strokeStyle = 'rgba(196,181,255,0.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(1, 1, BSIZE-2, BSIZE-2, 19); ctx.stroke();
+
+  // 격자선
+  ctx.strokeStyle = 'rgba(196,181,255,0.18)';
+  ctx.lineWidth   = 1;
+  for (let i = 0; i < SIZE; i++) {
+    const x = (i+1)*CELL, y = (i+1)*CELL;
+    ctx.beginPath(); ctx.moveTo(x, CELL);        ctx.lineTo(x, SIZE*CELL); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(CELL, y);        ctx.lineTo(SIZE*CELL, y); ctx.stroke();
+  }
+
+  // 화점 (star points)
+  [[3,3],[3,11],[7,7],[11,3],[11,11]].forEach(([r,c]) => {
+    ctx.beginPath();
+    ctx.arc((c+1)*CELL, (r+1)*CELL, 4, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(196,181,255,0.45)'; ctx.fill();
+  });
+
+  // 힌트
+  if (hintCell) {
+    const [hr, hc] = hintCell;
+    ctx.beginPath();
+    ctx.arc((hc+1)*CELL, (hr+1)*CELL, CELL*0.46, 0, Math.PI*2);
+    ctx.fillStyle   = 'rgba(94,223,202,0.2)';  ctx.fill();
+    ctx.strokeStyle = 'rgba(94,223,202,0.8)';  ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  // 마지막 수 강조
+  if (lastMove) {
+    const [lr, lc] = lastMove;
+    ctx.beginPath();
+    ctx.arc((lc+1)*CELL, (lr+1)*CELL, CELL*0.48, 0, Math.PI*2);
+    ctx.strokeStyle = board[lr][lc] === 1 ? 'rgba(196,181,255,0.8)' : 'rgba(255,133,161,0.8)';
+    ctx.lineWidth = 2.5; ctx.stroke();
+  }
+
+  // 돌 그리기
+  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+    if (!board[r][c]) continue;
+    drawStone(r, c, board[r][c] === 1);
+  }
+}
+
+function drawStone(r, c, isBlack) {
+  const x = (c+1)*CELL, y = (r+1)*CELL, rad = CELL * 0.43;
+
+  // 그림자
+  ctx.beginPath(); ctx.arc(x+2, y+3, rad, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fill();
+
+  // 돌 본체
+  const grad = ctx.createRadialGradient(x-rad*.3, y-rad*.3, rad*.05, x, y, rad);
+  if (isBlack) {
+    grad.addColorStop(0, '#6a5acd');
+    grad.addColorStop(0.4, '#2d1b69');
+    grad.addColorStop(1,  '#0d0a1a');
+  } else {
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.4,'#ede8ff');
+    grad.addColorStop(1,  '#c4b5ff');
+  }
+  ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI*2);
+  ctx.fillStyle = grad; ctx.fill();
+
+  // 광택 하이라이트
+  const shine = ctx.createRadialGradient(x-rad*.25, y-rad*.28, 0, x-rad*.1, y-rad*.1, rad*.55);
+  shine.addColorStop(0,   'rgba(255,255,255,0.55)');
+  shine.addColorStop(0.5, 'rgba(255,255,255,0.15)');
+  shine.addColorStop(1,   'rgba(255,255,255,0)');
+  ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI*2);
+  ctx.fillStyle = shine; ctx.fill();
+
+  // 테두리
+  ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI*2);
+  ctx.strokeStyle = isBlack ? 'rgba(100,80,200,0.5)' : 'rgba(196,181,255,0.6)';
+  ctx.lineWidth = 1; ctx.stroke();
+}
+
+// ── 입력 처리 ──
+function getCell(evt) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = BSIZE/rect.width, scaleY = BSIZE/rect.height;
+  let cx, cy;
+  if (evt.changedTouches && evt.changedTouches.length) { cx = evt.changedTouches[0].clientX; cy = evt.changedTouches[0].clientY; }
+  else if (evt.touches && evt.touches.length) { cx = evt.touches[0].clientX; cy = evt.touches[0].clientY; }
+  else             { cx = evt.clientX;             cy = evt.clientY; }
+  const x = (cx - rect.left)*scaleX, y = (cy - rect.top)*scaleY;
+  const c = Math.round(x/CELL) - 1, r = Math.round(y/CELL) - 1;
+  if (r >= 0 && r < SIZE && c >= 0 && c < SIZE) return [r, c];
+  return null;
+}
+
+canvas.addEventListener('click', handleInput);
+canvas.addEventListener('touchend', handleInput, {passive:true});
+
+function handleInput(e) {
+  if (gameOver || turn !== 0) return;
+  const cell = getCell(e);
+  if (!cell || board[cell[0]][cell[1]]) return;
+  hintCell = null;
+  placeStone(cell[0], cell[1], 1);
+  if (!gameOver) {
+    setThinking(true);
+    setTimeout(aiMove, difficulty === 2 ? 80 : 50);
+  }
+}
+
+function placeStone(r, c, player) {
+  board[r][c] = player; lastMove = [r, c];
+  draw();
+  if (checkWin(r, c, player)) { endGame(player === 1); return; }
+  if (isBoardFull()) { endGame(null); return; }
+  turn = 1 - turn;
+  setTurnUI();
+}
+
+function setTurnUI() {
+  const stone = document.getElementById('turn-stone');
+  const text  = document.getElementById('turn-text');
+  if (turn === 0) {
+    stone.style.background = 'radial-gradient(circle at 35% 35%,#6a5acd,#0d0a1a)';
+    stone.style.boxShadow  = '0 0 12px rgba(106,90,205,.6)';
+    text.textContent = '내 차례';
+    text.style.color = 'var(--lav)';
+  } else {
+    stone.style.background = 'radial-gradient(circle at 35% 35%,#fff,#c4b5ff)';
+    stone.style.boxShadow  = '0 0 12px rgba(196,181,255,.6)';
+    text.textContent = 'AI 생각 중...';
+    text.style.color = 'var(--pink)';
+  }
+}
+
+function setThinking(on) {
+  document.getElementById('thinking-bar').classList.toggle('active', on);
+}
+
+function isBoardFull() {
+  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) if (!board[r][c]) return false;
+  return true;
+}
+
+// ── 승리 판정 ──
+function checkWin(r, c, p) {
+  const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+  for (const [dr,dc] of dirs) {
+    let cnt = 1;
+    for (let i = 1; i < 5; i++) { const nr=r+dr*i, nc=c+dc*i; if (nr<0||nr>=SIZE||nc<0||nc>=SIZE||board[nr][nc]!==p) break; cnt++; }
+    for (let i = 1; i < 5; i++) { const nr=r-dr*i, nc=c-dc*i; if (nr<0||nr>=SIZE||nc<0||nc>=SIZE||board[nr][nc]!==p) break; cnt++; }
+    if (cnt >= 5) return true;
+  }
+  return false;
+}
+
+// ════════════════════════════════════════════════════
+//   AI — 알파-베타 미니맥스
+// ════════════════════════════════════════════════════
+
+// 패턴 점수 테이블
+const SCORES = {
+  FIVE:       100000,
+  OPEN_FOUR:  50000,
+  FOUR:       5000,
+  OPEN_THREE: 3000,
+  THREE:      500,
+  OPEN_TWO:   200,
+  TWO:        50,
+};
+
+function evalLine(line, p) {
+  let score = 0;
+  const opp = p === 1 ? 2 : 1;
+  const len  = line.length;
+
+  for (let i = 0; i < len; i++) {
+    if (line[i] !== p) continue;
+    // 각 방향으로 연속 개수 세기
+    const dirs = [1]; // forward only (avoid double-counting)
+    for (const d of dirs) {
+      let cnt = 1, openL = 0, openR = 0;
+      let j = i + d;
+      while (j < len && line[j] === p) { cnt++; j++; }
+      if (j < len && line[j] === 0) openR = 1;
+      else if (j >= len) openR = 0;
+      let k = i - d;
+      while (k >= 0 && line[k] === p) { cnt++; k--; }
+      if (k >= 0 && line[k] === 0) openL = 1;
+      else if (k < 0) openL = 0;
+
+      const open = openL + openR;
+      if (cnt >= 5)      score += SCORES.FIVE;
+      else if (cnt === 4) score += open >= 2 ? SCORES.OPEN_FOUR : SCORES.FOUR;
+      else if (cnt === 3) score += open >= 2 ? SCORES.OPEN_THREE : SCORES.THREE;
+      else if (cnt === 2) score += open >= 2 ? SCORES.OPEN_TWO  : SCORES.TWO;
+    }
+  }
+  return score;
+}
+
+// 빠른 포지션 평가 (단순 패턴 스캔)
+function evaluateBoard() {
+  let score = 0;
+  const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+
+  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+    for (const [dr,dc] of dirs) {
+      const line = [];
+      for (let i = 0; i < 6; i++) {
+        const nr = r+dr*i, nc = c+dc*i;
+        if (nr<0||nr>=SIZE||nc<0||nc>=SIZE) break;
+        line.push(board[nr][nc]);
+      }
+      if (line.length >= 5) {
+        score += evalLine(line, 2); // AI
+        score -= evalLine(line, 1) * 1.1; // Player (weight defense)
+      }
+    }
+  }
+  return score;
+}
+
+// 후보 셀 — 기존 돌 주변 2칸 이내
+function getCandidates() {
+  const set = new Set();
+  let hasStone = false;
+  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+    if (!board[r][c]) continue;
+    hasStone = true;
+    for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) {
+      const nr = r+dr, nc = c+dc;
+      if (nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE&&!board[nr][nc]) set.add(nr*SIZE+nc);
+    }
+  }
+  if (!hasStone) return [[7,7]];
+  return [...set].map(k => [Math.floor(k/SIZE), k%SIZE]);
+}
+
+// 즉시 이기는 수 찾기
+function findWinMove(p) {
+  for (const [r,c] of getCandidates()) {
+    if (board[r][c]) continue;
+    board[r][c] = p;
+    const win = checkWin(r, c, p);
+    board[r][c] = 0;
+    if (win) return [r,c];
+  }
+  return null;
+}
+
+// 알파-베타 미니맥스
+function minimax(depth, isMax, alpha, beta) {
+  if (depth === 0) return evaluateBoard();
+
+  const cands = getCandidates();
+  if (cands.length === 0) return 0;
+
+  // 즉시 승리/패배 체크
+  for (const [r,c] of cands) {
+    if (board[r][c]) continue;
+    board[r][c] = isMax ? 2 : 1;
+    const win = checkWin(r,c, board[r][c]);
+    board[r][c] = 0;
+    if (win) return isMax ? SCORES.FIVE - (5 - depth)*10 : -(SCORES.FIVE - (5-depth)*10);
+  }
+
+  if (isMax) {
+    let best = -Infinity;
+    for (const [r,c] of cands) {
+      if (board[r][c]) continue;
+      board[r][c] = 2;
+      const val = minimax(depth-1, false, alpha, beta);
+      board[r][c] = 0;
+      best  = Math.max(best, val);
+      alpha = Math.max(alpha, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  } else {
+    let best = Infinity;
+    for (const [r,c] of cands) {
+      if (board[r][c]) continue;
+      board[r][c] = 1;
+      const val = minimax(depth-1, true, alpha, beta);
+      board[r][c] = 0;
+      best = Math.min(best, val);
+      beta = Math.min(beta, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+}
+
+// AI 수 선택
+function aiMove() {
+  setThinking(false);
+
+  if (gameOver) return;
+
+  // 1) 즉시 이기는 수
+  const winMove = findWinMove(2);
+  if (winMove) { placeStone(winMove[0], winMove[1], 2); return; }
+
+  // 2) 상대 이기는 수 막기
+  const blockMove = findWinMove(1);
+  if (blockMove) { placeStone(blockMove[0], blockMove[1], 2); return; }
+
+  // 3) 미니맥스
+  const depth = difficulty === 0 ? 1 : difficulty === 1 ? 3 : 4;
+  const cands = getCandidates();
+  let best = -Infinity, bestCell = cands[0] || [7,7];
+
+  for (const [r,c] of cands) {
+    if (board[r][c]) continue;
+    board[r][c] = 2;
+    let val = minimax(depth-1, false, -Infinity, Infinity);
+    board[r][c] = 0;
+
+    // 난이도별 노이즈
+    if (difficulty === 0) val += (Math.random() - 0.5) * SCORES.OPEN_THREE * 2;
+    else if (difficulty === 1) val += (Math.random() - 0.5) * SCORES.THREE;
+
+    if (val > best) { best = val; bestCell = [r,c]; }
+  }
+
+  placeStone(bestCell[0], bestCell[1], 2);
+}
+
+// ── 힌트 ──
+function showHint() {
+  if (gameOver || turn !== 0) return;
+  const cands = getCandidates();
+  let best = -Infinity, bestCell = null;
+  for (const [r,c] of cands) {
+    if (board[r][c]) continue;
+    board[r][c] = 1;
+    const val = minimax(2, false, -Infinity, Infinity);
+    board[r][c] = 0;
+    if (val > best) { best = val; bestCell = [r,c]; }
+  }
+  hintCell = bestCell; draw();
+}
+
+// ── 게임 종료 ──
+function endGame(playerWon) {
+  gameOver = true;
+  setThinking(false);
+  if (typeof AdManager !== 'undefined') AdManager.onGameOver();
+
+  let reward = 0;
+  if (playerWon === true) {
+    myWins++;
+    reward = difficulty === 0 ? 20 : difficulty === 1 ? 35 : 55;
+    coins += reward;
+  } else if (playerWon === false) {
+    aiWins++;
+  }
+  // 무승부는 playerWon === null
+
+  document.getElementById('my-wins').textContent = myWins;
+  document.getElementById('ai-wins').textContent = aiWins;
+  document.getElementById('coins').textContent   = coins;
+  townAddCoins(reward);
+  if (playerWon) townBoostMungyi('happy', 10);
+  townRecordGame();
+
+  setTimeout(() => {
+    const emoji  = playerWon === true ? '🏆' : playerWon === false ? '😢' : '🤝';
+    const title  = playerWon === true ? '승리!' : playerWon === false ? '패배...' : '무승부!';
+    const sub    = playerWon === true ? 'AI를 이겼어요! 대단해요!' : playerWon === false ? '아쉽지만 다음엔 꼭 이겨요!' : '팽팽했어요!';
+    document.getElementById('r-emoji').textContent = emoji;
+    document.getElementById('r-title').textContent = title;
+    document.getElementById('r-sub').textContent   = sub;
+    document.getElementById('r-coin').textContent  = reward > 0 ? `+${reward}🪙 획득!` : '';
+    document.getElementById('overlay').classList.add('show');
+  }, 500);
+}
+
+function restartGame() {
+  document.getElementById('overlay').classList.remove('show');
+  initBoard();
+}
+
+function setDiff(d, btn) {
+  difficulty = d;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── 저장소 연동 ──
+const _SK = 'mungyi_town_save';
+function _load() {
+  try { const s = localStorage.getItem(_SK); return s ? JSON.parse(s) : {coins:100,items:{},mungyi:{},stats:{}}; }
+  catch(e) { return {coins:100,items:{},mungyi:{},stats:{}}; }
+}
+function _save(s) { try { localStorage.setItem(_SK, JSON.stringify(s)); } catch(e) {} }
+function townAddCoins(n)           { if (!n) return; const s=_load(); s.coins=Math.max(0,(s.coins||0)+n); _save(s); }
+function townBoostMungyi(type, n)  { const s=_load(); if(s.mungyi){s.mungyi[type]=Math.min(100,(s.mungyi[type]||0)+n);_save(s);} }
+function townRecordGame()          { const s=_load(); s.stats=s.stats||{}; s.stats.totalGamesPlayed=(s.stats.totalGamesPlayed||0)+1; _save(s); }
+
+// ── 초기화 ──
+document.getElementById('coins').textContent = coins;
+resizeCanvas();
+initBoard();
+</script>
+</body>
+</html>

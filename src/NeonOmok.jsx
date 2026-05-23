@@ -265,7 +265,7 @@ export default function NeonOmok({ onExit }) {
           👥 2인 대전
         </button>
       </div>
-      <button onClick={onExit} className="text-neon/30 hover:text-neon/60 text-[8px] mt-2 transition-colors"
+      <button onClick={() => onExit?.(0)} className="text-neon/30 hover:text-neon/60 text-[8px] mt-2 transition-colors"
         style={{fontFamily:'"Press Start 2P",monospace'}}>◀ BACK</button>
     </div>
   );
@@ -350,6 +350,12 @@ export default function NeonOmok({ onExit }) {
                 모드 변경
               </button>
             </div>
+            <button
+              onClick={() => onExit?.(winner === 'B' ? Math.max(100, 1000 - Math.ceil(moves / 2) * 20) : 1)}
+              className="text-[8px] text-neon/40 hover:text-neon transition-colors mt-1"
+              style={{fontFamily:'"Press Start 2P",monospace'}}>
+              ◀ LOBBY
+            </button>
           </div>
         </div>
       )}

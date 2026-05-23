@@ -35,13 +35,7 @@ const GAMES = [
 
 /* ── 스트릭 배너 ───────────────────────────────────── */
 function StreakBanner({ streak, attendedToday, onClaim }) {
-  const [claimed, setClaimed] = useState(false);
   const flames = streak >= 7 ? '🔥🔥🔥' : streak >= 3 ? '🔥🔥' : streak >= 1 ? '🔥' : '❄️';
-
-  const handleClaim = () => {
-    const n = onClaim();
-    if (n > 0) setClaimed(true);
-  };
 
   return (
     <div className="mx-3 mb-2 flex items-center justify-between px-3 py-2.5"
@@ -59,13 +53,13 @@ function StreakBanner({ streak, attendedToday, onClaim }) {
           )}
         </div>
       </div>
-      {attendedToday || claimed ? (
+      {attendedToday ? (
         <span style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: 'rgba(251,146,60,0.5)' }}>
           ✓ 완료
         </span>
       ) : (
         <button
-          onClick={handleClaim}
+          onClick={onClaim}
           style={{
             fontFamily: '"Press Start 2P",monospace', fontSize: 8,
             background: '#fb923c', color: '#000', border: 'none',
@@ -171,12 +165,49 @@ function AchievementsSection({ unlocked }) {
   );
 }
 
+/* ── PWA 설치 배너 ─────────────────────────────────── */
+function PwaBanner({ onInstall, onDismiss }) {
+  return (
+    <div className="mx-3 mb-2 flex items-center justify-between px-3 py-2.5"
+      style={{ border: '1px solid rgba(57,255,20,0.35)', background: 'rgba(57,255,20,0.07)' }}>
+      <div className="flex items-center gap-2">
+        <span className="text-base">📱</span>
+        <div>
+          <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: '#39FF14', lineHeight: 1.6 }}>
+            홈 화면에 추가
+          </div>
+          <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 7, color: 'rgba(57,255,20,0.5)' }}>
+            오프라인에서도 플레이!
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onInstall}
+          style={{
+            fontFamily: '"Press Start 2P",monospace', fontSize: 8,
+            background: '#39FF14', color: '#000', border: 'none',
+            padding: '5px 8px', cursor: 'pointer', letterSpacing: 1,
+          }}>
+          설치
+        </button>
+        <button
+          onClick={onDismiss}
+          style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: 'rgba(57,255,20,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}>
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── 메인 로비 ────────────────────────────────────── */
 export default function GameLobby({
   onSelect, user,
   streak = 0, attendedToday = false, onClaimStreak,
   mission, missionCompleted,
   achievements = {},
+  pwaPrompt = null, onPwaInstall, onPwaDismiss,
 }) {
   return (
     <div className="absolute inset-0 bg-black overflow-y-auto">
@@ -206,6 +237,9 @@ export default function GameLobby({
 
       {/* 구분선 */}
       <div className="mx-4 h-px bg-neon/20 mb-3" />
+
+      {/* PWA 설치 배너 */}
+      {pwaPrompt && <PwaBanner onInstall={onPwaInstall} onDismiss={onPwaDismiss} />}
 
       {/* 스트릭 배너 */}
       <StreakBanner streak={streak} attendedToday={attendedToday} onClaim={onClaimStreak} />

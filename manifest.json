@@ -1,21 +1,21 @@
 {
-  "name": "Candy Galaxy Games",
-  "short_name": "CandyGames",
-  "description": "A collection of fun mini-games in a candy galaxy universe",
+  "name": "무명이 게임 타운",
+  "short_name": "무명이타운",
+  "description": "6가지 네온 아케이드 게임과 실시간 리더보드",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0c0820",
-  "theme_color": "#FF85A1",
+  "background_color": "#000000",
+  "theme_color": "#39FF14",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { initializeApp } from 'firebase/app';
 import {
-  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+  getAuth, GoogleAuthProvider, signInWithPopup, linkWithPopup, signOut, onAuthStateChanged,
   signInAnonymously, updateProfile,
 } from 'firebase/auth';
 import { useStreak }                                        from './utils/useStreak';
 import { useDailyMission }                                  from './utils/useDailyMission';
 import { useAchievements, checkGameAchievements, checkStreakAchievements } from './utils/useAchievements';
+import { addCoins }                                         from './utils/coins';
 import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import NeonBrickBreaker from './NeonBrickBreaker';
 import ClassicTetris    from './ClassicTetris';
@@ -63,6 +64,7 @@ export default function GameTownLayout() {
   const [currentGame, setCurrentGame] = useState(null);
   const [pendingGame, setPendingGame] = useState(null);
   const currentGameRef                = useRef(null);
+  const [pwaPrompt, setPwaPrompt]     = useState(null);
 
   // BGM: 게임 화면일 때 gameplay BGM, 그 외(로비·가이드)는 lobby BGM
   const { bgmOn, toggleBgm } = useBgm(currentGame !== null);
@@ -71,6 +73,21 @@ export default function GameTownLayout() {
   const { streak, attendedToday, claim: claimStreak } = useStreak();
   const { mission, completed: missionCompleted, checkComplete } = useDailyMission();
   const { unlocked: achievements, unlock, toast: achToast } = useAchievements();
+
+  /* PWA install prompt 캡처 */
+  useEffect(() => {
+    const handler = (e) => { e.preventDefault(); setPwaPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handlePwaInstall = useCallback(() => {
+    if (!pwaPrompt) return;
+    pwaPrompt.prompt();
+    pwaPrompt.userChoice.then(() => setPwaPrompt(null));
+  }, [pwaPrompt]);
+
+  const handlePwaDismiss = useCallback(() => setPwaPrompt(null), []);
 
   /* Firebase Auth 상태 */
   useEffect(() => {
@@ -102,9 +119,20 @@ export default function GameTownLayout() {
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      const provider = new GoogleAuthProvider();
+      // 게스트(익명) 유저라면 링크로 연결해서 기존 데이터 보존
+      if (auth.currentUser?.isAnonymous) {
+        await linkWithPopup(auth.currentUser, provider);
+      } else {
+        await signInWithPopup(auth, provider);
+      }
     } catch (e) {
-      console.error('[Google] 로그인 실패:', e);
+      // credential-already-in-use: 이미 다른 계정이 있음 → 일반 로그인으로 폴백
+      if (e.code === 'auth/credential-already-in-use') {
+        try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch { /* ignore */ }
+      } else {
+        console.error('[Google] 로그인 실패:', e);
+      }
     } finally {
       setLoading(false);
     }
@@ -171,14 +199,18 @@ export default function GameTownLayout() {
             null;
           console.log(`[Kakao] 닉네임="${nickname}", 사진=${photoURL ? '있음' : '없음'}`);
 
-          // ── Firebase 익명 로그인 + 프로필 업데이트 ─
-          const cred = await signInAnonymously(auth);
-          await updateProfile(cred.user, { displayName: nickname, photoURL });
-          await setDoc(doc(db, 'users', cred.user.uid), {
-            uid: cred.user.uid, displayName: nickname, photoURL,
+          // ── Firebase: 기존 익명 유저라면 프로필만 업데이트, 없으면 새 익명 계정 ─
+          let targetUser = auth.currentUser;
+          if (!targetUser) {
+            const cred = await signInAnonymously(auth);
+            targetUser = cred.user;
+          }
+          await updateProfile(targetUser, { displayName: nickname, photoURL });
+          await setDoc(doc(db, 'users', targetUser.uid), {
+            uid: targetUser.uid, displayName: nickname, photoURL,
             provider: 'kakao', updatedAt: serverTimestamp(),
           }, { merge: true });
-          console.log('[Kakao] ✅ Firebase 완료 uid:', cred.user.uid);
+          console.log('[Kakao] ✅ Firebase 완료 uid:', targetUser.uid);
         } catch (e) {
           console.error('[Kakao] ❌ 처리 실패:', e.code ?? '', e.message);
           // Firebase Anonymous auth 미활성화 안내
@@ -224,12 +256,15 @@ export default function GameTownLayout() {
     if (gameId && typeof score === 'number' && score > 0) {
       checkGameAchievements(gameId, score, unlock);
       const missionCleared = checkComplete(gameId, score);
-      if (missionCleared) unlock('mission_done');
+      if (missionCleared) {
+        unlock('mission_done');
+        addCoins(mission?.reward ?? 50);
+      }
     }
     currentGameRef.current = null;
     setCurrentGame(null);
     setPendingGame(null);
-  }, [unlock, checkComplete]);
+  }, [unlock, checkComplete, mission]);
 
   /* 로비 카드 클릭 → 조작법 안내 먼저 */
   const handleSelectGame = (gameId) => {
@@ -244,10 +279,29 @@ export default function GameTownLayout() {
     setPendingGame(null);
   };
 
-  /* 스트릭 출석 체크 + 업적 */
-  const handleClaimStreak = useCallback(() => {
+  /* 스트릭 출석 체크 + 업적 + 코인 + 알림 권한 요청 */
+  const handleClaimStreak = useCallback(async () => {
     const n = claimStreak();
-    if (n > 0) checkStreakAchievements(n, unlock);
+    if (n > 0) {
+      checkStreakAchievements(n, unlock);
+      addCoins(30);
+      // 첫 출석 체크 시 알림 권한 요청
+      if ('Notification' in window && Notification.permission === 'default') {
+        try {
+          const perm = await Notification.requestPermission();
+          if (perm === 'granted' && 'serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            // 내일 이 시간에 스트릭 알림 (로컬 시뮬레이션: 24시간 후)
+            // 실제 Web Push는 서버 VAPID 키 필요 — 여기서는 권한 획득만
+            reg.showNotification('무명이 게임 타운 🔥', {
+              body: `${n}일 연속! 내일도 출석 체크를 잊지 마세요!`,
+              icon: '/icons/icon-192.png',
+              tag: 'streak-claim',
+            });
+          }
+        } catch { /* 알림 미지원 환경 무시 */ }
+      }
+    }
     return n;
   }, [claimStreak, unlock]);
 
@@ -353,6 +407,9 @@ export default function GameTownLayout() {
                 mission={mission}
                 missionCompleted={missionCompleted}
                 achievements={achievements}
+                pwaPrompt={pwaPrompt}
+                onPwaInstall={handlePwaInstall}
+                onPwaDismiss={handlePwaDismiss}
               />}
 
             {/* 조작법 안내 오버레이 */}
