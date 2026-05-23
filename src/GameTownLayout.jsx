@@ -5,7 +5,6 @@ import {
   signInAnonymously, updateProfile,
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import DustInvaderGame from './DustInvaderGame';
 import NeonBrickBreaker from './NeonBrickBreaker';
 import ClassicTetris    from './ClassicTetris';
 import NeonSnake        from './NeonSnake';
@@ -305,7 +304,6 @@ export default function GameTownLayout() {
               <ControlGuide gameId={pendingGame} onStart={handleGuideStart} onBack={goLobby} />}
 
             {/* 게임 화면 */}
-            {user && currentGame === 'dustInvader'  && <DustInvaderGame   autoStart onExit={goLobby} />}
             {user && currentGame === 'brickBreaker' && <NeonBrickBreaker  autoStart onExit={goLobby} />}
             {user && currentGame === 'tetris'        && <ClassicTetris     autoStart onExit={goLobby} />}
             {user && currentGame === 'snake'         && <NeonSnake         autoStart onExit={goLobby} />}
@@ -341,19 +339,6 @@ export default function GameTownLayout() {
 
 /* ── 조작법 안내 오버레이 ──────────────────────────── */
 const GUIDE_DATA = {
-  dustInvader: {
-    title: 'DUST INVADER',
-    color: '#39FF14',
-    keys: [
-      { key: '← →',   desc: '플레이어 이동' },
-      { key: 'AUTO',  desc: '자동 발사' },
-    ],
-    touch: [
-      { icon: '👆', desc: '좌/우 드래그로 이동' },
-      { icon: '🔫', desc: '총알은 자동으로 발사' },
-    ],
-    tip: '적이 내려오기 전에 모두 격파하라!',
-  },
   brickBreaker: {
     title: 'NEON BRICKS',
     color: '#FF2D55',

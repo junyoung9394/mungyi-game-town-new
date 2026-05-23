@@ -1116,20 +1116,12 @@ handleResize();
 
 // ── Game Grid ──
 const GAMES = [
-  {name:'뭉이 농장',     emoji:'🌾', desc:'방치형 농장 키우기!',      tag:'농장',   c1:'#6BCB77',c2:'#FFD93D', badge:'NEW', file:'game_farm.html'},
-  {name:'뭉이용사 RPG',  emoji:'⚔️', desc:'자동전투 방치형 RPG!',     tag:'RPG',    c1:'#C77DFF',c2:'#FF2D78', badge:'NEW', file:'game_rpg.html'},
-  {name:'뭉이 쿠키',    emoji:'🍪', desc:'쿠키 클릭 제국 건설!',      tag:'클리커', c1:'#FF9F43',c2:'#FFD700', badge:'NEW', file:'game_cookie.html'},
-  {name:'뭉이 공장',    emoji:'🏭', desc:'자원 생산 자동화!',          tag:'공장',   c1:'#00F5FF',c2:'#4D96FF', badge:'NEW', file:'game_factory.html'},
-  {name:'우주 탐험',    emoji:'🚀', desc:'행성 탐험 방치형!',          tag:'우주',   c1:'#C77DFF',c2:'#FF6B9D', badge:'NEW', file:'game_space.html'},
   {name:'뽀글뽀글 대작전',emoji:'🫧',desc:'5스테이지+보스 격파!',     tag:'액션',   c1:'#00F5FF',c2:'#C77DFF', badge:'HOT', file:'game_bogle.html'},
-  {name:'뭉이 키우기',  emoji:'🐾', desc:'뭉이를 직접 키워요!',        tag:'육성',   c1:'#FF85A1',c2:'#FFB07C', badge:'',    file:'tamagotchi_game.html'},
+  {name:'두더지 잡기',  emoji:'🐹', desc:'콤보로 점수 폭발!',          tag:'아케이드',c1:'#6BCB77',c2:'#4CAF50',badge:'',   file:'game_mole.html'},
   {name:'오목 AI 대전', emoji:'⚫', desc:'강력한 AI와 오목 대결!',     tag:'보드',   c1:'#C4B5FF',c2:'#9F89FF', badge:'',    file:'game_omok.html'},
-  {name:'행운의 뽑기',  emoji:'🎰', desc:'전설 아이템을 노려라!',      tag:'가챠',   c1:'#FFD700',c2:'#FF7A00', badge:'HOT', file:'game_gacha.html'},
   {name:'버블 슈터',    emoji:'🎯', desc:'버블 3개 맞추면 팡!',        tag:'퍼즐',   c1:'#6BCB77',c2:'#00F5FF', badge:'',    file:'game_bubble.html'},
   {name:'카드 짝맞추기',emoji:'🃏', desc:'기억력 테스트!',             tag:'메모리', c1:'#FF9F43',c2:'#FFD93D', badge:'',    file:'game_memory.html'},
-  {name:'두더지 잡기',  emoji:'🐹', desc:'콤보로 점수 폭발!',          tag:'아케이드',c1:'#6BCB77',c2:'#4CAF50',badge:'NEW', file:'game_mole.html'},
-  {name:'반응속도 테스트',emoji:'⚡',desc:'초록불에 바로 탭!',         tag:'반응',   c1:'#FFD93D',c2:'#FF9F43', badge:'',    file:'game_reaction.html'},
-  {name:'뱀 키우기',    emoji:'🐍', desc:'먹고 자라는 뱀!',            tag:'스네이크',c1:'#39FF14',c2:'#00F5FF',badge:'NEW', file:'game_snake.html'},
+  {name:'뭉이 키우기',  emoji:'🐾', desc:'뭉이를 직접 키워요!',        tag:'육성',   c1:'#FF85A1',c2:'#FFB07C', badge:'',    file:'tamagotchi_game.html'},
 ];
 
 function buildGameGrid() {

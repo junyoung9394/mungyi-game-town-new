@@ -24,13 +24,12 @@ function AdUnit({ slot, format = 'auto', style = {}, className = '' }) {
 
 /* ── 게임 목록 ────────────────────────────────────── */
 const GAMES = [
-  { id: 'runner',       title: 'RUNNER',          desc: '장애물을 피해 달려라!', available: true,  preview: <RunnerPreview />, hot: true },
-  { id: 'dustInvader',  title: 'DUST INVADER',  desc: '외계 먼지를 격파하라', available: true,  preview: <DustPreview /> },
-  { id: 'brickBreaker', title: 'NEON BRICKS',    desc: '벽돌을 모두 부숴라',  available: true,  preview: <BrickPreview /> },
-  { id: 'tetris',       title: 'TETRIS',          desc: '줄을 없애라',         available: true,  preview: <TetrisPreview /> },
-  { id: 'snake',        title: 'NEON SNAKE',      desc: '먹이를 먹어라',       available: true,  preview: <SnakePreview /> },
-  { id: 'flappy',       title: 'FLAPPY 무명이',  desc: '하늘을 날아라',       available: true,  preview: <FlappyPreview /> },
-  { id: 'omok',         title: 'NEON OMOK',      desc: '5목으로 승부하라',    available: true,  preview: <OmokPreview /> },
+  { id: 'runner',       title: 'RUNNER',         desc: '장애물을 피해 달려라!', available: true, preview: <RunnerPreview />, hot: true },
+  { id: 'flappy',       title: 'FLAPPY 무명이', desc: '하늘을 날아라',        available: true, preview: <FlappyPreview /> },
+  { id: 'tetris',       title: 'TETRIS',          desc: '줄을 없애라',          available: true, preview: <TetrisPreview /> },
+  { id: 'snake',        title: 'NEON SNAKE',      desc: '먹이를 먹어라',        available: true, preview: <SnakePreview /> },
+  { id: 'brickBreaker', title: 'NEON BRICKS',     desc: '벽돌을 모두 부숴라',   available: true, preview: <BrickPreview /> },
+  { id: 'omok',         title: 'NEON OMOK',       desc: '5목으로 승부하라',     available: true, preview: <OmokPreview /> },
 ];
 
 /* ── 메인 로비 ────────────────────────────────────── */
@@ -214,21 +213,6 @@ function RunnerPreview() {
       {/* 코인 */}
       <circle cx="32" cy="26" r="3" fill="#fbbf24"/>
       <circle cx="32" cy="26" r="2" fill="#f59e0b"/>
-    </svg>
-  );
-}
-
-function DustPreview() {
-  return (
-    <svg viewBox="0 0 60 44" className="w-full h-full bg-black"
-      style={{ imageRendering:'pixelated', shapeRendering:'crispEdges' }}>
-      {[0,12,24,36,48].map(x=><line key={x} x1={x} y1={0} x2={x} y2={44} stroke="rgba(57,255,20,0.07)" strokeWidth={.5}/>)}
-      {[0,9,18,27,36,44].map(y=><line key={y} x1={0} y1={y} x2={60} y2={y} stroke="rgba(57,255,20,0.07)" strokeWidth={.5}/>)}
-      {[0,1,2].map(r=>[0,1,2,3,4].map(c=><rect key={`${r}${c}`} x={5+c*10} y={4+r*8} width={6} height={5} fill="#39FF14"/>))}
-      <rect x={27} y={26} width={2} height={5} fill="#90FFA0"/>
-      <rect x={22} y={36} width={14} height={5} fill="#39FF14"/>
-      <rect x={28} y={32} width={2} height={5} fill="#39FF14"/>
-      <rect x={0} y={41} width={60} height={1} fill="#39FF14"/>
     </svg>
   );
 }
