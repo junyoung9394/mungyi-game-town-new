@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="먹이를 먹고 길어지는 뱀! 레벨업, 특수 아이템, 4가지 난이도">
+<meta name="keywords" content="스네이크게임,뱀게임,클래식게임,무료게임">
+<meta name="author" content="뭉이 게임타운">
+<meta name="robots" content="index, follow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta property="og:type" content="website">
+<meta property="og:title" content="🐍 뱀 키우기 — 뭉이 게임타운">
+<meta property="og:description" content="먹이를 먹고 길어지는 뱀! 레벨업, 특수 아이템, 4가지 난이도">
+<meta property="og:image" content="https://game.luckygrampus.com/icons/icon-512.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#76EBA0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>뱀 키우기 — 뭉이 게임타운</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Jua&display=swap" rel="stylesheet">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8518556382646891" crossorigin="anonymous"></script>
+<script src="ad_manager.js" onerror="console.warn('ad_manager.js 로드 실패')"></script>
+<style>
+/* ═══════════════════════════════════════
+   🍬 CANDY GALAXY — 뱀 키우기
+═══════════════════════════════════════ */
+:root {
+  --bg:     #0c0820;
+  --surface: rgba(255,255,255,0.07);
+  --border:  rgba(255,255,255,0.13);
+  --border2: rgba(255,255,255,0.22);
+  --green:   #76EBA0;
+  --green-d: #3CBBA8;
+  --pink:    #FF85A1;
+  --pink-d:  #FF4D8D;
+  --lav:     #C4B5FF;
+  --yellow:  #FFE97F;
+  --peach:   #FFB07C;
+  --mint:    #5EDFCA;
+  --white:   #FFFFFF;
+  --dim:     rgba(255,255,255,0.55);
+  --dim2:    rgba(255,255,255,0.32);
+  --r-sm: 12px; --r-md: 18px; --r-lg: 26px; --r-pill: 100px;
+}
+*,*::before,*::after { margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none; }
+body {
+  font-family:'Nunito',sans-serif;
+  background:var(--bg); min-height:100vh;
+  display:flex; justify-content:center; overflow:hidden;
+}
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 40% at 10% 10%, rgba(118,235,160,.12) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 60% at 90% 90%, rgba(196,181,255,.09) 0%,transparent 65%);
+}
+
+/* ── Layout ── */
+.app {
+  width:100%; max-width:460px; min-height:100vh;
+  position:relative; z-index:1;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+
+/* ── Home FAB ── */
+#home-fab {
+  position:fixed; top:14px; left:14px; z-index:9990;
+  width:44px; height:44px; border-radius:50%;
+  background:rgba(12,8,32,.75); border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; cursor:pointer; text-decoration:none;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  box-shadow:0 2px 16px rgba(0,0,0,.5);
+  transition:all .2s cubic-bezier(.34,1.56,.64,1);
+}
+#home-fab:active { transform:scale(.9); }
+
+/* ── Header ── */
+.header {
+  padding:16px 20px 12px; padding-left:70px;
+  display:flex; justify-content:space-between; align-items:center;
+  border-bottom:1px solid var(--border);
+  background:rgba(12,8,32,.7); backdrop-filter:blur(16px);
+  position:relative; z-index:10;
+}
+.title {
+  font-family:'Jua',sans-serif; font-size:20px;
+  background:linear-gradient(135deg,var(--green),var(--mint));
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 2px 8px rgba(118,235,160,.4));
+}
+.coin-box {
+  background:linear-gradient(135deg,rgba(255,233,127,.15),rgba(255,176,124,.15));
+  border:1px solid rgba(255,233,127,.35);
+  border-radius:var(--r-pill); padding:6px 14px;
+  font-size:14px; font-weight:900; color:var(--yellow);
+}
+
+/* ── HUD ── */
+.hud {
+  display:flex; gap:6px; padding:10px 12px 8px;
+  background:rgba(12,8,32,.6);
+  position:relative; z-index:10;
+}
+.hud-box {
+  flex:1; background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:8px 6px; text-align:center;
+}
+.hud-n { font-family:'Jua',sans-serif; font-size:18px; display:block; }
+.hud-l { font-size:9px; font-weight:800; color:var(--dim2); margin-top:1px; }
+.hud-score .hud-n { color:var(--pink); }
+.hud-level .hud-n { color:var(--yellow); }
+.hud-len   .hud-n { color:var(--mint); }
+.hud-best  .hud-n { color:var(--lav); }
+
+/* Speed bar */
+.speed-wrap { padding:0 12px 6px; background:rgba(12,8,32,.5); position:relative; z-index:10; }
+.speed-row  { display:flex; align-items:center; gap:8px; }
+.speed-label { font-size:9px; font-weight:800; color:var(--dim2); min-width:42px; }
+.speed-bg {
+  flex:1; height:7px;
+  background:rgba(0,0,0,.35); border-radius:var(--r-pill); overflow:hidden;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.3);
+}
+.speed-fill {
+  height:100%; border-radius:var(--r-pill);
+  background:linear-gradient(90deg,var(--green),var(--yellow),var(--pink-d));
+  transition:width .4s; position:relative;
+}
+.speed-fill::after {
+  content:''; position:absolute; top:1px; left:3px; right:3px; height:3px;
+  background:rgba(255,255,255,.4); border-radius:2px;
+}
+
+/* ── Canvas wrap ── */
+.canvas-wrap {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  padding:6px; position:relative; z-index:10; background:transparent;
+}
+#game-canvas {
+  border-radius:20px;
+  box-shadow:
+    0 0 0 2px rgba(118,235,160,.3),
+    0 12px 48px rgba(0,0,0,.6),
+    0 0 60px rgba(118,235,160,.08);
+  display:block;
+}
+
+/* ── D-pad ── */
+.dpad {
+  display:grid;
+  grid-template-columns:repeat(3,56px);
+  grid-template-rows:repeat(3,56px);
+  gap:5px; justify-content:center;
+  padding:10px 0 24px;
+  background:rgba(12,8,32,.75);
+  border-top:1px solid var(--border);
+  position:relative; z-index:10;
+}
+.dpad-btn {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-md);
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; cursor:pointer;
+  transition:all .1s cubic-bezier(.34,1.56,.64,1);
+  position:relative; overflow:hidden;
+}
+.dpad-btn::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:50%;
+  background:rgba(255,255,255,.06); border-radius:var(--r-md) var(--r-md) 0 0;
+}
+.dpad-btn:active,.dpad-btn.pressed {
+  background:rgba(118,235,160,.18);
+  border-color:rgba(118,235,160,.6);
+  box-shadow:0 0 16px rgba(118,235,160,.3);
+  transform:scale(.9);
+}
+.dpad-center { font-size:13px; font-weight:900; color:var(--green); }
+.dpad-up     { grid-column:2; grid-row:1; }
+.dpad-left   { grid-column:1; grid-row:2; }
+.dpad-center { grid-column:2; grid-row:2; }
+.dpad-right  { grid-column:3; grid-row:2; }
+.dpad-down   { grid-column:2; grid-row:3; }
+
+/* ── Score popup ── */
+.score-pop {
+  position:absolute; pointer-events:none; z-index:50;
+  font-size:14px; font-weight:900; color:var(--yellow);
+  text-shadow:0 2px 8px rgba(0,0,0,.6);
+  animation:pop-rise .8s ease-out forwards;
+}
+@keyframes pop-rise {
+  0%   { opacity:1; transform:translateY(0) scale(1); }
+  100% { opacity:0; transform:translateY(-44px) scale(.8); }
+}
+
+/* ── Level up banner ── */
+.levelup {
+  position:fixed; top:30%; left:50%; transform:translateX(-50%);
+  font-family:'Jua',sans-serif; font-size:22px;
+  background:linear-gradient(135deg,var(--green),var(--mint));
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 2px 12px rgba(118,235,160,.6));
+  pointer-events:none; z-index:300; white-space:nowrap;
+  animation:lv-anim 1.6s ease-out forwards;
+}
+@keyframes lv-anim {
+  0%  { opacity:0; transform:translateX(-50%) scale(.6); }
+  20% { opacity:1; transform:translateX(-50%) scale(1.1); }
+  70% { opacity:1; }
+  100%{ opacity:0; transform:translateX(-50%) translateY(-28px); }
+}
+
+/* ── Screens (start / game over) ── */
+.screen {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.78);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  z-index:200;
+}
+.screen-card {
+  background:rgba(20,10,48,.97);
+  border:1px solid var(--border2);
+  border-radius:32px; padding:36px 28px;
+  width:88%; max-width:340px; text-align:center;
+  position:relative; overflow:hidden;
+}
+.screen-card::before {
+  content:''; position:absolute; top:0; left:10%; right:10%; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+}
+.s-emoji { font-size:56px; display:block; margin-bottom:12px; }
+.s-title {
+  font-family:'Jua',sans-serif; font-size:26px;
+  background:linear-gradient(135deg,var(--green),var(--mint));
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+  margin-bottom:8px;
+}
+.s-sub    { font-size:12px; font-weight:600; color:var(--dim); line-height:1.6; margin-bottom:18px; }
+.s-score  { font-family:'Jua',sans-serif; font-size:48px; color:var(--pink); margin:10px 0; display:block; }
+.s-stat   { font-size:13px; font-weight:700; color:var(--dim); margin:4px 0; }
+.s-coin   { font-size:18px; font-weight:900; color:var(--yellow); margin:12px 0 22px; display:block; }
+
+/* Diff buttons */
+.diff-row { display:flex; gap:8px; margin-bottom:18px; }
+.diff-btn {
+  flex:1; border:1px solid var(--border); border-radius:var(--r-md);
+  background:var(--surface); color:var(--dim);
+  font-family:'Nunito',sans-serif; font-size:11px; font-weight:800;
+  padding:10px 4px; cursor:pointer; line-height:1.7;
+  transition:all .18s cubic-bezier(.34,1.56,.64,1);
+}
+.diff-btn:active { transform:scale(.94); }
+.diff-btn.active {
+  background:rgba(118,235,160,.15); border-color:rgba(118,235,160,.5); color:var(--green);
+}
+
+/* Candy buttons */
+.s-btn {
+  width:100%; border:none; border-radius:var(--r-pill);
+  font-family:'Nunito',sans-serif; font-size:15px; font-weight:900;
+  padding:14px; cursor:pointer; margin-bottom:10px;
+  position:relative; overflow:hidden;
+  transition:all .18s cubic-bezier(.34,1.56,.64,1);
+}
+.s-btn::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:50%;
+  background:rgba(255,255,255,.18); border-radius:var(--r-pill);
+}
+.s-btn:active { transform:scale(.96); }
+.s-btn-primary {
+  background:linear-gradient(135deg,var(--green),var(--mint-d,#3CBBA8));
+  color:#0c2010; box-shadow:0 4px 18px rgba(118,235,160,.4);
+}
+.s-btn-sec {
+  background:var(--surface); border:1px solid var(--border);
+  color:var(--dim); font-size:13px;
+}
+.s-btn-sec::after { display:none; }
+
+/* ── 모바일에서 PC 전용 패널 숨김 ── */
+.right-side { display:none; }
+.pc-hint    { display:none; }
+
+/* ── PC layout ── */
+@media(min-width:900px) {
+  body { overflow:auto; background:#080618; }
+  .app {
+    max-width:960px; flex-direction:row; flex-wrap:wrap;
+    align-items:flex-start; overflow:visible;
+  }
+  .header { width:100%; }
+  .canvas-wrap { flex:1; min-width:400px; height:calc(100vh - 60px); padding:16px; }
+  .right-side {
+    width:260px; padding:16px 16px 16px 0;
+    display:flex; flex-direction:column; gap:10px;
+    height:calc(100vh - 60px); overflow-y:auto;
+  }
+  .hud { flex-direction:column; padding:0; background:transparent; gap:8px; }
+  .hud-box { padding:12px 14px; border-radius:var(--r-md); }
+  .hud-n { font-size:20px; }
+  .speed-wrap { padding:0; background:transparent; }
+  .dpad { display:none !important; }
+  .pc-hint {
+    display:flex !important; flex-direction:column; gap:6px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--r-md); padding:14px;
+  }
+  .pc-hint-title { font-size:10px; font-weight:900; color:var(--green); margin-bottom:6px; }
+  .pc-hint-item  { font-size:12px; font-weight:600; color:var(--dim); line-height:2; }
+  .screen-card { max-width:400px; }
+}
+@media(min-width:1200px) {
+  .app { max-width:1100px; }
+  .right-side { width:300px; }
+}
+</style>
+</head>
+<body>
+
+<a href="index.html" id="home-fab" title="홈으로">🏠</a>
+
+<div class="app">
+  <div class="header">
+    <div class="title">🐍 뱀 키우기</div>
+    <div class="coin-box">🪙 <span id="coins">100</span></div>
+  </div>
+
+  <div class="hud">
+    <div class="hud-box hud-score"><span class="hud-n" id="score">0</span><div class="hud-l">점수</div></div>
+    <div class="hud-box hud-level"><span class="hud-n" id="level">1</span><div class="hud-l">레벨</div></div>
+    <div class="hud-box hud-len">  <span class="hud-n" id="length">3</span><div class="hud-l">길이</div></div>
+    <div class="hud-box hud-best"> <span class="hud-n" id="best">0</span><div class="hud-l">최고</div></div>
+  </div>
+
+  <div class="speed-wrap">
+    <div class="speed-row">
+      <div class="speed-label">속도</div>
+      <div class="speed-bg"><div class="speed-fill" id="speed-bar" style="width:10%"></div></div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap" id="canvas-wrap">
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <!-- D-pad (모바일) -->
+  <div class="dpad" id="dpad">
+    <div class="dpad-btn dpad-up"     id="btn-up"    ontouchstart="handleDir('up')"    onclick="handleDir('up')">▲</div>
+    <div class="dpad-btn dpad-left"   id="btn-left"  ontouchstart="handleDir('left')"  onclick="handleDir('left')">◀</div>
+    <div class="dpad-btn dpad-center">🐍</div>
+    <div class="dpad-btn dpad-right"  id="btn-right" ontouchstart="handleDir('right')" onclick="handleDir('right')">▶</div>
+    <div class="dpad-btn dpad-down"   id="btn-down"  ontouchstart="handleDir('down')"  onclick="handleDir('down')">▼</div>
+  </div>
+
+  <!-- PC 오른쪽 패널 -->
+  <div class="right-side">
+    <div class="hud">
+      <div class="hud-box hud-score"><span class="hud-n" id="score2">0</span><div class="hud-l">점수</div></div>
+      <div class="hud-box hud-level"><span class="hud-n" id="level2">1</span><div class="hud-l">레벨</div></div>
+      <div class="hud-box hud-len">  <span class="hud-n" id="length2">3</span><div class="hud-l">길이</div></div>
+      <div class="hud-box hud-best"> <span class="hud-n" id="best2">0</span><div class="hud-l">최고</div></div>
+    </div>
+    <div class="speed-wrap">
+      <div class="speed-row">
+        <div class="speed-label">속도</div>
+        <div class="speed-bg"><div class="speed-fill" id="speed-bar2" style="width:10%"></div></div>
+      </div>
+    </div>
+    <div class="pc-hint" style="display:none;">
+      <div class="pc-hint-title">⌨️ 키보드 조작</div>
+      <div class="pc-hint-item">
+        ↑ 위 &nbsp; ↓ 아래<br>
+        ← 왼쪽 &nbsp; → 오른쪽
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- START SCREEN -->
+<div class="screen" id="start-screen">
+  <div class="screen-card">
+    <span class="s-emoji">🐍</span>
+    <div class="s-title">뱀 키우기</div>
+    <div class="s-sub">먹이를 먹고 길어지세요!<br>벽이나 몸에 닿으면 끝!</div>
+    <div class="diff-row">
+      <div class="diff-btn active" onclick="setDiff('easy',this)">🐢<br>쉬움</div>
+      <div class="diff-btn"        onclick="setDiff('normal',this)">🐍<br>보통</div>
+      <div class="diff-btn"        onclick="setDiff('hard',this)">⚡<br>빠름</div>
+      <div class="diff-btn"        onclick="setDiff('hell',this)">💀<br>지옥</div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--dim);margin-bottom:16px;">최고기록: <span id="best-display">0</span></div>
+    <button class="s-btn s-btn-primary" onclick="startGame()">▶ 시작!</button>
+  </div>
+</div>
+
+<!-- GAME OVER SCREEN -->
+<div class="screen" id="gameover-screen" style="display:none;">
+  <div class="screen-card">
+    <span class="s-emoji" id="go-emoji">😢</span>
+    <div class="s-title"  id="go-title">게임 오버</div>
+    <span class="s-score" id="go-score">0</span>
+    <div class="s-stat"   id="go-length"></div>
+    <div class="s-stat"   id="go-level"></div>
+    <div class="s-stat"   id="go-best-txt"></div>
+    <span class="s-coin"  id="go-coin"></span>
+    <button class="s-btn s-btn-primary" onclick="startGame()">🔄 다시 도전</button>
+    <button class="s-btn s-btn-sec"     onclick="goTitle()">타이틀로</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   뱀 키우기 게임 로직
+═══════════════════════════════════════ */
+const CELL = 18;
+const DIFF_CONFIG = {
+  easy:   { speed:180, wallKill:false, label:'쉬움' },
+  normal: { speed:130, wallKill:true,  label:'보통' },
+  hard:   { speed:90,  wallKill:true,  label:'빠름' },
+  hell:   { speed:55,  wallKill:true,  label:'지옥' },
+};
+
+let diff = 'easy';
+let cols, rows;
+let snake, dir, nextDir, food, specials;
+let score, level, gameActive, loopTimer;
+let bestScore = parseInt(localStorage.getItem('snake_best') || '0');
+let coins = (() => {
+  try { const s = localStorage.getItem('mungyi_town_save'); return s ? JSON.parse(s).coins || 100 : 100; } catch(e) { return 100; }
+})();
+
+const canvas = document.getElementById('game-canvas');
+const ctx    = canvas.getContext('2d');
+
+// Touch swipe
+let tsX = 0, tsY = 0;
+document.getElementById('canvas-wrap').addEventListener('touchstart', e => {
+  tsX = e.touches[0].clientX; tsY = e.touches[0].clientY;
+}, { passive:true });
+document.getElementById('canvas-wrap').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tsX;
+  const dy = e.changedTouches[0].clientY - tsY;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 20) handleDir('right'); else if (dx < -20) handleDir('left');
+  } else {
+    if (dy > 20) handleDir('down'); else if (dy < -20) handleDir('up');
+  }
+}, { passive:true });
+
+document.addEventListener('keydown', e => {
+  const map = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right' };
+  if (map[e.code]) { e.preventDefault(); handleDir(map[e.code]); }
+});
+
+function handleDir(d) {
+  if (!gameActive) return;
+  const opp = { up:'down', down:'up', left:'right', right:'left' };
+  if (d !== opp[dir]) nextDir = d;
+  const btnMap = { up:'btn-up', left:'btn-left', right:'btn-right', down:'btn-down' };
+  const btn = document.getElementById(btnMap[d]);
+  if (btn) { btn.classList.add('pressed'); setTimeout(() => btn.classList.remove('pressed'), 150); }
+}
+
+function setDiff(d, btn) {
+  diff = d;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function initCanvas() {
+  const isPC  = window.innerWidth >= 900;
+  let size;
+  if (isPC) {
+    const availW = Math.min(window.innerWidth - 300, 700);
+    const availH = window.innerHeight - 80;
+    size = Math.min(availW - 32, availH - 32);
+  } else {
+    const dpadH = document.getElementById('dpad').offsetHeight || 168;
+    const hudH  = 90;
+    const headerH = document.querySelector('.header') ? document.querySelector('.header').offsetHeight : 56;
+    const speedH  = 30;
+    const availH = window.innerHeight - dpadH - hudH - headerH - speedH - 12;
+    size = Math.min(window.innerWidth - 12, availH);
+  }
+  size = Math.max(280, Math.floor(size / CELL) * CELL);
+  canvas.width = size; canvas.height = size;
+  cols = Math.floor(size / CELL); rows = Math.floor(size / CELL);
+  // PC hint
+  const hint = document.querySelector('.pc-hint');
+  if (hint) hint.style.display = isPC ? 'flex' : 'none';
+}
+window.addEventListener('resize', () => { if (gameActive) initCanvas(); });
+
+function startGame() {
+  document.getElementById('start-screen').style.display    = 'none';
+  document.getElementById('gameover-screen').style.display = 'none';
+  initCanvas();
+  snake   = [
+    { x:Math.floor(cols/2),   y:Math.floor(rows/2) },
+    { x:Math.floor(cols/2)-1, y:Math.floor(rows/2) },
+    { x:Math.floor(cols/2)-2, y:Math.floor(rows/2) },
+  ];
+  dir = 'right'; nextDir = 'right';
+  score = 0; level = 1; gameActive = true; specials = [];
+  spawnFood();
+  clearInterval(loopTimer);
+  loopTimer = setInterval(gameLoop, DIFF_CONFIG[diff].speed);
+  updateHUD();
+}
+
+function spawnFood() {
+  const occ = new Set(snake.map(s => s.x+','+s.y));
+  specials.forEach(s => occ.add(s.x+','+s.y));
+  let fx, fy;
+  do { fx = Math.floor(Math.random()*cols); fy = Math.floor(Math.random()*rows); }
+  while (occ.has(fx+','+fy));
+  food = { x:fx, y:fy, pulse:0 };
+}
+
+function spawnSpecial() {
+  const types = ['star','speed','shrink'];
+  const type  = types[Math.floor(Math.random()*types.length)];
+  const occ   = new Set(snake.map(s => s.x+','+s.y));
+  occ.add(food.x+','+food.y);
+  let sx, sy;
+  do { sx = Math.floor(Math.random()*cols); sy = Math.floor(Math.random()*rows); }
+  while (occ.has(sx+','+sy));
+  specials.push({ x:sx, y:sy, type, life:80, pulse:0 });
+}
+
+function gameLoop() {
+  if (!gameActive) return;
+  dir = nextDir;
+  const head = { x:snake[0].x, y:snake[0].y };
+  if (dir==='up')    head.y--;
+  if (dir==='down')  head.y++;
+  if (dir==='left')  head.x--;
+  if (dir==='right') head.x++;
+
+  const cfg = DIFF_CONFIG[diff];
+  if (cfg.wallKill) {
+    if (head.x<0||head.x>=cols||head.y<0||head.y>=rows) { endGame(); return; }
+  } else {
+    head.x = (head.x + cols) % cols;
+    head.y = (head.y + rows) % rows;
+  }
+  if (snake.some(s => s.x===head.x && s.y===head.y)) { endGame(); return; }
+  snake.unshift(head);
+
+  let ate = false;
+  if (head.x===food.x && head.y===food.y) {
+    ate = true;
+    const pts = 10 * level; score += pts;
+    showPop('+' + pts, food.x, food.y);
+    spawnFood();
+    if (score >= level * 100) levelUp();
+    if (Math.random() < 0.28) spawnSpecial();
+  }
+
+  specials = specials.filter(sp => {
+    if (head.x===sp.x && head.y===sp.y) {
+      if (sp.type==='star')   { score += 50*level; showPop('⭐+'+50*level, sp.x, sp.y); }
+      if (sp.type==='speed')  {
+        clearInterval(loopTimer);
+        loopTimer = setInterval(gameLoop, Math.max(40, DIFF_CONFIG[diff].speed*0.6));
+        setTimeout(() => { clearInterval(loopTimer); loopTimer = setInterval(gameLoop, DIFF_CONFIG[diff].speed); }, 3000);
+        showPop('⚡빨라!', sp.x, sp.y);
+      }
+      if (sp.type==='shrink') {
+        snake = snake.slice(0, Math.max(3, Math.floor(snake.length*0.6)));
+        showPop('✂짧아!', sp.x, sp.y);
+      }
+      ate = true; return false;
+    }
+    sp.life--; sp.pulse += 0.12;
+    return sp.life > 0;
+  });
+
+  if (!ate) snake.pop();
+  draw(); updateHUD();
+}
+
+function levelUp() {
+  level++;
+  clearInterval(loopTimer);
+  const newSpeed = Math.max(40, DIFF_CONFIG[diff].speed - (level-1)*10);
+  loopTimer = setInterval(gameLoop, newSpeed);
+  const el = document.createElement('div');
+  el.className = 'levelup'; el.textContent = '🌟 레벨 ' + level + '!';
+  document.querySelector('.app').appendChild(el);
+  setTimeout(() => el.remove(), 1600);
+}
+
+// ── 그리기 ── (캔디 갤럭시 스타일)
+function draw() {
+  // 배경
+  ctx.fillStyle = '#0a061a';
+  ctx.beginPath(); ctx.roundRect(0, 0, canvas.width, canvas.height, 20); ctx.fill();
+
+  // 미묘한 격자
+  ctx.strokeStyle = 'rgba(196,181,255,0.04)'; ctx.lineWidth = 0.5;
+  for (let x = 0; x <= cols; x++) { ctx.beginPath(); ctx.moveTo(x*CELL,0); ctx.lineTo(x*CELL,canvas.height); ctx.stroke(); }
+  for (let y = 0; y <= rows; y++) { ctx.beginPath(); ctx.moveTo(0,y*CELL); ctx.lineTo(canvas.width,y*CELL); ctx.stroke(); }
+
+  // 뱀 그리기
+  snake.forEach((seg, i) => {
+    const isHead = i === 0;
+    const t = 1 - i / snake.length; // tail fade
+    const x = seg.x * CELL + 1, y = seg.y * CELL + 1;
+    const w = CELL - 2, h = CELL - 2;
+    const r = isHead ? 7 : 5;
+
+    if (isHead) {
+      // 헤드 글로우
+      ctx.shadowColor = '#76EBA0'; ctx.shadowBlur = 14;
+      const grad = ctx.createLinearGradient(x, y, x+w, y+h);
+      grad.addColorStop(0, '#a8f5c0'); grad.addColorStop(1, '#5EDFCA');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill();
+      ctx.shadowBlur = 0;
+      // 광택
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath(); ctx.roundRect(x+2, y+2, w-4, h*0.4, 3); ctx.fill();
+      // 눈
+      ctx.fillStyle = '#0a061a';
+      if (dir==='right'||dir==='left') {
+        const ex = dir==='right' ? x+w-5 : x+3;
+        ctx.fillRect(ex, y+3, 3, 3); ctx.fillRect(ex, y+h-6, 3, 3);
+      } else {
+        const ey = dir==='down' ? y+h-5 : y+3;
+        ctx.fillRect(x+3, ey, 3, 3); ctx.fillRect(x+w-6, ey, 3, 3);
+      }
+    } else {
+      // 몸통 — 그라디언트 fade
+      const green = Math.floor(100 + t * 135);
+      const alpha = 0.3 + t * 0.7;
+      const grad = ctx.createLinearGradient(x, y, x+w, y+h);
+      grad.addColorStop(0, `rgba(118,${green},${Math.floor(t*80)},${alpha})`);
+      grad.addColorStop(1, `rgba(60,${green-20},${Math.floor(t*100)},${alpha*0.8})`);
+      ctx.fillStyle = grad;
+      const pad = i < 3 ? 0 : 1;
+      ctx.beginPath(); ctx.roundRect(x+pad, y+pad, w-pad*2, h-pad*2, Math.max(2,r-2)); ctx.fill();
+      // 비늘 하이라이트
+      if (i % 2 === 0) {
+        ctx.fillStyle = `rgba(255,255,255,${alpha*0.15})`;
+        ctx.beginPath(); ctx.roundRect(x+3, y+2, w-6, h*0.35, 2); ctx.fill();
+      }
+    }
+  });
+
+  // 먹이 — 글로시 캔디 볼
+  food.pulse = (food.pulse + 0.08) % (Math.PI * 2);
+  const fScale = 0.88 + Math.sin(food.pulse) * 0.12;
+  const fc = food.x*CELL + CELL/2, fr = food.y*CELL + CELL/2, fR = CELL/2 * fScale - 1;
+  ctx.shadowColor = '#FF85A1'; ctx.shadowBlur = 16;
+  const fg = ctx.createRadialGradient(fc-fR*.3, fr-fR*.3, fR*.05, fc, fr, fR);
+  fg.addColorStop(0, '#ffb3c8'); fg.addColorStop(0.5, '#FF85A1'); fg.addColorStop(1, '#FF4D8D');
+  ctx.beginPath(); ctx.arc(fc, fr, fR, 0, Math.PI*2); ctx.fillStyle = fg; ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.beginPath(); ctx.arc(fc - fR*.28, fr - fR*.28, fR*.3, 0, Math.PI*2); ctx.fill();
+
+  // 특수 아이템
+  specials.forEach(sp => {
+    sp.pulse += 0.12;
+    const sc = sp.x*CELL + CELL/2, sr = sp.y*CELL + CELL/2;
+    const sR = (CELL/2 - 2) * (0.85 + Math.sin(sp.pulse)*0.15);
+    const fadeA = Math.min(1, sp.life / 20);
+    const colors  = { star:'#FFE97F', speed:'#5EDFCA', shrink:'#C4B5FF' };
+    const emojis  = { star:'⭐', speed:'⚡', shrink:'✂️' };
+    ctx.shadowColor = colors[sp.type]; ctx.shadowBlur = 14;
+    ctx.beginPath(); ctx.arc(sc, sr, sR, 0, Math.PI*2);
+    ctx.fillStyle = colors[sp.type] + Math.floor(fadeA*255).toString(16).padStart(2,'0');
+    ctx.fill(); ctx.shadowBlur = 0;
+    ctx.font = `${CELL-2}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.globalAlpha = fadeA;
+    ctx.fillText(emojis[sp.type], sc, sr);
+    ctx.globalAlpha = 1;
+  });
+}
+
+function showPop(text, gx, gy) {
+  const wrap = document.getElementById('canvas-wrap');
+  const rect  = canvas.getBoundingClientRect();
+  const wRect = wrap.getBoundingClientRect();
+  const pop = document.createElement('div');
+  pop.className = 'score-pop';
+  pop.style.left = (rect.left - wRect.left + gx*CELL + CELL/2) + 'px';
+  pop.style.top  = (rect.top  - wRect.top  + gy*CELL) + 'px';
+  pop.textContent = text;
+  wrap.appendChild(pop);
+  setTimeout(() => pop.remove(), 850);
+}
+
+function updateHUD() {
+  ['score','level','length','best'].forEach(id => {
+    const v = id==='score' ? score : id==='level' ? level : id==='length' ? snake.length : Math.max(score, bestScore);
+    const el  = document.getElementById(id);
+    const el2 = document.getElementById(id+'2');
+    if (el)  el.textContent  = v;
+    if (el2) el2.textContent = v;
+  });
+  const spd = Math.min(100, 10 + (level-1)*12);
+  const sb  = document.getElementById('speed-bar');
+  const sb2 = document.getElementById('speed-bar2');
+  if (sb)  sb.style.width  = spd + '%';
+  if (sb2) sb2.style.width = spd + '%';
+}
+
+function endGame() {
+  gameActive = false; clearInterval(loopTimer);
+
+  if (typeof AdManager !== 'undefined') {
+    AdManager.showReward(
+      () => startGame(),
+      () => showGameOverScreen()
+    );
+  } else {
+    showGameOverScreen();
+  }
+}
+
+function showGameOverScreen() {
+  const reward = Math.floor(score / 8);
+  coins += reward;
+  const isHigh = score > bestScore;
+  if (isHigh) bestScore = score;
+  localStorage.setItem('snake_best', bestScore);
+  townAddCoins(reward); townBoostMungyi('happy', 8); townRecordGame();
+  document.getElementById('coins').textContent = coins;
+  document.getElementById('best-display').textContent = bestScore;
+
+  document.getElementById('go-emoji').textContent = isHigh ? '🏆' : '😢';
+  document.getElementById('go-title').textContent  = isHigh ? '최고기록!' : '게임 오버';
+  document.getElementById('go-score').textContent  = score;
+  document.getElementById('go-length').textContent = '길이: ' + snake.length + '칸';
+  document.getElementById('go-level').textContent  = '레벨: ' + level;
+  document.getElementById('go-best-txt').textContent = '최고: ' + bestScore;
+  document.getElementById('go-coin').textContent   = '+' + reward + ' 🪙 획득!';
+  document.getElementById('gameover-screen').style.display = 'flex';
+}
+
+function goTitle() {
+  clearInterval(loopTimer); gameActive = false;
+  document.getElementById('gameover-screen').style.display = 'none';
+  document.getElementById('start-screen').style.display    = 'flex';
+  document.getElementById('best-display').textContent = bestScore;
+}
+
+// ── 저장소 연동 ──
+const _SK = 'mungyi_town_save';
+function _load() {
+  try { const s = localStorage.getItem(_SK); return s ? JSON.parse(s) : {coins:100,items:{},mungyi:{},stats:{}}; }
+  catch(e) { return {coins:100,items:{},mungyi:{},stats:{}}; }
+}
+function _save(s) { try { localStorage.setItem(_SK, JSON.stringify(s)); } catch(e) {} }
+function townAddCoins(n)          { const s=_load(); s.coins=Math.max(0,(s.coins||0)+n); _save(s); }
+function townBoostMungyi(t, n)    { const s=_load(); if(s.mungyi){s.mungyi[t]=Math.min(100,(s.mungyi[t]||0)+n);_save(s);} }
+function townRecordGame()         { const s=_load(); s.stats=s.stats||{}; s.stats.totalGamesPlayed=(s.stats.totalGamesPlayed||0)+1; _save(s); }
+
+// 초기화
+document.getElementById('coins').textContent       = coins;
+document.getElementById('best-display').textContent = bestScore;
+</script>
+</body>
+</html>

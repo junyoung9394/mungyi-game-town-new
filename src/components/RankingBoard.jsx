@@ -3,11 +3,11 @@ import { getFirestore, collection, query, orderBy, limit, onSnapshot } from 'fir
 import { getAuth } from 'firebase/auth';
 
 const GAMES = [
-  { id: 'dustInvader', label: 'INVADER', short: 'INV' },
-  { id: 'brickBreaker', label: 'BRICKS',  short: 'BRK' },
+  { id: 'runner',       label: 'RUNNER',  short: 'RUN' },
+  { id: 'flappy',       label: 'FLAPPY',  short: 'FLP' },
   { id: 'tetris',       label: 'TETRIS',  short: 'TET' },
   { id: 'snake',        label: 'SNAKE',   short: 'SNK' },
-  { id: 'flappy',       label: 'FLAPPY',  short: 'FLP' },
+  { id: 'brickBreaker', label: 'BRICKS',  short: 'BRK' },
   { id: 'omok',         label: 'OMOK',    short: 'OMK' },
 ];
 
@@ -43,7 +43,7 @@ function Avatar({ name, photoURL, size = 24 }) {
 
 export default function RankingBoard() {
   const currentUid = getAuth().currentUser?.uid ?? null;
-  const [active, setActive]   = useState('dustInvader');
+  const [active, setActive]   = useState('runner');
   const [scores, setScores]   = useState([]);
   const [loading, setLoading] = useState(false);
   const [spin, setSpin]       = useState(false);

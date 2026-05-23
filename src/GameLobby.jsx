@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import RankingBoard from './components/RankingBoard';
+import { ACHIEVEMENT_DEFS } from './utils/useAchievements';
 
 /* ── AdSense 컴포넌트 ─────────────────────────────── */
 function AdUnit({ slot, format = 'auto', style = {}, className = '' }) {
@@ -24,16 +25,190 @@ function AdUnit({ slot, format = 'auto', style = {}, className = '' }) {
 
 /* ── 게임 목록 ────────────────────────────────────── */
 const GAMES = [
-  { id: 'dustInvader',  title: 'DUST INVADER',  desc: '외계 먼지를 격파하라', available: true,  preview: <DustPreview /> },
-  { id: 'brickBreaker', title: 'NEON BRICKS',    desc: '벽돌을 모두 부숴라',  available: true,  preview: <BrickPreview /> },
-  { id: 'tetris',       title: 'TETRIS',          desc: '줄을 없애라',         available: true,  preview: <TetrisPreview /> },
-  { id: 'snake',        title: 'NEON SNAKE',      desc: '먹이를 먹어라',       available: true,  preview: <SnakePreview /> },
-  { id: 'flappy',       title: 'FLAPPY 무명이',  desc: '하늘을 날아라',       available: true,  preview: <FlappyPreview /> },
-  { id: 'omok',         title: 'NEON OMOK',      desc: '5목으로 승부하라',    available: true,  preview: <OmokPreview /> },
+  { id: 'runner',       title: 'RUNNER',         desc: '장애물을 피해 달려라!', available: true, preview: <RunnerPreview />, hot: true },
+  { id: 'flappy',       title: 'FLAPPY 무명이', desc: '하늘을 날아라',        available: true, preview: <FlappyPreview /> },
+  { id: 'tetris',       title: 'TETRIS',          desc: '줄을 없애라',          available: true, preview: <TetrisPreview /> },
+  { id: 'snake',        title: 'NEON SNAKE',      desc: '먹이를 먹어라',        available: true, preview: <SnakePreview /> },
+  { id: 'brickBreaker', title: 'NEON BRICKS',     desc: '벽돌을 모두 부숴라',   available: true, preview: <BrickPreview /> },
+  { id: 'omok',         title: 'NEON OMOK',       desc: '5목으로 승부하라',     available: true, preview: <OmokPreview /> },
 ];
 
+/* ── 스트릭 배너 ───────────────────────────────────── */
+function StreakBanner({ streak, attendedToday, onClaim }) {
+  const flames = streak >= 7 ? '🔥🔥🔥' : streak >= 3 ? '🔥🔥' : streak >= 1 ? '🔥' : '❄️';
+
+  return (
+    <div className="mx-3 mb-2 flex items-center justify-between px-3 py-2.5"
+      style={{ border: '1px solid rgba(251,146,60,0.35)', background: 'rgba(251,146,60,0.07)' }}>
+      <div className="flex items-center gap-2.5">
+        <span className="text-lg leading-none">{flames}</span>
+        <div>
+          <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 9, color: '#fb923c', lineHeight: 1.6 }}>
+            {streak > 0 ? `${streak}일 연속 접속` : '오늘 첫 접속!'}
+          </div>
+          {streak > 0 && (
+            <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 7, color: 'rgba(251,146,60,0.5)' }}>
+              {streak >= 7 ? '🏆 7일 달성! 대단해요' : streak >= 3 ? '👏 3일 달성!' : `계속하면 +보너스`}
+            </div>
+          )}
+        </div>
+      </div>
+      {attendedToday ? (
+        <span style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: 'rgba(251,146,60,0.5)' }}>
+          ✓ 완료
+        </span>
+      ) : (
+        <button
+          onClick={onClaim}
+          style={{
+            fontFamily: '"Press Start 2P",monospace', fontSize: 8,
+            background: '#fb923c', color: '#000', border: 'none',
+            padding: '6px 10px', cursor: 'pointer', letterSpacing: 1,
+          }}>
+          출석 +30
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ── 데일리 미션 카드 ──────────────────────────────── */
+function DailyMissionCard({ mission, completed, onGo }) {
+  if (!mission) return null;
+  return (
+    <div className="mx-3 mb-3 px-3 py-2.5"
+      style={{ border: '1px solid rgba(168,85,247,0.35)', background: 'rgba(168,85,247,0.07)' }}>
+      <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 7, color: 'rgba(196,181,255,0.55)', marginBottom: 6 }}>
+        ⚡ 오늘의 미션
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xl leading-none">{mission.emoji}</span>
+          <div>
+            <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 9, color: '#c4b5fd', lineHeight: 1.6 }}>
+              {mission.label}
+            </div>
+            <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: 'rgba(196,181,255,0.7)' }}>
+              {mission.goal}{mission.unit} 달성 → +{mission.reward}🪙
+            </div>
+          </div>
+        </div>
+        {completed ? (
+          <span style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: '#a855f7' }}>✓ 달성!</span>
+        ) : (
+          <button
+            onClick={() => onGo(mission.gameId)}
+            style={{
+              fontFamily: '"Press Start 2P",monospace', fontSize: 8,
+              background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff',
+              border: 'none', padding: '6px 10px', cursor: 'pointer', letterSpacing: 1,
+            }}>
+            ▶ GO
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── 업적 섹션 ─────────────────────────────────────── */
+function AchievementsSection({ unlocked }) {
+  const [open, setOpen] = useState(false);
+  const count = Object.keys(unlocked).length;
+  const total = Object.keys(ACHIEVEMENT_DEFS).length;
+
+  return (
+    <div className="mx-3 mb-3">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-2.5"
+        style={{ border: '1px solid rgba(57,255,20,0.2)', background: 'rgba(57,255,20,0.04)' }}>
+        <div className="flex items-center gap-2">
+          <span className="text-base">🏆</span>
+          <span style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 9, color: '#39FF14' }}>
+            업적 {count}/{total}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex gap-0.5">
+            {Object.entries(ACHIEVEMENT_DEFS).slice(0, 6).map(([id]) => (
+              <span key={id} className="text-[10px]" style={{ opacity: unlocked[id] ? 1 : 0.2 }}>
+                {ACHIEVEMENT_DEFS[id].icon}
+              </span>
+            ))}
+          </div>
+          <span style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: 'rgba(57,255,20,0.5)' }}>
+            {open ? '▲' : '▼'}
+          </span>
+        </div>
+      </button>
+
+      {open && (
+        <div className="border border-t-0 border-neon/20 bg-black/60 px-3 py-3 grid grid-cols-3 gap-2">
+          {Object.entries(ACHIEVEMENT_DEFS).map(([id, def]) => (
+            <div key={id}
+              className="flex flex-col items-center gap-1 py-2 px-1 text-center"
+              style={{
+                background: unlocked[id] ? 'rgba(57,255,20,0.08)' : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${unlocked[id] ? 'rgba(57,255,20,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                opacity: unlocked[id] ? 1 : 0.4,
+              }}>
+              <span className="text-xl">{def.icon}</span>
+              <span style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 6, color: unlocked[id] ? '#39FF14' : '#666', lineHeight: 1.5 }}>
+                {def.name}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── PWA 설치 배너 ─────────────────────────────────── */
+function PwaBanner({ onInstall, onDismiss }) {
+  return (
+    <div className="mx-3 mb-2 flex items-center justify-between px-3 py-2.5"
+      style={{ border: '1px solid rgba(57,255,20,0.35)', background: 'rgba(57,255,20,0.07)' }}>
+      <div className="flex items-center gap-2">
+        <span className="text-base">📱</span>
+        <div>
+          <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: '#39FF14', lineHeight: 1.6 }}>
+            홈 화면에 추가
+          </div>
+          <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 7, color: 'rgba(57,255,20,0.5)' }}>
+            오프라인에서도 플레이!
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onInstall}
+          style={{
+            fontFamily: '"Press Start 2P",monospace', fontSize: 8,
+            background: '#39FF14', color: '#000', border: 'none',
+            padding: '5px 8px', cursor: 'pointer', letterSpacing: 1,
+          }}>
+          설치
+        </button>
+        <button
+          onClick={onDismiss}
+          style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: 'rgba(57,255,20,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}>
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── 메인 로비 ────────────────────────────────────── */
-export default function GameLobby({ onSelect, user }) {
+export default function GameLobby({
+  onSelect, user,
+  streak = 0, attendedToday = false, onClaimStreak,
+  mission, missionCompleted,
+  achievements = {},
+  pwaPrompt = null, onPwaInstall, onPwaDismiss,
+}) {
   return (
     <div className="absolute inset-0 bg-black overflow-y-auto">
 
@@ -43,7 +218,7 @@ export default function GameLobby({ onSelect, user }) {
       </div>
 
       {/* 타이틀 */}
-      <div className="px-4 pt-4 pb-3 text-center">
+      <div className="px-4 pt-4 pb-2 text-center">
         <div
           className="text-neon title-glow-pulse text-xl tracking-widest leading-loose"
           style={{ fontFamily: '"Press Start 2P", monospace' }}
@@ -51,7 +226,7 @@ export default function GameLobby({ onSelect, user }) {
           무명이<br/>게임 타운
         </div>
         <div
-          className="text-neon/50 text-[9px] tracking-widest mt-2"
+          className="text-neon/50 text-[9px] tracking-widest mt-1"
           style={{ fontFamily: '"Press Start 2P", monospace' }}
         >
           {user?.displayName
@@ -61,7 +236,19 @@ export default function GameLobby({ onSelect, user }) {
       </div>
 
       {/* 구분선 */}
-      <div className="mx-4 h-px bg-neon/30 mb-4" />
+      <div className="mx-4 h-px bg-neon/20 mb-3" />
+
+      {/* PWA 설치 배너 */}
+      {pwaPrompt && <PwaBanner onInstall={onPwaInstall} onDismiss={onPwaDismiss} />}
+
+      {/* 스트릭 배너 */}
+      <StreakBanner streak={streak} attendedToday={attendedToday} onClaim={onClaimStreak} />
+
+      {/* 데일리 미션 */}
+      <DailyMissionCard mission={mission} completed={missionCompleted} onGo={onSelect} />
+
+      {/* 구분선 */}
+      <div className="mx-4 h-px bg-neon/20 mb-3" />
 
       {/* 게임 카드 그리드 (2×2) + 와이드 카드 목록 */}
       <div className="px-3 grid grid-cols-2 gap-3 mb-3">
@@ -74,7 +261,10 @@ export default function GameLobby({ onSelect, user }) {
       ))}
 
       {/* 구분선 */}
-      <div className="mx-4 h-px bg-neon/30 mb-4" />
+      <div className="mx-4 h-px bg-neon/20 mb-3" />
+
+      {/* 업적 */}
+      <AchievementsSection unlocked={achievements} />
 
       {/* 랭킹 보드 */}
       <div className="px-3 mb-4">
@@ -148,11 +338,17 @@ function GameCard({ game, onSelect, wide = false }) {
         </div>
       </div>
 
-      {/* PLAY 배지 */}
+      {/* PLAY 배지 or HOT 배지 */}
       {available && (
-        <div className="absolute top-1.5 right-1.5 bg-neon text-black text-[7px] px-1.5 py-0.5 tracking-widest"
-          style={{ fontFamily: '"Press Start 2P",monospace' }}>
-          PLAY
+        <div
+          className="absolute top-1.5 right-1.5 text-[7px] px-1.5 py-0.5 tracking-widest"
+          style={{
+            fontFamily: '"Press Start 2P",monospace',
+            background: game.hot ? 'linear-gradient(135deg,#a855f7,#e879f9)' : '#39FF14',
+            color: '#000',
+            boxShadow: game.hot ? '0 0 8px rgba(168,85,247,0.8)' : undefined,
+          }}>
+          {game.hot ? '🔥NEW' : 'PLAY'}
         </div>
       )}
     </button>
@@ -160,17 +356,53 @@ function GameCard({ game, onSelect, wide = false }) {
 }
 
 /* ── 프리뷰 SVG ───────────────────────────────────── */
-function DustPreview() {
+function RunnerPreview() {
   return (
-    <svg viewBox="0 0 60 44" className="w-full h-full bg-black"
-      style={{ imageRendering:'pixelated', shapeRendering:'crispEdges' }}>
-      {[0,12,24,36,48].map(x=><line key={x} x1={x} y1={0} x2={x} y2={44} stroke="rgba(57,255,20,0.07)" strokeWidth={.5}/>)}
-      {[0,9,18,27,36,44].map(y=><line key={y} x1={0} y1={y} x2={60} y2={y} stroke="rgba(57,255,20,0.07)" strokeWidth={.5}/>)}
-      {[0,1,2].map(r=>[0,1,2,3,4].map(c=><rect key={`${r}${c}`} x={5+c*10} y={4+r*8} width={6} height={5} fill="#39FF14"/>))}
-      <rect x={27} y={26} width={2} height={5} fill="#90FFA0"/>
-      <rect x={22} y={36} width={14} height={5} fill="#39FF14"/>
-      <rect x={28} y={32} width={2} height={5} fill="#39FF14"/>
-      <rect x={0} y={41} width={60} height={1} fill="#39FF14"/>
+    <svg viewBox="0 0 60 44" className="w-full h-full" style={{ imageRendering: 'pixelated', shapeRendering: 'crispEdges' }}>
+      {/* 배경 그라데이션 */}
+      <defs>
+        <linearGradient id="rsky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0a0015"/>
+          <stop offset="100%" stopColor="#1a0035"/>
+        </linearGradient>
+      </defs>
+      <rect width="60" height="44" fill="url(#rsky)"/>
+      {/* 별 */}
+      {[{x:5,y:4},{x:18,y:7},{x:30,y:3},{x:45,y:8},{x:52,y:5},{x:10,y:14},{x:38,y:12},{x:55,y:16}].map((s,i)=>
+        <rect key={i} x={s.x} y={s.y} width={1} height={1} fill="rgba(255,255,255,0.7)"/>)}
+      {/* 달 */}
+      <circle cx={53} cy={6} r={4} fill="#e8d5ff"/>
+      <circle cx={55} cy={4} r={3} fill="#1a0035"/>
+      {/* 산 */}
+      <polygon points="0,32 8,18 16,32" fill="#2a1a4a"/>
+      <polygon points="10,32 20,14 30,32" fill="#2a1a4a"/>
+      <polygon points="22,32 34,16 46,32" fill="#3d2a60"/>
+      <polygon points="35,32 48,20 60,32" fill="#3d2a60"/>
+      {/* 지면 */}
+      <rect x="0" y="32" width="60" height="12" fill="#4c1d95"/>
+      <rect x="0" y="32" width="60" height="2" fill="#8b5cf6"/>
+      {/* 격자선 */}
+      <line x1="0" y1="32" x2="-5" y2="44" stroke="rgba(139,92,246,0.3)" strokeWidth="0.5"/>
+      <line x1="15" y1="32" x2="10" y2="44" stroke="rgba(139,92,246,0.3)" strokeWidth="0.5"/>
+      <line x1="30" y1="32" x2="25" y2="44" stroke="rgba(139,92,246,0.3)" strokeWidth="0.5"/>
+      <line x1="45" y1="32" x2="40" y2="44" stroke="rgba(139,92,246,0.3)" strokeWidth="0.5"/>
+      <line x1="60" y1="32" x2="55" y2="44" stroke="rgba(139,92,246,0.3)" strokeWidth="0.5"/>
+      {/* 캐릭터 */}
+      <rect x="10" y="17" width="8" height="6" fill="#f0abfc"/>
+      <rect x="10" y="16" width="9" height="2" fill="#c026d3"/>
+      <rect x="8" y="23" width="12" height="9" fill="#e879f9"/>
+      <rect x="5" y="24" width="4" height="6" fill="#f0abfc"/>
+      <rect x="20" y="24" width="4" height="6" fill="#f0abfc"/>
+      <rect x="10" y="32" width="4" height="5" fill="#c026d3"/>
+      <rect x="14" y="32" width="4" height="5" fill="#c026d3"/>
+      <rect x="8" y="36" width="7" height="2" fill="#fde68a"/>
+      <rect x="14" y="37" width="7" height="2" fill="#fde68a"/>
+      {/* 장애물 스파이크 */}
+      <polygon points="38,32 42,22 46,32" fill="#dc2626"/>
+      <polygon points="44,32 48,24 52,32" fill="#dc2626"/>
+      {/* 코인 */}
+      <circle cx="32" cy="26" r="3" fill="#fbbf24"/>
+      <circle cx="32" cy="26" r="2" fill="#f59e0b"/>
     </svg>
   );
 }
