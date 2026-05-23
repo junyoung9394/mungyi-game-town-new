@@ -24,6 +24,7 @@ function AdUnit({ slot, format = 'auto', style = {}, className = '' }) {
 
 /* ── 게임 목록 ────────────────────────────────────── */
 const GAMES = [
+  { id: 'runner',       title: 'RUNNER',          desc: '장애물을 피해 달려라!', available: true,  preview: <RunnerPreview />, hot: true },
   { id: 'dustInvader',  title: 'DUST INVADER',  desc: '외계 먼지를 격파하라', available: true,  preview: <DustPreview /> },
   { id: 'brickBreaker', title: 'NEON BRICKS',    desc: '벽돌을 모두 부숴라',  available: true,  preview: <BrickPreview /> },
   { id: 'tetris',       title: 'TETRIS',          desc: '줄을 없애라',         available: true,  preview: <TetrisPreview /> },
@@ -148,11 +149,17 @@ function GameCard({ game, onSelect, wide = false }) {
         </div>
       </div>
 
-      {/* PLAY 배지 */}
+      {/* PLAY 배지 or HOT 배지 */}
       {available && (
-        <div className="absolute top-1.5 right-1.5 bg-neon text-black text-[7px] px-1.5 py-0.5 tracking-widest"
-          style={{ fontFamily: '"Press Start 2P",monospace' }}>
-          PLAY
+        <div
+          className="absolute top-1.5 right-1.5 text-[7px] px-1.5 py-0.5 tracking-widest"
+          style={{
+            fontFamily: '"Press Start 2P",monospace',
+            background: game.hot ? 'linear-gradient(135deg,#a855f7,#e879f9)' : '#39FF14',
+            color: '#000',
+            boxShadow: game.hot ? '0 0 8px rgba(168,85,247,0.8)' : undefined,
+          }}>
+          {game.hot ? '🔥NEW' : 'PLAY'}
         </div>
       )}
     </button>
@@ -160,6 +167,57 @@ function GameCard({ game, onSelect, wide = false }) {
 }
 
 /* ── 프리뷰 SVG ───────────────────────────────────── */
+function RunnerPreview() {
+  return (
+    <svg viewBox="0 0 60 44" className="w-full h-full" style={{ imageRendering: 'pixelated', shapeRendering: 'crispEdges' }}>
+      {/* 배경 그라데이션 */}
+      <defs>
+        <linearGradient id="rsky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0a0015"/>
+          <stop offset="100%" stopColor="#1a0035"/>
+        </linearGradient>
+      </defs>
+      <rect width="60" height="44" fill="url(#rsky)"/>
+      {/* 별 */}
+      {[{x:5,y:4},{x:18,y:7},{x:30,y:3},{x:45,y:8},{x:52,y:5},{x:10,y:14},{x:38,y:12},{x:55,y:16}].map((s,i)=>
+        <rect key={i} x={s.x} y={s.y} width={1} height={1} fill="rgba(255,255,255,0.7)"/>)}
+      {/* 달 */}
+      <circle cx={53} cy={6} r={4} fill="#e8d5ff"/>
+      <circle cx={55} cy={4} r={3} fill="#1a0035"/>
+      {/* 산 */}
+      <polygon points="0,32 8,18 16,32" fill="#2a1a4a"/>
+      <polygon points="10,32 20,14 30,32" fill="#2a1a4a"/>
+      <polygon points="22,32 34,16 46,32" fill="#3d2a60"/>
+      <polygon points="35,32 48,20 60,32" fill="#3d2a60"/>
+      {/* 지면 */}
+      <rect x="0" y="32" width="60" height="12" fill="#4c1d95"/>
+      <rect x="0" y="32" width="60" height="2" fill="#8b5cf6"/>
+      {/* 격자선 */}
+      <line x1="0" y1="32" x2="-5" y2="44" stroke="rgba(139,92,246,0.3)" strokeWidth="0.5"/>
+      <line x1="15" y1="32" x2="10" y2="44" stroke="rgba(139,92,246,0.3)" strokeWidth="0.5"/>
+      <line x1="30" y1="32" x2="25" y2="44" stroke="rgba(139,92,246,0.3)" strokeWidth="0.5"/>
+      <line x1="45" y1="32" x2="40" y2="44" stroke="rgba(139,92,246,0.3)" strokeWidth="0.5"/>
+      <line x1="60" y1="32" x2="55" y2="44" stroke="rgba(139,92,246,0.3)" strokeWidth="0.5"/>
+      {/* 캐릭터 */}
+      <rect x="10" y="17" width="8" height="6" fill="#f0abfc"/>
+      <rect x="10" y="16" width="9" height="2" fill="#c026d3"/>
+      <rect x="8" y="23" width="12" height="9" fill="#e879f9"/>
+      <rect x="5" y="24" width="4" height="6" fill="#f0abfc"/>
+      <rect x="20" y="24" width="4" height="6" fill="#f0abfc"/>
+      <rect x="10" y="32" width="4" height="5" fill="#c026d3"/>
+      <rect x="14" y="32" width="4" height="5" fill="#c026d3"/>
+      <rect x="8" y="36" width="7" height="2" fill="#fde68a"/>
+      <rect x="14" y="37" width="7" height="2" fill="#fde68a"/>
+      {/* 장애물 스파이크 */}
+      <polygon points="38,32 42,22 46,32" fill="#dc2626"/>
+      <polygon points="44,32 48,24 52,32" fill="#dc2626"/>
+      {/* 코인 */}
+      <circle cx="32" cy="26" r="3" fill="#fbbf24"/>
+      <circle cx="32" cy="26" r="2" fill="#f59e0b"/>
+    </svg>
+  );
+}
+
 function DustPreview() {
   return (
     <svg viewBox="0 0 60 44" className="w-full h-full bg-black"

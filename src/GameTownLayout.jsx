@@ -10,6 +10,7 @@ import NeonBrickBreaker from './NeonBrickBreaker';
 import ClassicTetris    from './ClassicTetris';
 import NeonSnake        from './NeonSnake';
 import FlappyMungyi     from './FlappyMungyi';
+import RunnerGame       from './RunnerGame';
 import GameLobby        from './GameLobby';
 import NeonOmok         from './NeonOmok';
 import { useBgm }       from './utils/useBgm';
@@ -309,6 +310,7 @@ export default function GameTownLayout() {
             {user && currentGame === 'tetris'        && <ClassicTetris     autoStart onExit={goLobby} />}
             {user && currentGame === 'snake'         && <NeonSnake         autoStart onExit={goLobby} />}
             {user && currentGame === 'flappy'        && <FlappyMungyi      autoStart onExit={goLobby} />}
+            {user && currentGame === 'runner'        && <RunnerGame        autoStart onExit={goLobby} />}
             {user && currentGame === 'omok'          && <NeonOmok                    onExit={goLobby} />}
 
             {/* 게임 중 로비 복귀 버튼 — 하단 중앙 (HUD 겹침 방지) */}
@@ -415,6 +417,20 @@ const GUIDE_DATA = {
       { icon: '👆', desc: '화면 탭으로 점프' },
     ],
     tip: '파이프 사이를 통과하며 최고 기록에 도전!',
+  },
+  runner: {
+    title: 'ENDLESS RUNNER',
+    color: '#e879f9',
+    keys: [
+      { key: 'SPACE', desc: '점프' },
+      { key: '↑ / W', desc: '점프' },
+      { key: 'CLICK', desc: '점프' },
+    ],
+    touch: [
+      { icon: '👆', desc: '한 번 탭: 점프' },
+      { icon: '👆👆', desc: '연속 탭: 이중 점프' },
+    ],
+    tip: '장애물을 피하고 🪙 코인을 모아라! 속도가 점점 빨라진다.',
   },
 };
 
