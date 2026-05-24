@@ -445,6 +445,7 @@ let cols, rows;
 let snake, dir, nextDir, food, specials;
 let score, level, gameActive, loopTimer;
 let bestScore = parseInt(localStorage.getItem('snake_best') || '0');
+let isHighScore = false;
 let coins = (()=>{
   try { const s = localStorage.getItem('mungyi_town_save'); return s ? JSON.parse(s).coins || 100 : 100; } catch(e) { return 100; }
 })();
@@ -520,7 +521,7 @@ function startGame() {
     { x:Math.floor(cols/2)-2, y:Math.floor(rows/2) },
   ];
   dir = 'right'; nextDir = 'right';
-  score = 0; level = 1; gameActive = true; specials = [];
+  score = 0; level = 1; gameActive = true; specials = []; isHighScore = false;
   spawnFood();
   clearInterval(loopTimer);
   loopTimer = setInterval(gameLoop, DIFF_CONFIG[diff].speed);
@@ -587,7 +588,7 @@ function gameLoop() {
       }
       if (sp.type==='shrink') {
         snake = snake.slice(0, Math.max(3, Math.floor(snake.length*0.6)));
-        showPop('✂즧아!', sp.x, sp.y);
+        showPop('✂즐아!', sp.x, sp.y);
       }
       ate = true; return false;
     }
@@ -718,6 +719,16 @@ function updateHUD() {
 function endGame() {
   gameActive = false; clearInterval(loopTimer);
 
+  /* 신기록/코인 즉시 적립 (광고 시청 여부 무관) */
+  const reward = Math.floor(score / 8);
+  coins += reward;
+  isHighScore = score > bestScore;
+  if (isHighScore) bestScore = score;
+  localStorage.setItem('snake_best', bestScore);
+  townAddCoins(reward); townBoostMungyi('happy', 8); townRecordGame();
+  document.getElementById('coins').textContent = coins;
+  document.getElementById('best-display').textContent = bestScore;
+
   if (typeof AdManager !== 'undefined') {
     AdManager.showReward(
       () => startGame(),
@@ -730,16 +741,8 @@ function endGame() {
 
 function showGameOverScreen() {
   const reward = Math.floor(score / 8);
-  coins += reward;
-  const isHigh = score > bestScore;
-  if (isHigh) bestScore = score;
-  localStorage.setItem('snake_best', bestScore);
-  townAddCoins(reward); townBoostMungyi('happy', 8); townRecordGame();
-  document.getElementById('coins').textContent = coins;
-  document.getElementById('best-display').textContent = bestScore;
-
-  document.getElementById('go-emoji').textContent = isHigh ? '🏆' : '😢';
-  document.getElementById('go-title').textContent  = isHigh ? '최고기록!' : '게임 오버';
+  document.getElementById('go-emoji').textContent = isHighScore ? '🏆' : '😢';
+  document.getElementById('go-title').textContent  = isHighScore ? '최고기록!' : '게임 오버';
   document.getElementById('go-score').textContent  = score;
   document.getElementById('go-length').textContent = '길이: ' + snake.length + '칸';
   document.getElementById('go-level').textContent  = '레벨: ' + level;
