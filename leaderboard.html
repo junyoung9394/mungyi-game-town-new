@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="description" content="뭉이 게임타운 내 기록 모아보기 - 게임별 최고 점수를 확인하세요!">
+<meta name="keywords" content="뭉이게임타운,게임기록,최고점수,리더보드">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="🏆 내 기록 — 뭉이 게임타운">
+<meta property="og:description" content="내 게임별 최고 기록을 한 눈에 확인하세요!">
+<meta property="og:image" content="https://game.luckygrampus.com/icons/icon-512.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FFE97F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>🏆 내 기록 — 뭉이 게임타운</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Jua&display=swap" rel="stylesheet">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8518556382646891" crossorigin="anonymous"></script>
+<script src="ad_manager.js" onerror="console.warn('ad_manager.js load failed')"></script>
+<style>
+:root {
+  --bg:     #0c0820;
+  --surface: rgba(255,255,255,0.07);
+  --border:  rgba(255,255,255,0.13);
+  --border2: rgba(255,255,255,0.22);
+  --yellow:  #FFE97F;
+  --pink:    #FF85A1;
+  --mint:    #5EDFCA;
+  --lav:     #C4B5FF;
+  --peach:   #FFB07C;
+  --green:   #76EBA0;
+  --dim:     rgba(255,255,255,0.55);
+  --dim2:    rgba(255,255,255,0.32);
+  --r-sm: 12px; --r-md: 18px; --r-lg: 26px; --r-pill: 100px;
+}
+*,*::before,*::after { margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'Nunito',sans-serif;
+  background:var(--bg); min-height:100vh;
+  display:flex; justify-content:center;
+}
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 15%, rgba(255,233,127,.08) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 60% at 85% 85%, rgba(196,181,255,.06) 0%,transparent 65%);
+}
+.app {
+  width:100%; max-width:480px; min-height:100vh;
+  position:relative; z-index:1;
+  display:flex; flex-direction:column;
+}
+
+/* ── FAB ── */
+#home-fab {
+  position:fixed; top:14px; left:14px; z-index:9990;
+  width:44px; height:44px; border-radius:50%;
+  background:rgba(12,8,32,.75); border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; cursor:pointer; text-decoration:none;
+  backdrop-filter:blur(12px);
+  box-shadow:0 2px 16px rgba(0,0,0,.5);
+  transition:all .2s cubic-bezier(.34,1.56,.64,1);
+}
+#home-fab:active { transform:scale(.9); }
+
+/* ── 헤더 ── */
+.header {
+  padding:16px 20px 14px; padding-left:70px;
+  border-bottom:1px solid var(--border);
+  background:rgba(12,8,32,.7); backdrop-filter:blur(16px);
+  position:sticky; top:0; z-index:10;
+}
+.header-title {
+  font-family:'Jua',sans-serif; font-size:22px;
+  background:linear-gradient(135deg,var(--yellow),var(--peach));
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 2px 8px rgba(255,233,127,.4));
+}
+.header-sub {
+  font-size:11px; font-weight:700;
+  color:var(--dim2); margin-top:3px;
+}
+
+/* ── 총합 카드 ── */
+.summary-card {
+  margin:16px 16px 0;
+  background:linear-gradient(135deg,rgba(255,233,127,.12),rgba(255,176,124,.08));
+  border:1px solid rgba(255,233,127,.3);
+  border-radius:var(--r-lg);
+  padding:18px 20px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.sum-info { flex:1; }
+.sum-label {
+  font-size:10px; font-weight:800; color:var(--dim2);
+  text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px;
+}
+.sum-value {
+  font-family:'Jua',sans-serif; font-size:32px; color:var(--yellow);
+  text-shadow:0 0 16px rgba(255,233,127,.5);
+}
+.sum-sub {
+  font-size:11px; font-weight:700; color:var(--dim2); margin-top:4px;
+}
+.sum-trophy { font-size:52px; line-height:1; }
+
+/* ── 섹션 제목 ── */
+.section-title {
+  padding:20px 16px 10px;
+  font-family:'Jua',sans-serif; font-size:16px; color:var(--dim);
+  display:flex; align-items:center; gap:8px;
+}
+.section-title::after {
+  content:''; flex:1; height:1px;
+  background:linear-gradient(90deg,var(--border),transparent);
+}
+
+/* ── 게임 카드 ── */
+.game-list { padding:0 12px; display:flex; flex-direction:column; gap:10px; }
+.game-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-md);
+  display:flex; align-items:center; gap:12px; padding:14px 16px;
+  text-decoration:none; color:inherit;
+  transition:all .18s cubic-bezier(.34,1.56,.64,1);
+  position:relative; overflow:hidden;
+}
+.game-card::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.04),transparent);
+  pointer-events:none;
+}
+.game-card:active { transform:scale(.97); }
+.game-card.has-score {
+  border-color:rgba(255,233,127,.28);
+  background:linear-gradient(135deg,rgba(255,233,127,.06),var(--surface));
+}
+.game-icon { font-size:36px; line-height:1; flex-shrink:0; }
+.game-info { flex:1; min-width:0; }
+.game-name {
+  font-family:'Jua',sans-serif; font-size:16px; color:white;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.game-desc { font-size:11px; font-weight:700; color:var(--dim2); margin-top:2px; }
+.game-score-wrap { text-align:right; flex-shrink:0; }
+.game-score {
+  font-family:'Jua',sans-serif; font-size:22px; color:var(--yellow);
+  line-height:1;
+}
+.game-score.no-record { font-size:15px; color:var(--dim2); }
+.game-score-label { font-size:10px; font-weight:800; color:var(--dim2); margin-top:2px; }
+.game-play-badge {
+  position:absolute; top:10px; right:12px;
+  background:linear-gradient(135deg,var(--pink),var(--lav));
+  color:white; font-size:9px; font-weight:900;
+  padding:3px 8px; border-radius:var(--r-pill);
+  letter-spacing:.6px;
+}
+
+/* ── 공유 버튼 ── */
+.share-section {
+  margin:20px 16px 12px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.share-btn {
+  width:100%; border:none; border-radius:var(--r-pill);
+  font-family:'Nunito',sans-serif; font-size:15px; font-weight:900;
+  padding:14px; cursor:pointer;
+  background:linear-gradient(135deg,var(--pink),var(--lav));
+  color:white;
+  box-shadow:0 4px 18px rgba(255,133,161,.35);
+  transition:all .18s cubic-bezier(.34,1.56,.64,1);
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.share-btn:active { transform:scale(.96); }
+.reset-btn {
+  width:100%; border:1px solid var(--border);
+  border-radius:var(--r-pill);
+  font-family:'Nunito',sans-serif; font-size:13px; font-weight:800;
+  padding:11px; cursor:pointer;
+  background:transparent; color:rgba(255,100,100,.6);
+  transition:all .18s;
+}
+.reset-btn:active { opacity:.7; }
+
+/* ── 빈 상태 ── */
+.empty-state {
+  margin:40px 16px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-lg); padding:36px 24px; text-align:center;
+}
+.empty-emoji { font-size:56px; margin-bottom:12px; }
+.empty-text { font-family:'Jua',sans-serif; font-size:18px; color:var(--dim); margin-bottom:8px; }
+.empty-sub { font-size:13px; font-weight:700; color:var(--dim2); line-height:1.7; }
+
+/* ── 광고 ── */
+.ad-wrap {
+  margin:12px 16px;
+  background:rgba(0,0,0,.2);
+  border:1px solid var(--border);
+  border-radius:var(--r-md);
+  overflow:hidden;
+}
+.ad-label {
+  font-size:8px; color:var(--dim2); text-align:center;
+  padding:4px; font-family:sans-serif;
+}
+
+/* ── 풋터 ── */
+.footer {
+  margin-top:auto;
+  padding:24px 16px;
+  text-align:center;
+  font-size:11px; font-weight:700; color:var(--dim2);
+  line-height:2;
+}
+.footer a { color:var(--lav); text-decoration:none; }
+
+@media(min-width:600px) {
+  .app { max-width:560px; }
+}
+</style>
+</head>
+<body>
+
+<a href="index.html" id="home-fab" title="홈으로">🏠</a>
+
+<div class="app">
+  <div class="header">
+    <div class="header-title">🏆 내 기록</div>
+    <div class="header-sub">게임별 최고 기록을 확인하세요!</div>
+  </div>
+
+  <!-- 총합 요약 카드 -->
+  <div class="summary-card" id="summary-card">
+    <div class="sum-info">
+      <div class="sum-label">총 게임 횟수</div>
+      <div class="sum-value" id="total-games">0</div>
+      <div class="sum-sub" id="played-count">아직 기록이 없어요</div>
+    </div>
+    <div class="sum-trophy">🎮</div>
+  </div>
+
+  <!-- 광고 -->
+  <div class="ad-wrap">
+    <div class="ad-label">AD</div>
+    <ins class="adsbygoogle"
+      style="display:block;min-height:60px;"
+      data-ad-client="ca-pub-8518556382646891"
+      data-ad-slot="8080905265"
+      data-ad-format="auto"
+      data-full-width-responsive="true"></ins>
+  </div>
+
+  <div class="section-title">🎯 게임별 기록</div>
+
+  <div class="game-list" id="game-list"></div>
+
+  <!-- 공유 / 초기화 -->
+  <div class="share-section">
+    <button class="share-btn" onclick="shareMyRecord()">📤 내 기록 공유하기</button>
+    <button class="reset-btn" onclick="confirmReset()">🗑 기록 초기화</button>
+  </div>
+
+  <!-- 풋터 -->
+  <div class="footer">
+    <a href="index.html">🏠 홈으로</a> &nbsp;|&nbsp;
+    <a href="game_snake.html">🐍 뱀 키우기</a> &nbsp;|&nbsp;
+    <a href="game_mole.html">🐹 두더지</a>
+    <br>© 2026 뭉이 게임타운
+  </div>
+</div>
+
+<script>
+/* ── 게임 목록 (localStorage 키 + 파일 + 이모지 + 이름) ── */
+const GAME_DEFS = [
+  { key:'snake_best',      file:'game_snake.html',    icon:'🐍', name:'뱀 키우기',      desc:'먹이를 먹고 길어지는 뱀!',   unit:'점' },
+  { key:'mole_best',       file:'game_mole.html',     icon:'🐹', name:'두더지 잡기',    desc:'두더지를 최대한 빨리 잡아라!', unit:'점' },
+  { key:'memory_best',     file:'game_memory.html',   icon:'🧠', name:'기억력 게임',    desc:'카드 짝을 모두 맞춰라!',      unit:'점' },
+  { key:'bubble_best',     file:'game_bubble.html',   icon:'🫧', name:'버블 팡',        desc:'같은 색 버블을 터뜨려라!',    unit:'점' },
+  { key:'reaction_best',   file:'game_reaction.html', icon:'⚡', name:'반응속도 테스트', desc:'얼마나 빠르게 반응하나?',     unit:'ms' },
+  { key:'omok_best',       file:'game_omok.html',     icon:'⚫', name:'오목',           desc:'5개를 먼저 놓으면 승리!',     unit:'승' },
+  { key:'bogle_best',      file:'game_bogle.html',    icon:'🔤', name:'보글 단어',      desc:'숨어있는 단어를 찾아라!',     unit:'점' },
+  { key:'space_best',      file:'game_space.html',    icon:'🚀', name:'우주 슈팅',      desc:'적을 물리쳐라!',              unit:'점' },
+  { key:'rpg_best',        file:'game_rpg.html',      icon:'⚔️', name:'RPG 던전',       desc:'던전을 탐험하라!',            unit:'레벨' },
+  { key:'farm_best',       file:'game_farm.html',     icon:'🌾', name:'팜 게임',        desc:'작물을 수확하라!',            unit:'점' },
+  { key:'factory_best',    file:'game_factory.html',  icon:'🏭', name:'팩토리',         desc:'생산 라인을 운영하라!',       unit:'점' },
+  { key:'cookie_best',     file:'game_cookie.html',   icon:'🍪', name:'쿠키 팡',        desc:'쿠키를 3개 이상 연결!',       unit:'점' },
+  { key:'gacha_best',      file:'game_gacha.html',    icon:'🎲', name:'가챠',           desc:'운을 시험해봐라!',            unit:'점' },
+  { key:'tamagotchi_best', file:'tamagotchi_game.html',icon:'🐱',name:'다마고치',       desc:'귀여운 친구를 키워라!',       unit:'일' },
+];
+
+const _SK = 'mungyi_town_save';
+function _loadTown() {
+  try { const s=localStorage.getItem(_SK); return s?JSON.parse(s):{coins:100,stats:{totalGamesPlayed:0}}; }
+  catch(e){ return {coins:100,stats:{}}; }
+}
+
+function getScore(key) {
+  const v = localStorage.getItem(key);
+  if (v === null || v === '') return null;
+  const n = parseInt(v, 10);
+  return isNaN(n) ? null : n;
+}
+
+function renderGames() {
+  const list = document.getElementById('game-list');
+  list.innerHTML = '';
+
+  let playedCount = 0;
+  const records = [];
+
+  GAME_DEFS.forEach(g => {
+    const score = getScore(g.key);
+    if (score !== null && score > 0) {
+      playedCount++;
+      records.push({ ...g, score });
+    }
+
+    const card = document.createElement('a');
+    card.href = g.file;
+    card.className = 'game-card' + (score ? ' has-score' : '');
+
+    if (score && score > 0) {
+      card.innerHTML = `
+        <div class="game-icon">${g.icon}</div>
+        <div class="game-info">
+          <div class="game-name">${g.name}</div>
+          <div class="game-desc">${g.desc}</div>
+        </div>
+        <div class="game-score-wrap">
+          <div class="game-score">${score.toLocaleString()}</div>
+          <div class="game-score-label">${g.unit} · 최고</div>
+        </div>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="game-icon" style="opacity:.5">${g.icon}</div>
+        <div class="game-info">
+          <div class="game-name" style="color:rgba(255,255,255,.5)">${g.name}</div>
+          <div class="game-desc">${g.desc}</div>
+        </div>
+        <div class="game-score-wrap">
+          <div class="game-score no-record">미도전</div>
+          <div class="game-score-label">탭해서 시작</div>
+        </div>
+      `;
+      const badge = document.createElement('div');
+      badge.className = 'game-play-badge';
+      badge.textContent = '▶ 플레이';
+      card.appendChild(badge);
+    }
+
+    list.appendChild(card);
+  });
+
+  /* ── 요약 카드 업데이트 ── */
+  const town = _loadTown();
+  const totalPlayed = town.stats?.totalGamesPlayed || 0;
+  document.getElementById('total-games').textContent = totalPlayed.toLocaleString();
+
+  if (playedCount > 0) {
+    document.getElementById('played-count').textContent =
+      `${playedCount}개 게임 도전 완료`;
+  } else {
+    document.getElementById('played-count').textContent = '아직 기록이 없어요 — 게임을 플레이해보세요!';
+  }
+
+  return records;
+}
+
+function shareMyRecord() {
+  const records = GAME_DEFS
+    .map(g => ({ name: g.name, icon: g.icon, score: getScore(g.key), unit: g.unit }))
+    .filter(r => r.score && r.score > 0)
+    .sort((a, b) => 0); // keep order
+
+  if (records.length === 0) {
+    alert('공유할 기록이 없어요! 게임을 먼저 플레이해주세요 🎮');
+    return;
+  }
+
+  const lines = records
+    .slice(0, 5)
+    .map(r => `${r.icon} ${r.name}: ${r.score.toLocaleString()}${r.unit}`)
+    .join('\n');
+
+  const text = `🏆 뭉이 게임타운 내 기록!\n\n${lines}\n\n나 이길 수 있어? 😈\nhttps://game.luckygrampus.com`;
+
+  if (navigator.share) {
+    navigator.share({ title: '🏆 내 게임 기록', text })
+      .catch(() => copyToClipboard(text));
+  } else {
+    copyToClipboard(text);
+  }
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => alert('기록이 클립보드에 복사됐어요! 📋'));
+  } else {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    alert('기록이 클립보드에 복사됐어요! 📋');
+  }
+}
+
+function confirmReset() {
+  if (!confirm('모든 게임 기록을 초기화할까요?\n이 작업은 되돌릴 수 없습니다.')) return;
+  GAME_DEFS.forEach(g => localStorage.removeItem(g.key));
+  alert('기록이 초기화됐어요!');
+  renderGames();
+}
+
+/* ── 초기화 ── */
+renderGames();
+
+/* AdSense */
+try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+</script>
+</body>
+</html>

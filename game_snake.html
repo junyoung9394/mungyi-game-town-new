@@ -245,7 +245,7 @@ body::before {
 .s-sub    { font-size:12px; font-weight:600; color:var(--dim); line-height:1.6; margin-bottom:18px; }
 .s-score  { font-family:'Jua',sans-serif; font-size:48px; color:var(--pink); margin:10px 0; display:block; }
 .s-stat   { font-size:13px; font-weight:700; color:var(--dim); margin:4px 0; }
-.s-coin   { font-size:18px; font-weight:900; color:var(--yellow); margin:12px 0 22px; display:block; }
+.s-coin   { font-size:18px; font-weight:900; color:var(--yellow); margin:12px 0 16px; display:block; }
 
 /* Diff buttons */
 .diff-row { display:flex; gap:8px; margin-bottom:18px; }
@@ -283,6 +283,16 @@ body::before {
   color:var(--dim); font-size:13px;
 }
 .s-btn-sec::after { display:none; }
+.s-btn-share {
+  background:linear-gradient(135deg,#FEE500,#FFB700);
+  color:#3C1E1E;
+}
+.s-link {
+  font-size:11px; font-weight:800; color:rgba(255,255,255,.38);
+  text-decoration:none; display:block; margin-top:4px; margin-bottom:6px;
+  letter-spacing:.4px;
+}
+.s-link:hover { color:var(--lav); }
 
 /* ── 모바일에서 PC 전용 패널 숨김 ── */
 .right-side { display:none; }
@@ -352,11 +362,11 @@ body::before {
 
   <!-- D-pad (모바일) -->
   <div class="dpad" id="dpad">
-    <div class="dpad-btn dpad-up"     id="btn-up"    ontouchstart="handleDir('up')"    onclick="handleDir('up')">▲</div>
-    <div class="dpad-btn dpad-left"   id="btn-left"  ontouchstart="handleDir('left')"  onclick="handleDir('left')">◀</div>
+    <div class="dpad-btn dpad-up"     id="btn-up"    ontouchstart="handleDir('up')"    onclick="handleDir('up')">&#9650;</div>
+    <div class="dpad-btn dpad-left"   id="btn-left"  ontouchstart="handleDir('left')"  onclick="handleDir('left')">&#9664;</div>
     <div class="dpad-btn dpad-center">🐍</div>
-    <div class="dpad-btn dpad-right"  id="btn-right" ontouchstart="handleDir('right')" onclick="handleDir('right')">▶</div>
-    <div class="dpad-btn dpad-down"   id="btn-down"  ontouchstart="handleDir('down')"  onclick="handleDir('down')">▼</div>
+    <div class="dpad-btn dpad-right"  id="btn-right" ontouchstart="handleDir('right')" onclick="handleDir('right')">&#9654;</div>
+    <div class="dpad-btn dpad-down"   id="btn-down"  ontouchstart="handleDir('down')"  onclick="handleDir('down')">&#9660;</div>
   </div>
 
   <!-- PC 오른쪽 패널 -->
@@ -388,15 +398,16 @@ body::before {
   <div class="screen-card">
     <span class="s-emoji">🐍</span>
     <div class="s-title">뱀 키우기</div>
-    <div class="s-sub">먹이를 먹고 길어지세요!<br>벽이나 몸에 닿으면 끝!</div>
+    <div class="s-sub">먹이를 먹고 길어지세요!<br>벽이나 엄에 닿으면 끝!</div>
     <div class="diff-row">
-      <div class="diff-btn active" onclick="setDiff('easy',this)">🐢<br>쉬움</div>
+      <div class="diff-btn active" onclick="setDiff('easy',this)">🐢<br>쉽음</div>
       <div class="diff-btn"        onclick="setDiff('normal',this)">🐍<br>보통</div>
       <div class="diff-btn"        onclick="setDiff('hard',this)">⚡<br>빠름</div>
       <div class="diff-btn"        onclick="setDiff('hell',this)">💀<br>지옥</div>
     </div>
     <div style="font-size:12px;font-weight:700;color:var(--dim);margin-bottom:16px;">최고기록: <span id="best-display">0</span></div>
-    <button class="s-btn s-btn-primary" onclick="startGame()">▶ 시작!</button>
+    <button class="s-btn s-btn-primary" onclick="startGame()">&#9654; 시작!</button>
+    <a href="leaderboard.html" class="s-link">📊 내 기록 보기</a>
   </div>
 </div>
 
@@ -411,7 +422,9 @@ body::before {
     <div class="s-stat"   id="go-best-txt"></div>
     <span class="s-coin"  id="go-coin"></span>
     <button class="s-btn s-btn-primary" onclick="startGame()">🔄 다시 도전</button>
+    <button class="s-btn s-btn-share" onclick="shareSnakeScore()">📤 점수 공유하기</button>
     <button class="s-btn s-btn-sec"     onclick="goTitle()">타이틀로</button>
+    <a href="leaderboard.html" class="s-link">📊 내 기록 보기</a>
   </div>
 </div>
 
@@ -421,7 +434,7 @@ body::before {
 ═══════════════════════════════════════ */
 const CELL = 18;
 const DIFF_CONFIG = {
-  easy:   { speed:180, wallKill:false, label:'쉬움' },
+  easy:   { speed:180, wallKill:false, label:'쉽음' },
   normal: { speed:130, wallKill:true,  label:'보통' },
   hard:   { speed:90,  wallKill:true,  label:'빠름' },
   hell:   { speed:55,  wallKill:true,  label:'지옥' },
@@ -432,7 +445,8 @@ let cols, rows;
 let snake, dir, nextDir, food, specials;
 let score, level, gameActive, loopTimer;
 let bestScore = parseInt(localStorage.getItem('snake_best') || '0');
-let coins = (() => {
+let isHighScore = false;
+let coins = (()=>{
   try { const s = localStorage.getItem('mungyi_town_save'); return s ? JSON.parse(s).coins || 100 : 100; } catch(e) { return 100; }
 })();
 
@@ -492,7 +506,6 @@ function initCanvas() {
   size = Math.max(280, Math.floor(size / CELL) * CELL);
   canvas.width = size; canvas.height = size;
   cols = Math.floor(size / CELL); rows = Math.floor(size / CELL);
-  // PC hint
   const hint = document.querySelector('.pc-hint');
   if (hint) hint.style.display = isPC ? 'flex' : 'none';
 }
@@ -508,7 +521,7 @@ function startGame() {
     { x:Math.floor(cols/2)-2, y:Math.floor(rows/2) },
   ];
   dir = 'right'; nextDir = 'right';
-  score = 0; level = 1; gameActive = true; specials = [];
+  score = 0; level = 1; gameActive = true; specials = []; isHighScore = false;
   spawnFood();
   clearInterval(loopTimer);
   loopTimer = setInterval(gameLoop, DIFF_CONFIG[diff].speed);
@@ -575,7 +588,7 @@ function gameLoop() {
       }
       if (sp.type==='shrink') {
         snake = snake.slice(0, Math.max(3, Math.floor(snake.length*0.6)));
-        showPop('✂짧아!', sp.x, sp.y);
+        showPop('✂즐아!', sp.x, sp.y);
       }
       ate = true; return false;
     }
@@ -598,37 +611,30 @@ function levelUp() {
   setTimeout(() => el.remove(), 1600);
 }
 
-// ── 그리기 ── (캔디 갤럭시 스타일)
 function draw() {
-  // 배경
   ctx.fillStyle = '#0a061a';
   ctx.beginPath(); ctx.roundRect(0, 0, canvas.width, canvas.height, 20); ctx.fill();
 
-  // 미묘한 격자
   ctx.strokeStyle = 'rgba(196,181,255,0.04)'; ctx.lineWidth = 0.5;
   for (let x = 0; x <= cols; x++) { ctx.beginPath(); ctx.moveTo(x*CELL,0); ctx.lineTo(x*CELL,canvas.height); ctx.stroke(); }
   for (let y = 0; y <= rows; y++) { ctx.beginPath(); ctx.moveTo(0,y*CELL); ctx.lineTo(canvas.width,y*CELL); ctx.stroke(); }
 
-  // 뱀 그리기
   snake.forEach((seg, i) => {
     const isHead = i === 0;
-    const t = 1 - i / snake.length; // tail fade
+    const t = 1 - i / snake.length;
     const x = seg.x * CELL + 1, y = seg.y * CELL + 1;
     const w = CELL - 2, h = CELL - 2;
     const r = isHead ? 7 : 5;
 
     if (isHead) {
-      // 헤드 글로우
       ctx.shadowColor = '#76EBA0'; ctx.shadowBlur = 14;
       const grad = ctx.createLinearGradient(x, y, x+w, y+h);
       grad.addColorStop(0, '#a8f5c0'); grad.addColorStop(1, '#5EDFCA');
       ctx.fillStyle = grad;
       ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill();
       ctx.shadowBlur = 0;
-      // 광택
       ctx.fillStyle = 'rgba(255,255,255,0.35)';
       ctx.beginPath(); ctx.roundRect(x+2, y+2, w-4, h*0.4, 3); ctx.fill();
-      // 눈
       ctx.fillStyle = '#0a061a';
       if (dir==='right'||dir==='left') {
         const ex = dir==='right' ? x+w-5 : x+3;
@@ -638,7 +644,6 @@ function draw() {
         ctx.fillRect(x+3, ey, 3, 3); ctx.fillRect(x+w-6, ey, 3, 3);
       }
     } else {
-      // 몸통 — 그라디언트 fade
       const green = Math.floor(100 + t * 135);
       const alpha = 0.3 + t * 0.7;
       const grad = ctx.createLinearGradient(x, y, x+w, y+h);
@@ -647,7 +652,6 @@ function draw() {
       ctx.fillStyle = grad;
       const pad = i < 3 ? 0 : 1;
       ctx.beginPath(); ctx.roundRect(x+pad, y+pad, w-pad*2, h-pad*2, Math.max(2,r-2)); ctx.fill();
-      // 비늘 하이라이트
       if (i % 2 === 0) {
         ctx.fillStyle = `rgba(255,255,255,${alpha*0.15})`;
         ctx.beginPath(); ctx.roundRect(x+3, y+2, w-6, h*0.35, 2); ctx.fill();
@@ -655,7 +659,6 @@ function draw() {
     }
   });
 
-  // 먹이 — 글로시 캔디 볼
   food.pulse = (food.pulse + 0.08) % (Math.PI * 2);
   const fScale = 0.88 + Math.sin(food.pulse) * 0.12;
   const fc = food.x*CELL + CELL/2, fr = food.y*CELL + CELL/2, fR = CELL/2 * fScale - 1;
@@ -667,7 +670,6 @@ function draw() {
   ctx.fillStyle = 'rgba(255,255,255,0.55)';
   ctx.beginPath(); ctx.arc(fc - fR*.28, fr - fR*.28, fR*.3, 0, Math.PI*2); ctx.fill();
 
-  // 특수 아이템
   specials.forEach(sp => {
     sp.pulse += 0.12;
     const sc = sp.x*CELL + CELL/2, sr = sp.y*CELL + CELL/2;
@@ -717,6 +719,16 @@ function updateHUD() {
 function endGame() {
   gameActive = false; clearInterval(loopTimer);
 
+  /* 신기록/코인 즉시 적립 (광고 시청 여부 무관) */
+  const reward = Math.floor(score / 8);
+  coins += reward;
+  isHighScore = score > bestScore;
+  if (isHighScore) bestScore = score;
+  localStorage.setItem('snake_best', bestScore);
+  townAddCoins(reward); townBoostMungyi('happy', 8); townRecordGame();
+  document.getElementById('coins').textContent = coins;
+  document.getElementById('best-display').textContent = bestScore;
+
   if (typeof AdManager !== 'undefined') {
     AdManager.showReward(
       () => startGame(),
@@ -729,16 +741,8 @@ function endGame() {
 
 function showGameOverScreen() {
   const reward = Math.floor(score / 8);
-  coins += reward;
-  const isHigh = score > bestScore;
-  if (isHigh) bestScore = score;
-  localStorage.setItem('snake_best', bestScore);
-  townAddCoins(reward); townBoostMungyi('happy', 8); townRecordGame();
-  document.getElementById('coins').textContent = coins;
-  document.getElementById('best-display').textContent = bestScore;
-
-  document.getElementById('go-emoji').textContent = isHigh ? '🏆' : '😢';
-  document.getElementById('go-title').textContent  = isHigh ? '최고기록!' : '게임 오버';
+  document.getElementById('go-emoji').textContent = isHighScore ? '🏆' : '😢';
+  document.getElementById('go-title').textContent  = isHighScore ? '최고기록!' : '게임 오버';
   document.getElementById('go-score').textContent  = score;
   document.getElementById('go-length').textContent = '길이: ' + snake.length + '칸';
   document.getElementById('go-level').textContent  = '레벨: ' + level;
@@ -754,7 +758,28 @@ function goTitle() {
   document.getElementById('best-display').textContent = bestScore;
 }
 
-// ── 저장소 연동 ──
+/* ── 공유 ── */
+function shareSnakeScore() {
+  const text = '🐍 뭉이 게임타운 뱀 키우기\n\n내 점수: ' + score + '점\n최고기록: ' + bestScore + '점\n레벨: ' + level + '\n\n나 이길 수 있어? 😈\nhttps://game.luckygrampus.com/game_snake.html';
+  if (navigator.share) {
+    navigator.share({ title: '🐍 뱀 키우기', text: text, url: 'https://game.luckygrampus.com/game_snake.html' })
+      .catch(function() { _snakeCopy(text); });
+  } else {
+    _snakeCopy(text);
+  }
+}
+function _snakeCopy(t) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(t).then(function() { alert('클립보드에 복사됐어요! 📋'); });
+  } else {
+    var el = document.createElement('textarea');
+    el.value = t; document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+    alert('클립보드에 복사됐어요! 📋');
+  }
+}
+
+/* ── 저장소 연동 ── */
 const _SK = 'mungyi_town_save';
 function _load() {
   try { const s = localStorage.getItem(_SK); return s ? JSON.parse(s) : {coins:100,items:{},mungyi:{},stats:{}}; }
@@ -765,9 +790,9 @@ function townAddCoins(n)          { const s=_load(); s.coins=Math.max(0,(s.coins
 function townBoostMungyi(t, n)    { const s=_load(); if(s.mungyi){s.mungyi[t]=Math.min(100,(s.mungyi[t]||0)+n);_save(s);} }
 function townRecordGame()         { const s=_load(); s.stats=s.stats||{}; s.stats.totalGamesPlayed=(s.stats.totalGamesPlayed||0)+1; _save(s); }
 
-// 초기화
-document.getElementById('coins').textContent       = coins;
-document.getElementById('best-display').textContent = bestScore;
+/* ── 초기화 ── */
+document.getElementById('coins').textContent        = coins;
+document.getElementById('best-display').textContent  = bestScore;
 </script>
 </body>
 </html>
