@@ -392,6 +392,21 @@ function endGame(){
   gameActive=false;
   clearInterval(timerId);
 
+  /* 신기록/코인 즉시 적립 (광고 시청 여부 무관) */
+  if(score > bestScore){
+    bestScore = score;
+    isNewRecord = true;
+    localStorage.setItem('mole_best', bestScore);
+    document.getElementById('best-display').textContent = bestScore;
+  }
+  const reward=Math.floor(score/5);
+  coins+=reward;
+  localStorage.setItem('mole_coins',coins);
+  townAddCoins(reward);
+  townBoostMungyi('happy',5);
+  townRecordGame();
+  document.getElementById('coins').textContent=coins;
+
   /* 광고 시청 후 계속하기 */
   if(typeof AdManager!=='undefined'){
     AdManager.showReward(
@@ -409,22 +424,7 @@ function endGame(){
 }
 
 function showEndScreen(){
-  /* 비스코어 업데이트 */
-  if(score > bestScore){
-    bestScore = score;
-    isNewRecord = true;
-    localStorage.setItem('mole_best', bestScore);
-    document.getElementById('best-display').textContent = bestScore;
-  }
-
   const reward=Math.floor(score/5);
-  coins+=reward;
-  localStorage.setItem('mole_coins',coins);
-  townAddCoins(reward);
-  townBoostMungyi('happy',5);
-  townRecordGame();
-  document.getElementById('coins').textContent=coins;
-
   const badge = document.getElementById('new-record-badge');
   if(isNewRecord){
     badge.style.display='block';

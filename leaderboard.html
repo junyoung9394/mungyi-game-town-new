@@ -313,14 +313,12 @@ function renderGames() {
   list.innerHTML = '';
 
   let playedCount = 0;
-  let totalScore = 0;
   const records = [];
 
   GAME_DEFS.forEach(g => {
     const score = getScore(g.key);
     if (score !== null && score > 0) {
       playedCount++;
-      totalScore += score;
       records.push({ ...g, score });
     }
 
