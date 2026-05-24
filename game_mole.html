@@ -325,6 +325,7 @@ function showMole(idx, duration){
   mole.classList.remove('hidden');
 
   const t=setTimeout(()=>{
+    if(!gameActive) return;
     if(holes[idx]&&holes[idx].active&&mole.dataset.type!=='bonked'){
       hideMole(idx);
       if(type!=='bomb'){
