@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSyncedRef } from './utils/useSyncedRef';
 import { VW, VH } from './constants';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
-import KakaoShareButton from './components/KakaoShareButton';
+import MiniGameResult from './components/MiniGameResult';
+import MiniGameControls from './components/MiniGameControls';
 
 /* ── 상수 ─────────────────────────────────────────── */
 const NEON='#39FF14';
@@ -11,7 +12,6 @@ const BIRD_X=80, BIRD_W=28, BIRD_H=22;
 const GRAVITY=0.38, JUMP=-8;
 const PIPE_W=54, PIPE_GAP=170, PIPE_SPEED=2.6;
 const PIPE_SPAWN_INTERVAL=1700; // ms
-const GAMEOVER_DELAY=1800;
 
 /* ── 드로잉 ───────────────────────────────────────── */
 function drawBg(ctx) {
@@ -108,9 +108,9 @@ function hitsPipe(birdX, birdY, pipe) {
 }
 
 /* ── 훅 ───────────────────────────────────────────── */
-export function useFlappyMungyi({ canvasRef, onExit }) {
+function useFlappyMungyi({ canvasRef }) {
   const [score, setScore]     = useState(0);
-  const [hiScore, setHiScore] = useState(0);
+  const [hiScore, setHiScore] = useState(() => { try { return Number(localStorage.getItem('flappy_hi')) || 0; } catch { return 0; } });
   const [status, setStatus]   = useState('idle');
   const [isNewHi, setIsNewHi] = useState(false);
 
@@ -118,55 +118,43 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
   const scoreRef  = useSyncedRef(score);
   const hiRef     = useSyncedRef(hiScore);
   const statusRef = useSyncedRef(status);
-  const timerRef  = useRef(null); // gameover 자동복귀 타이머
 
   // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
   useAutoSave('flappy', scoreRef, statusRef);
 
-  useEffect(()=>{
-    const v=parseInt(localStorage.getItem('flappy_hi')||'0',10);
-    setHiScore(v);
-  },[]);
 
   const doJump = useCallback(()=>{
     const g=gRef.current; if(!g) return;
     const st=statusRef.current;
     if(st==='idle'||st==='gameover') return; // gameover 중 점프 방지
     g.vy=JUMP;
-  },[]);
+  },[statusRef]);
 
   const start = useCallback(()=>{
-    // 진행 중인 gameover 타이머 취소
-    if(timerRef.current){ clearTimeout(timerRef.current); timerRef.current=null; }
     gRef.current={
       birdY: VH/2-50, vy:0,
       pipes:[], pipeTimer:0,
       tick:0, scored:new Set(),
     };
     setScore(0); setIsNewHi(false);
+    scoreRef.current=0; statusRef.current='playing';
     setStatus('playing');
-  },[]);
+  },[scoreRef, statusRef]);
 
-  const triggerGameOver = useCallback(async()=>{
+  const triggerGameOver = useCallback(()=>{
     const final=scoreRef.current;
-    setStatus('gameover');
-    const isNew=await saveLeaderboardScore('flappy',final);
-    if(isNew||final>hiRef.current){
+    statusRef.current='gameover'; setStatus('gameover');
+    void saveLeaderboardScore('flappy', final);
+    if(final>hiRef.current){
       const best=Math.max(final,hiRef.current);
-      setHiScore(best); setIsNewHi(true);
+      setHiScore(best); hiRef.current=best; setIsNewHi(true);
       localStorage.setItem('flappy_hi',String(best));
     }
-    // GAMEOVER_DELAY 후 로비 복귀 (retry 시 취소됨)
-    timerRef.current = setTimeout(()=>{
-      timerRef.current=null;
-      setStatus('idle');
-      onExit?.(final);
-    }, GAMEOVER_DELAY);
-  },[onExit]);
+  },[hiRef, scoreRef, statusRef]);
 
   // Input: 키보드
   useEffect(()=>{
-    const kd=(e)=>{ if(e.key===' '||e.key==='ArrowUp'){ e.preventDefault(); doJump(); } };
+    const kd=(e)=>{ if (e.target.closest?.('button, input, textarea')) return; if(e.key===' '||e.key==='ArrowUp'){ e.preventDefault(); doJump(); } };
     window.addEventListener('keydown',kd);
     return ()=>window.removeEventListener('keydown',kd);
   },[doJump]);
@@ -235,7 +223,7 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
 
     raf=requestAnimationFrame(loop);
     return ()=>{ cancelled=true; if(raf) cancelAnimationFrame(raf); };
-  },[canvasRef,triggerGameOver]);
+  },[canvasRef,triggerGameOver,hiRef,scoreRef,statusRef]);
 
   return { start, doJump, status, score, hiScore, isNewHi };
 }
@@ -243,7 +231,7 @@ export function useFlappyMungyi({ canvasRef, onExit }) {
 /* ── 컴포넌트 ─────────────────────────────────────── */
 export default function FlappyMungyi({ onExit, autoStart }) {
   const canvasRef = useRef(null);
-  const { start, doJump, status, score, hiScore, isNewHi } = useFlappyMungyi({ canvasRef, onExit });
+  const { start, doJump, status, score, hiScore, isNewHi } = useFlappyMungyi({ canvasRef });
   useEffect(() => { if (autoStart) start(); }, []); // eslint-disable-line
 
   return (
@@ -251,6 +239,7 @@ export default function FlappyMungyi({ onExit, autoStart }) {
       <canvas ref={canvasRef} className="block w-full h-full select-none"
         style={{imageRendering:'pixelated',touchAction:'none',cursor:'pointer'}} />
 
+      {status === 'playing' && <MiniGameControls controls={[{ label: '위로 날기', symbol: '↑', action: doJump }]} hint="화면 탭 / Space" />}
       {/* 시작 전 idle 화면 */}
       {status==='idle' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/80">
@@ -273,30 +262,7 @@ export default function FlappyMungyi({ onExit, autoStart }) {
       )}
 
       {/* 게임 오버 오버레이 — Retry 버튼 */}
-      {status==='gameover' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-end pb-24 pointer-events-none">
-          <div className="pointer-events-auto flex flex-col items-center gap-3">
-            {isNewHi && (
-              <div className="text-neon text-glow text-[10px] tracking-widest blink mb-1"
-                style={{fontFamily:'"Press Start 2P",monospace'}}>
-                ★ NEW RECORD ★
-              </div>
-            )}
-            <div className="text-neon/60 text-[9px] mb-1" style={{fontFamily:'"Press Start 2P",monospace'}}>
-              SCORE {String(score).padStart(3,'0')}
-            </div>
-            <div className="flex gap-2 items-center">
-              <button
-                onClick={start}
-                className="border-2 border-neon px-5 py-3 text-neon text-[11px] tracking-widest hover:bg-neon hover:text-black active:scale-95 transition-all"
-                style={{fontFamily:'"Press Start 2P",monospace',boxShadow:'0 0 14px rgba(57,255,20,0.6)'}}>
-                🔄 RETRY
-              </button>
-              <KakaoShareButton gameId="flappy" score={score} />
-            </div>
-          </div>
-        </div>
-      )}
+      {status === 'gameover' && <MiniGameResult gameId="flappy" score={score} best={hiScore} isNewHi={isNewHi} onRetry={start} onExit={onExit} detail={'짧게 톡톡 눌러 높이를 유지해 보세요.'} />}
     </div>
   );
 }

@@ -1,5 +1,5 @@
-const CACHE = 'mungyi-v1';
-const PRECACHE = ['/', '/manifest.json'];
+const CACHE = 'mongle-playground-v2';
+const PRECACHE = ['/', '/manifest.webmanifest'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -25,8 +25,8 @@ self.addEventListener('fetch', e => {
 self.addEventListener('push', e => {
   const data = e.data?.json() ?? {};
   e.waitUntil(
-    self.registration.showNotification(data.title || '무명이 게임 타운', {
-      body: data.body || '오늘도 출석 체크하러 오세요! 🔥',
+    self.registration.showNotification(data.title || '몽글이 게임 타운', {
+      body: data.body || '몽글이랑 한 판 놀러 오세요! 🌿',
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
       tag: 'streak-reminder',

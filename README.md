@@ -1,16 +1,53 @@
-# React + Vite
+# 몽글이 게임 타운
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+귀엽고 말랑한 6가지 미니게임 놀이터입니다. React 19 + Vite 8로 실행됩니다.
 
-Currently, two official plugins are available:
+## 실행
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Node.js 22.12 이상(현재 검증: 24.19.0)에서 저장소 루트 기준:
 
-## React Compiler
+```sh
+npm ci
+npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
+npm run build
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+새 놀이터는 로그인이나 Firebase 설정 없이 실행됩니다. 기존 오락실 소스와 Firebase 설정은 남아 있지만 새 `src/App.jsx` 진입점에서는 사용하지 않습니다.
 
-## Expanding the ESLint configuration
+## 놀이
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+각 라운드는 최대 45초입니다. 간식 받기와 구름 점프는 기회를 3번 잃으면 종료되고, 짝꿍 찾기는 여섯 쌍을 모두 찾으면 먼저 종료됩니다. 일시정지와 창 이탈 시에는 게임 시간도 멈춥니다.
+
+| 놀이 | 조작 |
+| --- | --- |
+| 냠냠 간식 바구니 | 바구니 드래그 / 좌우 방향키 |
+| 퐁퐁 구름 점프 | 구름이 중앙에 왔을 때 버튼 / Space |
+| 콩닥 택배 가게 | 좌·우·위 스와이프 / 방향키 / 목적지 버튼 |
+| 도란도란 짝꿍 찾기 | 카드 탭 / Tab + Enter |
+| 느긋느긋 낚시터 | 버튼 또는 Space를 누르다가 초록 구간에서 놓기 |
+| 꼬물꼬물 두더지 | 두더지 탭 / 숫자키 1~9 |
+
+완료한 라운드는 `5 + min(25, floor(score / 20))`개의 별사탕을 줍니다. 중도 이탈은 보상이 없습니다. 일일 선물은 브라우저의 현지 날짜 기준 1회 20개입니다. 별사탕으로 꾸미기 화면의 몽글이 색을 구매하고 다시 선택할 수 있습니다.
+
+기록·보상·색상은 `localStorage`의 `mongle_playground_v1`에 저장됩니다. 브라우저 데이터를 지우면 초기화되며, 계정 또는 기기 간 동기화와 온라인 랭킹은 연결되어 있지 않습니다. 기존 게임 기록과는 별도입니다. 효과음은 기본 꺼짐이며 상단 버튼으로 켤 수 있습니다.
+
+## 검증
+
+```sh
+node --test tests/playground.test.js
+npx eslint src/playground src/App.jsx src/main.jsx tests/playground.test.js
+```
+
+실제 브라우저 검증은 개발 서버가 5173 포트에서 실행 중이며 Python Playwright와 `/usr/bin/chromium`이 설치된 환경에서 실행합니다:
+
+```sh
+python tests/playground_smoke.py
+```
+
+게임별 입력·라운드 종료·보상 중복 방지·일일 선물·색상 구매·새로고침 후 저장·모바일 너비를 검증합니다. 다른 테스트 및 전체 `npm run lint`에는 이전 오락실 소스도 포함됩니다.
+
+온라인 배포는 별도입니다. 빌드 결과는 `dist/`에 생성됩니다.
+
+## 수익화 준비
+
+선택형 보상 광고와 동의 기반 GA4 이벤트 연결이 준비되어 있습니다. 기본 설정에서는 외부 서비스가 비활성화됩니다. 실제 연결에 필요한 공개 ID, 광고 보상 조건, 분석 보고서와 배포 절차는 [수익화 운영 문서](docs/monetization.md)를 참고하세요. 유료 결제와 온라인 구매 복원은 아직 제공하지 않습니다.

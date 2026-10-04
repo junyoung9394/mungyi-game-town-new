@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSyncedRef } from './utils/useSyncedRef';
 import { VW, VH } from './constants';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
-import KakaoShareButton from './components/KakaoShareButton';
+import MiniGameResult from './components/MiniGameResult';
+import MiniGameControls from './components/MiniGameControls';
 
 const NEON = '#39FF14';
 const COLS = 10, ROWS = 20, CELL = 28;
@@ -91,11 +92,11 @@ function drawBanner(ctx, title, sub) {
 }
 
 /* ── 훅 ────────────────────────────────────────────── */
-export function useClassicTetris({ canvasRef, onExit }) {
+function useClassicTetris({ canvasRef }) {
   const [score,setScore]   = useState(0);
   const [level,setLevel]   = useState(1);
   const [lines,setLines]   = useState(0);
-  const [hiScore,setHi]    = useState(0);
+  const [hiScore,setHi]    = useState(() => { try { return Number(localStorage.getItem('tetris_hi')) || 0; } catch { return 0; } });
   const [status,setStatus] = useState('idle');
   const [isNewHi,setNewHi] = useState(false);
 
@@ -106,9 +107,7 @@ export function useClassicTetris({ canvasRef, onExit }) {
   const hiRef    =useSyncedRef(hiScore);
   const statusRef=useSyncedRef(status);
   const inp=useRef({left:false,right:false,down:false,la:80,ra:80});
-  const goTimer=useRef(null);
 
-  useEffect(()=>{const v=parseInt(localStorage.getItem('tetris_hi')||'0',10);setHi(v);},[]);
 
   // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
   useAutoSave('tetris', scoreRef, statusRef);
@@ -119,18 +118,40 @@ export function useClassicTetris({ canvasRef, onExit }) {
   },[]);
 
   const start = useCallback(()=>{
-    if(goTimer.current){clearTimeout(goTimer.current);goTimer.current=null;}
     setNewHi(false); setScore(0); setLevel(1); setLines(0);
     scoreRef.current=0; levelRef.current=1; linesRef.current=0;
     const board=Array.from({length:ROWS},()=>Array(COLS).fill(null));
     const cur={...makePiece(randomType()),x:3,y:-1};
     gameRef.current={board,current:cur,next:makePiece(randomType()),dropAccum:0};
+    statusRef.current='playing';
+    inp.current={left:false,right:false,down:false,la:80,ra:80};
     setStatus('playing');
-  },[]);
+  },[scoreRef,levelRef,linesRef,statusRef]);
+
+  const act = useCallback((action) => {
+    const g=gameRef.current;
+    if (!g || statusRef.current !== 'playing') return;
+    if (action === 'left' || action === 'right') {
+      const dx=action === 'left' ? -1 : 1;
+      if (isValid(g.board,g.current.grid,g.current.x+dx,g.current.y)) g.current.x+=dx;
+    } else if (action === 'rotate') {
+      const rot=rotateCW(g.current.grid);
+      for (const k of [0,-1,1,-2,2]) {
+        if (isValid(g.board,rot,g.current.x+k,g.current.y)) {
+          g.current={...g.current,grid:rot,x:g.current.x+k};
+          break;
+        }
+      }
+    } else if (action === 'drop') {
+      while (isValid(g.board,g.current.grid,g.current.x,g.current.y+1)) g.current.y++;
+      g.dropAccum=9999;
+    }
+  }, [statusRef]);
 
   /* 키보드 */
   useEffect(()=>{
     const kd=(e)=>{
+      if (e.target.closest?.('button, input, textarea')) return;
       const g=gameRef.current; if(!g||statusRef.current!=='playing') return;
       if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' ','Enter','x'].includes(e.key)) e.preventDefault();
       if(e.key==='ArrowLeft')  inp.current.left=true;
@@ -153,7 +174,7 @@ export function useClassicTetris({ canvasRef, onExit }) {
     };
     window.addEventListener('keydown',kd); window.addEventListener('keyup',ku);
     return ()=>{window.removeEventListener('keydown',kd);window.removeEventListener('keyup',ku);};
-  },[]);
+  },[statusRef]);
 
   /* 터치 */
   useEffect(()=>{
@@ -179,7 +200,7 @@ export function useClassicTetris({ canvasRef, onExit }) {
     canvas.addEventListener('touchstart',ts,{passive:false});
     canvas.addEventListener('touchend',te,{passive:false});
     return ()=>{canvas.removeEventListener('touchstart',ts);canvas.removeEventListener('touchend',te);};
-  },[canvasRef]);
+  },[canvasRef,statusRef]);
 
   /* DPR */
   useEffect(()=>{
@@ -228,16 +249,14 @@ export function useClassicTetris({ canvasRef, onExit }) {
             levelRef.current=nv;setLevel(nv);
             const np=trySpawn(cleared,g.next);
             if(!np){
-              setStatus('gameover');
-              saveLeaderboardScore('tetris',ns).then(ok=>{
-                if(ok||ns>hiRef.current){
+              statusRef.current='gameover'; setStatus('gameover');
+              void saveLeaderboardScore('tetris',ns);
+              if(ns>hiRef.current){
                   const best=Math.max(ns,hiRef.current);
                   setHi(best);hiRef.current=best;setNewHi(true);
                   localStorage.setItem('tetris_hi',String(best));
                 }
-              });
-              try{window.AndroidInterface?.showInterstitialAd?.();}catch(_){}
-              goTimer.current=setTimeout(()=>{goTimer.current=null;setStatus('idle');onExit?.(ns);},5000);
+              try{window.AndroidInterface?.showInterstitialAd?.();}catch { /* Native advertising is optional. */ }
             } else {
               g.board=cleared;g.current=np;g.next=makePiece(randomType());g.dropAccum=0;
             }
@@ -257,20 +276,26 @@ export function useClassicTetris({ canvasRef, onExit }) {
     };
     raf=requestAnimationFrame(loop);
     return ()=>{cancelled=true;cancelAnimationFrame(raf);};
-  },[canvasRef,trySpawn,onExit]);
+  },[canvasRef,trySpawn,hiRef,levelRef,linesRef,scoreRef,statusRef]);
 
-  return {start,status,score,level,lines,hiScore,isNewHi};
+  return {start,status,score,level,lines,hiScore,isNewHi,act};
 }
 
 /* ── 컴포넌트 ──────────────────────────────────────── */
 export default function ClassicTetris({ onExit, autoStart }) {
   const canvasRef=useRef(null);
-  const {start,status,score,hiScore,isNewHi}=useClassicTetris({canvasRef,onExit});
+  const {start,status,score,hiScore,isNewHi,act}=useClassicTetris({canvasRef});
   useEffect(()=>{ if(autoStart) start(); },[]); // eslint-disable-line
   return (
     <div className="absolute inset-0">
-      <canvas ref={canvasRef} className="block w-full h-full select-none"
+      <canvas ref={canvasRef} className="mini-board-canvas block w-full select-none"
         style={{imageRendering:'pixelated',touchAction:'none'}}/>
+      {status === 'playing' && <MiniGameControls controls={[
+        { label: '왼쪽', symbol: '←', action: () => act('left') },
+        { label: '회전', symbol: '↻', action: () => act('rotate') },
+        { label: '오른쪽', symbol: '→', action: () => act('right') },
+        { label: '내리기', symbol: '↓', action: () => act('drop') },
+      ]} hint="줄을 채우면 사라져요 · 키보드와 스와이프도 가능" />}
       {status==='idle'&&(
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/80">
           <div className="text-neon text-glow text-lg tracking-widest" style={{fontFamily:'"Press Start 2P",monospace'}}>CLASSIC TETRIS</div>
@@ -284,27 +309,7 @@ export default function ClassicTetris({ onExit, autoStart }) {
           </div>
         </div>
       )}
-      {status==='gameover'&&(
-        <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 pointer-events-none">
-          <div className="pointer-events-auto flex flex-col items-center gap-3">
-            {isNewHi&&(
-              <div className="text-neon text-glow text-[10px] tracking-widest blink mb-1"
-                style={{fontFamily:'"Press Start 2P",monospace'}}>★ NEW HI-SCORE ★</div>
-            )}
-            <div className="text-[#BF5AF2]/70 text-[9px] mb-1" style={{fontFamily:'"Press Start 2P",monospace'}}>
-              SCORE {String(score).padStart(6,'0')}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={start}
-                className="border-2 px-5 py-3 text-[11px] tracking-widest active:scale-95 transition-all"
-                style={{fontFamily:'"Press Start 2P",monospace',borderColor:'#BF5AF2',color:'#BF5AF2',boxShadow:'0 0 14px rgba(191,90,242,0.5)'}}>
-                🔄 RETRY
-              </button>
-              <KakaoShareButton gameId="tetris" score={score} />
-            </div>
-          </div>
-        </div>
-      )}
+      {status === 'gameover' && <MiniGameResult gameId="tetris" score={score} best={hiScore} isNewHi={isNewHi} onRetry={start} onExit={onExit} detail={'빈틈을 줄이고 한 번에 여러 줄을 지워보세요.'} />}
     </div>
   );
 }

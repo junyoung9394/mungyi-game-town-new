@@ -209,8 +209,35 @@ export default function GameLobby({
   achievements = {},
   pwaPrompt = null, onPwaInstall, onPwaDismiss,
 }) {
+  const [query, setQuery] = useState('');
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('town_favorites') || '[]');
+      return Array.isArray(saved) ? saved.filter(id => GAMES.some(game => game.id === id)) : [];
+    } catch { return []; }
+  });
+  const [recent, setRecent] = useState(() => {
+    try { return localStorage.getItem('town_recent') || ''; } catch { return ''; }
+  });
+  const selectGame = (id) => {
+    setRecent(id);
+    try { localStorage.setItem('town_recent', id); } catch { /* Storage may be unavailable. */ }
+    onSelect(id);
+  };
+  const toggleFavorite = (id) => {
+    const next = favorites.includes(id) ? favorites.filter(item => item !== id) : [...favorites, id];
+    setFavorites(next);
+    try { localStorage.setItem('town_favorites', JSON.stringify(next)); } catch { /* Keep this session usable. */ }
+  };
+  const aliases = { runner: '러너 달리기', flappy: '플래피 날기', tetris: '테트리스 블록', snake: '스네이크 뱀', brickBreaker: '벽돌 깨기', omok: '오목' };
+  const filteredGames = GAMES.filter(game =>
+    (!onlyFavorites || favorites.includes(game.id)) &&
+    `${game.title} ${game.desc} ${aliases[game.id]}`.toLowerCase().includes(query.trim().toLowerCase())
+  );
+  const recentGame = GAMES.find(game => game.id === recent);
   return (
-    <div className="absolute inset-0 bg-black overflow-y-auto">
+    <div className="town-lobby absolute inset-0 bg-black overflow-y-auto">
 
       {/* 수평 광고 – 최상단 */}
       <div className="w-full bg-black/50 border-b border-neon/10">
@@ -245,20 +272,30 @@ export default function GameLobby({
       <StreakBanner streak={streak} attendedToday={attendedToday} onClaim={onClaimStreak} />
 
       {/* 데일리 미션 */}
-      <DailyMissionCard mission={mission} completed={missionCompleted} onGo={onSelect} />
+      <DailyMissionCard mission={mission} completed={missionCompleted} onGo={selectGame} />
 
       {/* 구분선 */}
       <div className="mx-4 h-px bg-neon/20 mb-3" />
 
-      {/* 게임 카드 그리드 (2×2) + 와이드 카드 목록 */}
-      <div className="px-3 grid grid-cols-2 gap-3 mb-3">
-        {GAMES.slice(0, 4).map(g => <GameCard key={g.id} game={g} onSelect={onSelect} />)}
-      </div>
-      {GAMES.slice(4).map(g => (
-        <div key={g.id} className="px-3 mb-3">
-          <GameCard game={g} onSelect={onSelect} wide />
+      <div className="library-toolbar">
+        <div className="library-heading"><h2>오늘의 한 판</h2><span>6 GAMES</span></div>
+        {recentGame && <button className="library-recent" onClick={() => selectGame(recentGame.id)}>↻ 최근 선택: {recentGame.title} <span>다시 시작 →</span></button>}
+        <label className="library-search"><span aria-hidden="true">⌕</span><input aria-label="게임 검색" placeholder="어떤 게임을 찾으세요?" value={query} onChange={event => setQuery(event.target.value)} /></label>
+        <div className="library-filters">
+          <button aria-pressed={!onlyFavorites} onClick={() => setOnlyFavorites(false)}>전체 게임</button>
+          <button aria-pressed={onlyFavorites} onClick={() => setOnlyFavorites(true)}>★ 즐겨찾기 {favorites.length}</button>
+          <span aria-live="polite">{filteredGames.length}개</span>
         </div>
-      ))}
+      </div>
+      <div className="library-grid">
+        {filteredGames.map(game => (
+          <div className="library-item" key={game.id}>
+            <GameCard game={game} onSelect={selectGame} />
+            <button className="library-favorite" aria-label={`${game.title} 즐겨찾기`} aria-pressed={favorites.includes(game.id)} onClick={() => toggleFavorite(game.id)}>{favorites.includes(game.id) ? '★' : '☆'}</button>
+          </div>
+        ))}
+      </div>
+      {filteredGames.length === 0 && <div className="library-empty"><span>✧</span><p>{query ? '검색 결과가 없어요. 다른 이름으로 찾아보세요.' : '게임 카드의 별을 눌러 즐겨찾기를 모아보세요.'}</p><button onClick={() => { setQuery(''); setOnlyFavorites(false); }}>전체 게임 보기</button></div>}
 
       {/* 구분선 */}
       <div className="mx-4 h-px bg-neon/20 mb-3" />

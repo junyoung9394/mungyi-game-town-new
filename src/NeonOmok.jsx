@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
+import MiniGameResult from './components/MiniGameResult';
 import { saveLeaderboardScore } from './utils/saveScore';
 
 const N = 15;
@@ -251,18 +252,18 @@ export default function NeonOmok({ onExit }) {
   if (!mode) return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black">
       <p className="text-neon text-[15px] tracking-widest"
-        style={{fontFamily:'"Press Start 2P",monospace', textShadow:'0 0 10px #39FF14'}}>OMOK</p>
-      <p className="text-neon/50 text-[9px]" style={{fontFamily:'"Press Start 2P",monospace'}}>모드 선택</p>
-      <div className="flex flex-col gap-3 w-[180px]">
+        style={{fontFamily:'"Press Start 2P",monospace', textShadow:'0 0 10px #39FF14'}}>한 수씩, 오목</p>
+      <p className="text-neon/50 text-[9px]" style={{fontFamily:'"Press Start 2P",monospace'}}>먼저 5개를 이어보세요</p>
+      <div className="flex flex-col gap-3 w-[260px]">
         <button onClick={()=>setMode('AI')}
           className="border-2 border-neon text-neon py-3 text-[11px] tracking-widest hover:bg-neon hover:text-black active:scale-95 transition-all"
           style={{fontFamily:'"Press Start 2P",monospace', boxShadow:'0 0 12px rgba(57,255,20,0.4)'}}>
-          🤖 VS AI
+          🤖 혼자 가볍게 · AI 대전
         </button>
         <button onClick={()=>setMode('2P')}
           className="border border-neon/50 text-neon/60 py-3 text-[11px] tracking-widest hover:border-neon hover:text-neon active:scale-95 transition-all"
           style={{fontFamily:'"Press Start 2P",monospace'}}>
-          👥 2인 대전
+          👥 친구와 번갈아 · 2인 대전
         </button>
       </div>
       <button onClick={() => onExit?.(0)} className="text-neon/30 hover:text-neon/60 text-[8px] mt-2 transition-colors"
@@ -300,10 +301,10 @@ export default function NeonOmok({ onExit }) {
         <div className="flex gap-1.5">
           <button onClick={reset}
             className="text-[7px] px-2 py-1 border border-neon/25 text-neon/50 hover:border-neon hover:text-neon transition-colors"
-            style={{fontFamily:'"Press Start 2P",monospace'}}>NEW</button>
+            style={{fontFamily:'"Press Start 2P",monospace'}}>새 판</button>
           <button onClick={()=>{reset();setMode(null);}}
             className="text-[7px] px-2 py-1 border border-neon/25 text-neon/50 hover:border-neon hover:text-neon transition-colors"
-            style={{fontFamily:'"Press Start 2P",monospace'}}>MODE</button>
+            style={{fontFamily:'"Press Start 2P",monospace'}}>대전 방식</button>
         </div>
       </div>
 
@@ -323,42 +324,16 @@ export default function NeonOmok({ onExit }) {
         </div>
       </div>
 
-      {/* 승패 오버레이 */}
-      {winner && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/65 z-10">
-          <div className="flex flex-col items-center gap-5 border-2 px-8 py-6"
-            style={{borderColor: winColor, boxShadow:`0 0 24px ${winColor}50`}}>
-            <p className="text-[14px] tracking-widest"
-              style={{fontFamily:'"Press Start 2P",monospace', color: winColor,
-                textShadow:`0 0 10px ${winColor}`}}>
-              {statusText}
-            </p>
-            {mode==='AI' && winner==='B' && (
-              <p className="text-neon/50 text-[8px]" style={{fontFamily:'"Press Start 2P",monospace'}}>
-                SCORE: {Math.max(100, 1000-Math.ceil(moves/2)*20)}
-              </p>
-            )}
-            <div className="flex gap-3">
-              <button onClick={reset}
-                className="text-[9px] px-4 py-2 border-2 hover:opacity-80 transition-opacity active:scale-95"
-                style={{fontFamily:'"Press Start 2P",monospace', color:winColor, borderColor:winColor}}>
-                다시 하기
-              </button>
-              <button onClick={()=>{reset();setMode(null);}}
-                className="text-[9px] px-4 py-2 border border-neon/40 text-neon/50 hover:text-neon hover:border-neon transition-colors active:scale-95"
-                style={{fontFamily:'"Press Start 2P",monospace'}}>
-                모드 변경
-              </button>
-            </div>
-            <button
-              onClick={() => onExit?.(winner === 'B' ? Math.max(100, 1000 - Math.ceil(moves / 2) * 20) : 1)}
-              className="text-[8px] text-neon/40 hover:text-neon transition-colors mt-1"
-              style={{fontFamily:'"Press Start 2P",monospace'}}>
-              ◀ LOBBY
-            </button>
-          </div>
-        </div>
-      )}
+      {winner && <MiniGameResult
+        gameId="omok"
+        showScore={mode === 'AI' && winner === 'B'}
+        score={mode === 'AI' && winner === 'B' ? Math.max(100, 1000-Math.ceil(moves/2)*20) : 0}
+        title={winner === 'D' ? '무승부! 다시 한 판?' : mode === 'AI' ? (winner === 'B' ? '멋진 승리예요!' : '이번엔 AI의 승리!') : (winner === 'B' ? '흑돌 승리!' : '백돌 승리!')}
+        detail={`${moves}수 만에 승부 완료 · 먼저 5개를 이으면 승리`}
+        onRetry={reset}
+        onExit={onExit}
+      />}
+
     </div>
   );
 }

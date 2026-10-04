@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSyncedRef } from './utils/useSyncedRef';
 import { VW, VH } from './constants';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
-import KakaoShareButton from './components/KakaoShareButton';
+import MiniGameResult from './components/MiniGameResult';
 
 /* ── 상수 ──────────────────────────────────────────────── */
 const NEON = '#39FF14';
@@ -33,7 +33,6 @@ const BALL_SPEED_MAX  = 9.5;
 
 const MISS_DELAY_MS    = 800;
 const CLEARED_DELAY_MS = 1200;
-const GAMEOVER_DELAY_MS = 1800;
 
 /* ── 드로잉 유틸 ───────────────────────────────────────── */
 function drawBackground(ctx) {
@@ -132,7 +131,7 @@ function drawCenterBanner(ctx, title, subtitle) {
 }
 
 /* ── 게임 훅 ───────────────────────────────────────────── */
-export function useNeonBrickBreaker({ canvasRef, onExit }) {
+function useNeonBrickBreaker({ canvasRef }) {
   const [stage, setStage]     = useState(1);
   const [score, setScore]     = useState(0);
   const [hiScore, setHiScore] = useState(0);
@@ -148,7 +147,6 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
   const statusRef   = useSyncedRef(status);
   const inputRef    = useRef({ left: false, right: false });
   const paddleXRef  = useRef(null); // mouse/touch 직접 위치
-  const goTimer     = useRef(null);
 
   // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
   useAutoSave('brickBreaker', scoreRef, statusRef);
@@ -177,7 +175,7 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
         { merge: true }
       );
     } catch (e) { console.warn('[Brick] hiScore 저장 실패:', e); }
-  }, []);
+  }, [stageRef]);
 
   /* 스테이지 초기화 */
   const initStage = useCallback((stageNum) => {
@@ -213,7 +211,6 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
 
   /* 게임 시작 */
   const start = useCallback(() => {
-    if(goTimer.current){clearTimeout(goTimer.current);goTimer.current=null;}
     setIsNewHi(false);
     setStage(1); setScore(0); setLives(3);
     initStage(1);
@@ -223,20 +220,17 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
   /* 게임 오버 */
   const triggerGameOver = useCallback(() => {
     const final = scoreRef.current;
-    setStatus('gameover');
-    saveLeaderboardScore('brickBreaker', final).then(isNew => {
-      if (isNew || final > hiScoreRef.current) {
-        setHiScore(final); setIsNewHi(true);
-      }
-    });
+    statusRef.current='gameover'; setStatus('gameover');
+    void saveLeaderboardScore('brickBreaker', final);
     if (final > hiScoreRef.current) {
-      saveHiScore(final); // 로컬 컬렉션 유지
+      hiScoreRef.current=final;
+      setHiScore(final); setIsNewHi(true);
+      void saveHiScore(final);
     }
     try {
       window.AndroidInterface?.showInterstitialAd?.();
-    } catch (e) {}
-    goTimer.current = setTimeout(() => { goTimer.current=null; setStatus('idle'); onExit?.(final); }, 5000);
-  }, [saveHiScore, onExit]);
+    } catch { /* Native advertising is optional. */ }
+  }, [saveHiScore, scoreRef, hiScoreRef, statusRef]);
 
   /* 입력: 키보드 */
   useEffect(() => {
@@ -427,7 +421,7 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
 
     rafId = requestAnimationFrame(loop);
     return () => { cancelled = true; if (rafId) cancelAnimationFrame(rafId); };
-  }, [canvasRef, initStage, triggerGameOver]);
+  }, [canvasRef, initStage, triggerGameOver,hiScoreRef,livesRef,scoreRef,stageRef,statusRef]);
 
   return { start, status, stage, score, hiScore, lives, isNewHi };
 }
@@ -435,8 +429,8 @@ export function useNeonBrickBreaker({ canvasRef, onExit }) {
 /* ── 컴포넌트 ──────────────────────────────────────────── */
 export default function NeonBrickBreaker({ onExit, autoStart }) {
   const canvasRef = useRef(null);
-  const { start, status, score, hiScore, stage, lives, isNewHi } =
-    useNeonBrickBreaker({ canvasRef, onExit });
+  const { start, status, score, hiScore, isNewHi } =
+    useNeonBrickBreaker({ canvasRef });
   useEffect(() => { if (autoStart) start(); }, []); // eslint-disable-line
 
   return (
@@ -477,29 +471,7 @@ export default function NeonBrickBreaker({ onExit, autoStart }) {
       )}
 
       {/* 게임오버 오버레이 */}
-      {status === 'gameover' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 pointer-events-none">
-          <div className="pointer-events-auto flex flex-col items-center gap-3">
-            {isNewHi && (
-              <div className="text-neon text-glow text-[10px] tracking-widest blink mb-1"
-                style={{ fontFamily: '"Press Start 2P", monospace' }}>
-                ★ NEW HI-SCORE ★
-              </div>
-            )}
-            <div className="text-[#FF2D55]/70 text-[9px] mb-1" style={{ fontFamily: '"Press Start 2P", monospace' }}>
-              SCORE {String(score).padStart(5, '0')}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={start}
-                className="border-2 px-5 py-3 text-[11px] tracking-widest active:scale-95 transition-all"
-                style={{ fontFamily: '"Press Start 2P", monospace', borderColor: '#FF2D55', color: '#FF2D55', boxShadow: '0 0 14px rgba(255,45,85,0.5)' }}>
-                🔄 RETRY
-              </button>
-              <KakaoShareButton gameId="brickBreaker" score={score} />
-            </div>
-          </div>
-        </div>
-      )}
+      {status === 'gameover' && <MiniGameResult gameId="brickBreaker" score={score} best={hiScore} isNewHi={isNewHi} onRetry={start} onExit={onExit} detail={'패들의 맞는 위치에 따라 공의 방향이 달라져요.'} />}
     </div>
   );
 }

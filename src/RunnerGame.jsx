@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSyncedRef } from './utils/useSyncedRef';
 import { VW, VH } from './constants';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
-import KakaoShareButton from './components/KakaoShareButton';
+import MiniGameResult from './components/MiniGameResult';
+import MiniGameControls from './components/MiniGameControls';
 
 /* ── 상수 ─────────────────────────────────────────── */
 const GROUND_Y    = VH - 90;
@@ -453,9 +454,9 @@ function makeCoin(x) {
 }
 
 /* ── 게임 훅 ──────────────────────────────────────── */
-export function useRunnerGame({ canvasRef, onExit }) {
+function useRunnerGame({ canvasRef }) {
   const [score, setScore]     = useState(0);
-  const [hiScore, setHiScore] = useState(0);
+  const [hiScore, setHiScore] = useState(() => { try { return Number(localStorage.getItem('runner_hi')) || 0; } catch { return 0; } });
   const [status, setStatus]   = useState('idle');
   const [isNewHi, setIsNewHi] = useState(false);
   const [coinCount, setCoinCount] = useState(0);
@@ -464,14 +465,9 @@ export function useRunnerGame({ canvasRef, onExit }) {
   const scoreRef  = useSyncedRef(score);
   const hiRef     = useSyncedRef(hiScore);
   const statusRef = useSyncedRef(status);
-  const timerRef  = useRef(null);
 
   useAutoSave('runner', scoreRef, statusRef);
 
-  useEffect(() => {
-    const v = parseInt(localStorage.getItem('runner_hi') || '0', 10);
-    setHiScore(v);
-  }, []);
 
   const doJump = useCallback(() => {
     const g = gRef.current; if (!g) return;
@@ -486,10 +482,9 @@ export function useRunnerGame({ canvasRef, onExit }) {
       g.canDouble = false;
       spawnParticles(g.particles, CHAR_X + CHAR_W / 2, g.charY, 10);
     }
-  }, []);
+  }, [statusRef]);
 
   const start = useCallback(() => {
-    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
     gRef.current = {
       charY: GROUND_Y - CHAR_H,
       vy: 0,
@@ -507,28 +502,25 @@ export function useRunnerGame({ canvasRef, onExit }) {
       coinCount: 0,
     };
     setScore(0); setCoinCount(0); setIsNewHi(false);
+    scoreRef.current=0; statusRef.current='playing';
     setStatus('playing');
-  }, []);
+  }, [scoreRef, statusRef]);
 
-  const triggerGameOver = useCallback(async () => {
+  const triggerGameOver = useCallback(() => {
     const final = scoreRef.current;
-    setStatus('gameover');
-    const isNew = await saveLeaderboardScore('runner', final);
-    if (isNew || final > hiRef.current) {
+    statusRef.current='gameover'; setStatus('gameover');
+    void saveLeaderboardScore('runner', final);
+    if (final > hiRef.current) {
       const best = Math.max(final, hiRef.current);
-      setHiScore(best); setIsNewHi(true);
+      setHiScore(best); hiRef.current=best; setIsNewHi(true);
       localStorage.setItem('runner_hi', String(best));
     }
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null;
-      setStatus('idle');
-      onExit?.(final);
-    }, 2200);
-  }, [onExit]);
+  }, [hiRef, scoreRef, statusRef]);
 
   // 키보드
   useEffect(() => {
     const kd = (e) => {
+      if (e.target.closest?.('button, input, textarea')) return;
       if (e.code === 'Space' || e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         e.preventDefault(); doJump();
       }
@@ -675,7 +667,7 @@ export function useRunnerGame({ canvasRef, onExit }) {
 
     raf = requestAnimationFrame(loop);
     return () => { cancelled = true; if (raf) cancelAnimationFrame(raf); };
-  }, [canvasRef, triggerGameOver, coinCount]);
+  }, [canvasRef, triggerGameOver, coinCount, hiRef, scoreRef, statusRef]);
 
   return { start, doJump, status, score, hiScore, isNewHi, coinCount };
 }
@@ -684,7 +676,7 @@ export function useRunnerGame({ canvasRef, onExit }) {
 export default function RunnerGame({ onExit, autoStart }) {
   const canvasRef = useRef(null);
   const { start, doJump, status, score, hiScore, isNewHi, coinCount } =
-    useRunnerGame({ canvasRef, onExit });
+    useRunnerGame({ canvasRef });
 
   useEffect(() => { if (autoStart) start(); }, []); // eslint-disable-line
 
@@ -696,6 +688,7 @@ export default function RunnerGame({ onExit, autoStart }) {
         style={{ imageRendering: 'pixelated', touchAction: 'none', cursor: 'pointer' }}
       />
 
+      {status === 'playing' && <MiniGameControls controls={[{ label: '점프', symbol: '↑', action: doJump }]} hint="연속 두 번 누르면 이중 점프" />}
       {/* idle 화면 */}
       {status === 'idle' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-6"
@@ -756,39 +749,7 @@ export default function RunnerGame({ onExit, autoStart }) {
       )}
 
       {/* 게임오버 오버레이 */}
-      {status === 'gameover' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 pointer-events-none">
-          <div className="pointer-events-auto flex flex-col items-center gap-3">
-            {isNewHi && (
-              <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 9, color: '#fbbf24',
-                textShadow: '0 0 10px #f59e0b', animation: 'blink 1s steps(2,start) infinite' }}>
-                ★ NEW RECORD ★
-              </div>
-            )}
-            <div style={{ fontFamily: '"Press Start 2P",monospace', fontSize: 8, color: 'rgba(232,121,249,0.6)' }}>
-              🪙 {coinCount} COINS
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={start}
-                style={{
-                  fontFamily: '"Press Start 2P",monospace',
-                  fontSize: 11,
-                  color: '#0a0015',
-                  background: 'linear-gradient(135deg, #a855f7, #e879f9)',
-                  border: 'none',
-                  padding: '12px 22px',
-                  cursor: 'pointer',
-                  boxShadow: '0 0 18px rgba(168,85,247,0.7)',
-                  letterSpacing: 1,
-                }}>
-                🔄 RETRY
-              </button>
-              <KakaoShareButton gameId="runner" score={score} />
-            </div>
-          </div>
-        </div>
-      )}
+      {status === 'gameover' && <MiniGameResult gameId="runner" score={score} best={hiScore} isNewHi={isNewHi} onRetry={start} onExit={onExit} detail={`${coinCount}개 코인 · 탭 두 번으로 이중 점프!`} />}
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import GameTownLayout from './GameTownLayout'
+import Playground from './playground/Playground';
 
 export default function App() {
-  return <GameTownLayout />
+  return <Playground />;
 }

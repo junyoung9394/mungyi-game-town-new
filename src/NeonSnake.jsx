@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSyncedRef } from './utils/useSyncedRef';
+import { queueSnakeTurn, swipeDirection } from './utils/snakeControls';
 import { VW, VH } from './constants';
 import { saveLeaderboardScore } from './utils/saveScore';
 import { useAutoSave } from './utils/useAutoSave';
-import KakaoShareButton from './components/KakaoShareButton';
+import MiniGameResult from './components/MiniGameResult';
+import MiniGameControls from './components/MiniGameControls';
 
 const NEON = '#39FF14';
 const COLS = 18, ROWS = 28, CELL = 20;
@@ -84,9 +86,9 @@ function drawBanner(ctx, title, sub) {
 }
 
 /* ── 훅 ─────────────────────────────────────────────── */
-export function useNeonSnake({ canvasRef, onExit }) {
+function useNeonSnake({ canvasRef }) {
   const [score,setScore]   = useState(0);
-  const [hiScore,setHi]    = useState(0);
+  const [hiScore,setHi]    = useState(() => { try { return Number(localStorage.getItem('snake_hi')) || 0; } catch { return 0; } });
   const [status,setStatus] = useState('idle');
   const [isNewHi,setNewHi] = useState(false);
 
@@ -95,15 +97,34 @@ export function useNeonSnake({ canvasRef, onExit }) {
   const hiRef     = useSyncedRef(hiScore);
   const statusRef = useSyncedRef(status);
   const dirBuf    = useRef(null); // 다음 방향 버퍼
-  const goTimer   = useRef(null); // 게임오버 자동복귀 타이머
 
-  useEffect(()=>{const v=parseInt(localStorage.getItem('snake_hi')||'0',10);setHi(v);},[]);
+  const togglePause = useCallback(() => {
+    const next = statusRef.current === 'playing' ? 'paused' : statusRef.current === 'paused' ? 'playing' : null;
+    if (!next) return;
+    statusRef.current = next;
+    setStatus(next);
+  }, [statusRef]);
+
+  useEffect(() => {
+    const pause = () => {
+      if (statusRef.current === 'playing') {
+        statusRef.current = 'paused';
+        setStatus('paused');
+      }
+    };
+    const visibility = () => { if (document.hidden) pause(); };
+    window.addEventListener('blur', pause);
+    document.addEventListener('visibilitychange', visibility);
+    return () => {
+      window.removeEventListener('blur', pause);
+      document.removeEventListener('visibilitychange', visibility);
+    };
+  }, [statusRef]);
 
   // 중간 점수 자동 저장 (LOBBY 이탈 / 창 닫기)
   useAutoSave('snake', scoreRef, statusRef);
 
   const start = useCallback(()=>{
-    if(goTimer.current){clearTimeout(goTimer.current);goTimer.current=null;}
     setNewHi(false); setScore(0); scoreRef.current=0;
     const snake=[{x:9,y:14},{x:8,y:14},{x:7,y:14}];
     gameRef.current={
@@ -113,11 +134,18 @@ export function useNeonSnake({ canvasRef, onExit }) {
       tickAccum:0,
       tickInterval:TICK_BASE,
       eaten:0,
+      foodFlash:0,
       t:0,
     };
     dirBuf.current=null;
+    statusRef.current = 'playing';
     setStatus('playing');
-  },[]);
+  },[scoreRef, statusRef]);
+
+  const turn = useCallback((next) => {
+    const g=gameRef.current;
+    if (g && statusRef.current === 'playing') dirBuf.current=queueSnakeTurn(g.dir,dirBuf.current,next);
+  }, [statusRef]);
 
   /* 키보드 */
   useEffect(()=>{
@@ -128,16 +156,20 @@ export function useNeonSnake({ canvasRef, onExit }) {
       W:{dx:0,dy:-1},S:{dx:0,dy:1},A:{dx:-1,dy:0},D:{dx:1,dy:0},
     };
     const kd=(e)=>{
+      if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        if (!e.repeat) togglePause();
+        return;
+      }
       if(statusRef.current!=='playing') return;
       const nd=MAP[e.key]; if(!nd) return;
       e.preventDefault();
       const g=gameRef.current; if(!g) return;
-      const cur=dirBuf.current||g.dir;
-      if(nd.dx!==-cur.dx||nd.dy!==-cur.dy) dirBuf.current=nd;
+      dirBuf.current=queueSnakeTurn(g.dir,dirBuf.current,nd);
     };
     window.addEventListener('keydown',kd);
     return ()=>window.removeEventListener('keydown',kd);
-  },[]);
+  },[togglePause, statusRef]);
 
   /* 터치 스와이프 */
   useEffect(()=>{
@@ -149,19 +181,12 @@ export function useNeonSnake({ canvasRef, onExit }) {
       if(statusRef.current!=='playing') return;
       const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
       const g=gameRef.current; if(!g) return;
-      const cur=dirBuf.current||g.dir;
-      let nd=null;
-      if(Math.abs(dx)>Math.abs(dy)){
-        nd=dx>15?{dx:1,dy:0}:{dx:-1,dy:0};
-      } else if(Math.abs(dy)>15){
-        nd=dy>0?{dx:0,dy:1}:{dx:0,dy:-1};
-      }
-      if(nd&&(nd.dx!==-cur.dx||nd.dy!==-cur.dy)) dirBuf.current=nd;
+      dirBuf.current=queueSnakeTurn(g.dir,dirBuf.current,swipeDirection(dx,dy));
     };
     canvas.addEventListener('touchstart',ts,{passive:false});
     canvas.addEventListener('touchend',te,{passive:false});
     return ()=>{canvas.removeEventListener('touchstart',ts);canvas.removeEventListener('touchend',te);};
-  },[canvasRef]);
+  },[canvasRef, statusRef]);
 
   /* DPR */
   useEffect(()=>{
@@ -188,6 +213,7 @@ export function useNeonSnake({ canvasRef, onExit }) {
 
       if(st==='playing'&&g){
         g.t+=dt;
+        g.foodFlash=Math.max(0,g.foodFlash-dt);
         g.tickAccum+=dt;
         if(g.tickAccum>=g.tickInterval){
           g.tickAccum-=g.tickInterval;
@@ -201,22 +227,21 @@ export function useNeonSnake({ canvasRef, onExit }) {
           /* 자기 충돌 */
           if(g.snake.some(s=>s.x===head.x&&s.y===head.y)){
             const final=scoreRef.current;
-            setStatus('gameover');
-            saveLeaderboardScore('snake',final).then(ok=>{
-              if(ok||final>hiRef.current){
-                const best=Math.max(final,hiRef.current);
-                setHi(best);hiRef.current=best;setNewHi(true);
-                localStorage.setItem('snake_hi',String(best));
-              }
-            });
-            try{window.AndroidInterface?.showInterstitialAd?.();}catch(_){}
-            goTimer.current=setTimeout(()=>{goTimer.current=null;setStatus('idle');onExit?.(final);},5000);
+            statusRef.current='gameover'; setStatus('gameover');
+            void saveLeaderboardScore('snake',final);
+            if(final>hiRef.current){
+              const best=Math.max(final,hiRef.current);
+              setHi(best);hiRef.current=best;setNewHi(true);
+              localStorage.setItem('snake_hi',String(best));
+            }
+            try{window.AndroidInterface?.showInterstitialAd?.();}catch { /* Native advertising is optional. */ }
           } else {
             const ateFood=head.x===g.food.x&&head.y===g.food.y;
             g.snake=[head,...g.snake];
             if(!ateFood) g.snake.pop();
             else {
               g.eaten++;
+              g.foodFlash=350;
               const pts=10*(1+Math.floor(g.eaten/5));
               const ns=scoreRef.current+pts;
               scoreRef.current=ns; setScore(ns);
@@ -230,14 +255,21 @@ export function useNeonSnake({ canvasRef, onExit }) {
         drawHUD(ctx,scoreRef.current,hiRef.current,g.snake.length);
         drawFood(ctx,g.food,g.t);
         drawSnake(ctx,g.snake);
+        if (g.foodFlash > 0) {
+          ctx.save();
+          ctx.globalAlpha=g.foodFlash/350;
+          ctx.fillStyle='#ffd780';ctx.font='bold 16px monospace';ctx.textAlign='center';
+          ctx.fillText('+'+10*(1+Math.floor(g.eaten/5)),VW/2,72+(g.foodFlash/350)*10);
+          ctx.restore();
+        }
       } else {
         ctx.fillStyle='#000';ctx.fillRect(0,0,VW,VH);
-        if(g&&st==='gameover'){
+        if(g&&(st==='gameover'||st==='paused')){
           drawBg(ctx);
           drawHUD(ctx,scoreRef.current,hiRef.current,g.snake.length);
           drawFood(ctx,g.food,g.t||0);
           drawSnake(ctx,g.snake);
-          drawBanner(ctx,'GAME OVER','SCORE '+scoreRef.current);
+          if(st==='gameover') drawBanner(ctx,'GAME OVER','SCORE '+scoreRef.current);
         }
       }
 
@@ -245,20 +277,28 @@ export function useNeonSnake({ canvasRef, onExit }) {
     };
     raf=requestAnimationFrame(loop);
     return ()=>{cancelled=true;cancelAnimationFrame(raf);};
-  },[canvasRef,onExit]);
+  },[canvasRef,hiRef,scoreRef,statusRef]);
 
-  return {start,status,score,hiScore,isNewHi,scoreRef};
+  return {start,status,score,hiScore,isNewHi,scoreRef,togglePause,turn};
 }
 
 /* ── 컴포넌트 ──────────────────────────────────────── */
 export default function NeonSnake({ onExit, autoStart }) {
   const canvasRef=useRef(null);
-  const {start,status,score,hiScore,isNewHi}=useNeonSnake({canvasRef,onExit});
+  const {start,status,score,hiScore,isNewHi,togglePause,turn}=useNeonSnake({canvasRef});
   useEffect(()=>{ if(autoStart) start(); },[]); // eslint-disable-line
   return (
     <div className="absolute inset-0">
-      <canvas ref={canvasRef} className="block w-full h-full select-none"
+      <canvas ref={canvasRef} className="mini-board-canvas block w-full select-none"
         style={{imageRendering:'pixelated',touchAction:'none'}}/>
+      {status === 'playing' && <MiniGameControls controls={[
+        { label: '왼쪽', symbol: '←', action: () => turn({dx:-1,dy:0}) },
+        { label: '위', symbol: '↑', action: () => turn({dx:0,dy:-1}) },
+        { label: '아래', symbol: '↓', action: () => turn({dx:0,dy:1}) },
+        { label: '오른쪽', symbol: '→', action: () => turn({dx:1,dy:0}) },
+      ]} hint="먹이를 모으세요 · 벽은 통과, 몸에 닿으면 끝!" />}
+      {status==='playing' && <button className="snake-pause-button" onClick={togglePause} aria-label="일시정지">Ⅱ 일시정지</button>}
+      {status==='paused' && <div className="snake-pause-overlay"><span>TAKE A BREATHER</span><h2>잠깐 쉬어가요</h2><p>기록은 그대로, 준비되면 이어서 시작하세요.</p><button onClick={togglePause}>▶ 계속하기</button><small>Esc 또는 P 키로도 계속할 수 있어요</small></div>}
       {status==='idle'&&(
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/80">
           <div className="text-neon text-glow text-xl tracking-widest" style={{fontFamily:'"Press Start 2P",monospace'}}>NEON SNAKE</div>
@@ -272,27 +312,7 @@ export default function NeonSnake({ onExit, autoStart }) {
           </div>
         </div>
       )}
-      {status==='gameover'&&(
-        <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 pointer-events-none">
-          <div className="pointer-events-auto flex flex-col items-center gap-3">
-            {isNewHi&&(
-              <div className="text-neon text-glow text-[10px] tracking-widest blink mb-1"
-                style={{fontFamily:'"Press Start 2P",monospace'}}>★ NEW HI-SCORE ★</div>
-            )}
-            <div className="text-neon/60 text-[9px] mb-1" style={{fontFamily:'"Press Start 2P",monospace'}}>
-              SCORE {String(score).padStart(5,'0')}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={start}
-                className="border-2 border-neon px-5 py-3 text-neon text-[11px] tracking-widest hover:bg-neon hover:text-black active:scale-95 transition-all"
-                style={{fontFamily:'"Press Start 2P",monospace',boxShadow:'0 0 14px rgba(57,255,20,0.6)'}}>
-                🔄 RETRY
-              </button>
-              <KakaoShareButton gameId="snake" score={score} />
-            </div>
-          </div>
-        </div>
-      )}
+      {status === 'gameover' && <MiniGameResult gameId="snake" score={score} best={hiScore} isNewHi={isNewHi} onRetry={start} onExit={onExit} detail={'급하게 꺾기보다 한 칸 앞을 보고 움직여요.'} />}
     </div>
   );
 }
